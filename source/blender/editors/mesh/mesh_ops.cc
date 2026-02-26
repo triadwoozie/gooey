@@ -193,6 +193,7 @@ void ED_operatortypes_mesh()
   WM_operatortype_append(MESH_OT_flip_quad_tessellation);
   WM_operatortype_append(MESH_OT_relax_edge_loops);
   WM_operatortype_append(MESH_OT_curve_edge_loops_between_selected);
+  WM_operatortype_append(MESH_OT_circularize);
 }
 
 #if 0 /* UNUSED, remove? */

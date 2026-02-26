@@ -128,6 +128,10 @@ wmKeyMap *bevel_modal_keymap(wmKeyConfig *keyconf);
 
 void MESH_OT_bisect(wmOperatorType *ot);
 
+/* *** `editmesh_circularize.cc` *** */
+
+void MESH_OT_circularize(wmOperatorType *ot);
+
 /* *** `editmesh_curve_edge_loops_between_selected.cc` *** */
 
 void MESH_OT_curve_edge_loops_between_selected(wmOperatorType *ot);
