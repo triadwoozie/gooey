@@ -161,6 +161,7 @@ enum FlattenMethod {
   FLATTEN_NORMAL = 1,
   FLATTEN_VIEW = 2,
 };
+
 /* Interpolation method for fitting edge loops to a curve. */
 enum CurveInterpolation {
   CURVE_INTERP_CUBIC = 0,

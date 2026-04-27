@@ -138,6 +138,10 @@ void MESH_OT_curve_edge_loops_between_selected(wmOperatorType *ot);
 /* *** `editmesh_relax_edge_loops.cc` *** */
 
 void MESH_OT_relax_edge_loops(wmOperatorType *ot);
+
+/* *** `editmesh_flatten.cc` *** */
+
+void MESH_OT_flatten(wmOperatorType *ot);
 /* *** `editmesh_extrude.cc` *** */
 
 void MESH_OT_extrude_repeat(wmOperatorType *ot);
