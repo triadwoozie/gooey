@@ -1533,6 +1533,41 @@ void BKE_image_packfiles_from_mem(ReportList *reports,
   }
 }
 
+void BKE_image_packfile_ensure(
+    Main *bmain, Image *image, ReportList *reports, const char *data, const int data_len)
+{
+  if (ID_IS_LINKED(image)) {
+    BKE_reportf(reports, RPT_ERROR, "Cannot pack linked image '%s'", image->id.name + 2);
+    return;
+  }
+  if (ELEM(image->type, IMA_TYPE_R_RESULT, IMA_TYPE_COMPOSITE)) {
+    BKE_report(reports, RPT_ERROR, "Cannot pack render result or viewer node images");
+    return;
+  }
+  const bool is_packed = BKE_image_has_packedfile(image);
+  const bool is_dirty = BKE_image_is_dirty(image);
+
+  if (is_packed && !is_dirty && !data) {
+    BKE_report(reports, RPT_INFO, "Image is already packed");
+    return;
+  }
+
+  BKE_image_free_packedfiles(image);
+
+  if (data) {
+    char *data_dup = static_cast<char *>(
+        MEM_new_array_uninitialized(size_t(data_len), 1, __func__));
+    memcpy(data_dup, data, size_t(data_len));
+    BKE_image_packfiles_from_mem(reports, image, data_dup, size_t(data_len));
+  }
+  else if (is_dirty) {
+    BKE_image_memorypack(image);
+  }
+  else {
+    BKE_image_packfiles(reports, image, ID_BLEND_PATH(bmain, &image->id));
+  }
+}
+
 void BKE_image_tag_time(Image *ima)
 {
   ima->lastused = BLI_time_now_seconds_i();

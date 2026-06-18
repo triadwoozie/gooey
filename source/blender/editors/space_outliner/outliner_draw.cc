@@ -35,6 +35,8 @@
 #include "BKE_gpencil_legacy.h"
 #include "BKE_grease_pencil.hh"
 #include "BKE_idtype.hh"
+#include "BKE_image.hh"
+#include "BKE_key.hh"
 #include "BKE_layer.hh"
 #include "BKE_lib_id.hh"
 #include "BKE_lib_override.hh"
@@ -3470,6 +3472,17 @@ static void outliner_draw_tree_element(uiBlock *block,
         UI_icon_draw_alpha(
             float(startx) + offsx + 2 * ufac, float(*starty) + 2 * ufac, lib_icon, alpha_fac);
         offsx += UI_UNIT_X + 4 * ufac;
+      }
+
+      if ((lib_icon == ICON_NONE) && (GS(tselem->id->name) == ID_IM)) {
+        const Image *image = id_cast<Image *>(tselem->id);
+        if (BKE_image_has_packedfile(image)) {
+          ui::icon_draw_alpha(float(startx) + offsx + 2 * ufac,
+                              float(*starty) + 2 * ufac,
+                              ICON_PACKAGE,
+                              alpha_fac);
+          offsx += UI_UNIT_X + 4 * ufac;
+        }
       }
 
       if (tselem->type == TSE_LAYER_COLLECTION) {
