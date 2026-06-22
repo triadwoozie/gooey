@@ -1350,7 +1350,6 @@ class VIEW3D_MT_transform_object(VIEW3D_MT_transform_base, Menu):
         layout.separator()
 
         layout.operator_context = 'EXEC_REGION_WIN'
-        # XXX: see `alignmenu()` in `edit.c` of b2.4x to get this working.
         layout.operator("transform.transform", text="Align to Transform Orientation").mode = 'ALIGN'
 
         layout.separator()
@@ -1373,9 +1372,23 @@ class VIEW3D_MT_transform_armature(VIEW3D_MT_transform_base, Menu):
         # base menu
         VIEW3D_MT_transform_base.draw(self, context)
 
-        # armature specific extensions follow...
-        obj = context.object
-        if obj.type == 'ARMATURE' and obj.mode in {'EDIT', 'POSE'}:
+        if obj.type == 'ARMATURE':
+            if obj.mode == 'EDIT':
+                layout.separator()
+
+                layout.operator("transform.vertex_warp", text="Warp")
+                layout.operator_context = 'EXEC_REGION_WIN'
+                layout.operator("transform.vertex_random", text="Randomize").offset = 0.1
+                layout.operator_context = 'INVOKE_REGION_WIN'
+            elif obj.mode == 'POSE':
+                layout.separator()
+
+                # Only show Align to Transform Orientation operator in pose mode, because in edit mode
+                # it might change the parent bone's length, or fail to align in certain cases.
+                layout.operator_context = 'EXEC_REGION_WIN'
+                layout.operator("transform.transform", text="Align to Transform Orientation").mode = 'ALIGN'
+                layout.operator_context = 'INVOKE_REGION_WIN'
+
             if obj.data.display_type == 'BBONE':
                 layout.separator()
 
@@ -1389,7 +1402,7 @@ class VIEW3D_MT_transform_armature(VIEW3D_MT_transform_base, Menu):
         if context.edit_object and context.edit_object.type == 'ARMATURE':
             layout.separator()
 
-            layout.operator("armature.align")
+            layout.operator("armature.align", text="Align to Active Bone or Parent")
 
 
 class VIEW3D_MT_mirror(Menu):
