@@ -41,6 +41,7 @@ static void node_geo_exec(GeoNodeExecParams params)
   const Object *camera_obj = params.extract_input<Object *>("Camera");
 
   if (!camera_obj || camera_obj->type != OB_CAMERA) {
+    params.error_message_add(NodeWarningType::Error, TIP_("Object is not a camera"));
     params.set_default_remaining_outputs();
     return;
   }
@@ -70,6 +71,7 @@ static void node_geo_exec(GeoNodeExecParams params)
   params.set_output("Focus Distance", focus_distance);
   params.set_output("Is Orthographic", camera_params.is_ortho);
   params.set_output("Orthographic Scale", camera_params.ortho_scale);
+}
 }
 
 static void node_register()
