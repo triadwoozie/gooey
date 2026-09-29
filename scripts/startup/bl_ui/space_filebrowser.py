@@ -883,9 +883,9 @@ class ASSETBROWSER_MT_context_menu(AssetBrowserMenu, Menu):
         st = context.space_data
         params = st.params
 
-        layout.operator("asset.library_refresh")
-
-        layout.separator()
+        if hasattr(bpy.ops.asset, "assets_download") and bpy.ops.asset.assets_download.poll():
+            layout.operator("asset.assets_download", icon='DOWNLOAD')
+            layout.separator()
 
         sub = layout.column()
         sub.operator_context = 'EXEC_DEFAULT'
@@ -895,6 +895,11 @@ class ASSETBROWSER_MT_context_menu(AssetBrowserMenu, Menu):
         layout.separator()
 
         layout.operator("asset.open_containing_blend_file")
+
+        layout.separator()
+
+        layout.operator("asset.library_refresh", icon='FILE_REFRESH')
+        layout.operator("asset.library_reload_listing", text="Refresh Remote Listing")
 
         layout.separator()
 
