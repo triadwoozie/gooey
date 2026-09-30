@@ -466,6 +466,10 @@ void GridViewBuilder::build_grid_view(const bContext &C,
   grid_view.change_state_delayed();
   grid_view.filter(search_string);
 
+  if (grid_view.get_item_count_filtered() == 0) {
+    return;
+  }
+
   /* Ensure the given layout is actually active. */
   UI_block_layout_set_current(&block, &layout);
 
