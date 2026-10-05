@@ -334,7 +334,7 @@ static void node_init(bNodeTree * /*ntree*/, bNode *node)
 
 static void node_buts_fsr1(uiLayout *layout, bContext * /*C*/, PointerRNA *ptr)
 {
-  uiItemR(layout, ptr, "scale", UI_ITEM_R_SPLIT_EMPTY_NAME, std::nullopt, ICON_NONE);
+  layout->prop(ptr, "scale");
   uiItemR(layout, ptr, "sharpness", UI_ITEM_R_SPLIT_EMPTY_NAME, std::nullopt, ICON_NONE);
 }
 
