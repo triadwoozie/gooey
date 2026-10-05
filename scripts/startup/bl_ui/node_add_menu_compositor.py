@@ -156,6 +156,7 @@ class NODE_MT_category_compositor_filter(Menu):
         node_add_menu.add_node_type(layout, "CompositorNodeInpaint")
         layout.separator()
         node_add_menu.add_node_type_with_searchable_enum(context, layout, "CompositorNodeFilter", "filter_type")
+        node_add_menu.add_node_type(layout, "CompositorNodeFSR1")
         node_add_menu.add_node_type_with_searchable_enum(context, layout, "CompositorNodeGlare", "glare_type")
         node_add_menu.add_node_type(layout, "CompositorNodeKuwahara")
         node_add_menu.add_node_type(layout, "CompositorNodePixelate")
@@ -250,6 +251,7 @@ class NODE_MT_category_compositor_transform(Menu):
         layout = self.layout
         node_add_menu.add_node_type(layout, "CompositorNodeRotate")
         node_add_menu.add_node_type(layout, "CompositorNodeScale")
+        node_add_menu.add_node_type(layout, "CompositorNodeFSR1")
         node_add_menu.add_node_type(layout, "CompositorNodeTransform")
         node_add_menu.add_node_type(layout, "CompositorNodeTranslate")
         layout.separator()

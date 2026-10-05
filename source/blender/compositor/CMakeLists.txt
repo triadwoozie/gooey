@@ -186,6 +186,8 @@ set(GLSL_SRC
   shaders/compositor_ellipse_mask.glsl
   shaders/compositor_filter.glsl
   shaders/compositor_flip.glsl
+  shaders/compositor_fsr1_easu.glsl
+  shaders/compositor_fsr1_rcas.glsl
   shaders/compositor_gamma_correct.glsl
   shaders/compositor_glare_bloom_downsample.glsl
   shaders/compositor_glare_bloom_upsample.glsl

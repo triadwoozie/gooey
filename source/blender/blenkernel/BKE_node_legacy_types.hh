@@ -135,6 +135,23 @@
 #define SH_NODE_BSDF_METALLIC 716
 #define SH_NODE_VOLUME_COEFFICIENTS 717
 
+#define SH_NODE_SHADER_INFO 800
+#define SH_NODE_SCREENSPACE_INFO 801
+#define SH_NODE_SDF_PRIMITIVE 802
+#define SH_NODE_SDF_OP 803
+#define SH_NODE_SDF_VECTOR_OP 804
+#define SH_NODE_SDF_NOISE 805
+#define SH_NODE_SET_DEPTH 806
+#define SH_NODE_CURVATURE 807
+
+/* Fruitbat Nodes */
+// #define SH_NODE_COLOR_PALETTE 900
+#define SH_NODE_LIGHT_INFO 901
+#define SH_NODE_TEX_HEXAGON 902
+#define SH_NODE_TWIRL 903
+#define SH_NODE_WATER_RIPPLES 904
+#define SH_NODE_OKLAB_COLOR_RAMP 907
+
 /** \} */
 
 /* -------------------------------------------------------------------- */
@@ -254,6 +271,7 @@
 #define CMP_NODE_COMBINE_COLOR 332
 #define CMP_NODE_SEPARATE_COLOR 333
 #define CMP_NODE_IMAGE_INFO 334
+#define CMP_NODE_FSR1 850
 
 /* channel toggles */
 #define CMP_CHAN_RGB 1

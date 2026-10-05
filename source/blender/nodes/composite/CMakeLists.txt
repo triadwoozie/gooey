@@ -56,6 +56,7 @@ set(SRC
   nodes/node_composite_exposure.cc
   nodes/node_composite_file_output.cc
   nodes/node_composite_filter.cc
+  nodes/node_composite_fsr1.cc
   nodes/node_composite_flip.cc
   nodes/node_composite_gamma.cc
   nodes/node_composite_glare.cc

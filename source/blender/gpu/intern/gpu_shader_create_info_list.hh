@@ -69,6 +69,7 @@
 #include "compositor_edge_filter_info.hh"
 #include "compositor_ellipse_mask_info.hh"
 #include "compositor_filter_info.hh"
+#include "compositor_fsr1_info.hh"
 #include "compositor_flip_info.hh"
 #include "compositor_gamma_correct_info.hh"
 #include "compositor_glare_info.hh"
@@ -121,6 +122,17 @@
 #ifdef WITH_OPENSUBDIV
 #  include "subdiv_info.hh"
 #endif
+
+/* Goo engine. */
+#include "eevee_legacy_bloom_info.hh"
+#include "eevee_legacy_common_info.hh"
+#include "eevee_legacy_dof_info.hh"
+#include "eevee_legacy_effects_info.hh"
+#include "eevee_legacy_lightprobe_info.hh"
+#include "eevee_legacy_material_info.hh"
+#include "eevee_legacy_motion_blur_info.hh"
+#include "eevee_legacy_shadow_info.hh"
+#include "eevee_legacy_volume_info.hh"
 
 /* EEVEE engine. */
 #include "eevee_ambient_occlusion_info.hh"
