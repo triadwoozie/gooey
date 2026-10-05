@@ -347,7 +347,7 @@ class FSR1Operation : public NodeOperation {
     Result &input = get_input("Image");
     Result &output = get_result("Image");
     if (input.is_single_value()) {
-      input.pass_through(output);
+      output.share_data(input);
       return;
     }
 
@@ -460,8 +460,7 @@ static void register_node_type_cmp_fsr1()
   ntype.initfunc = file_ns::node_init;
   ntype.draw_buttons = file_ns::node_buts_fsr1;
   ntype.get_compositor_operation = file_ns::get_compositor_operation;
-  blender::bke::node_type_storage(
-      &ntype, "NodeFSR1", node_free_standard_storage, node_copy_standard_storage);
+  blender::bke::node_type_storage(ntype, "NodeFSR1", node_free_standard_storage, node_copy_standard_storage);
 
   blender::bke::node_register_type(ntype);
 }
