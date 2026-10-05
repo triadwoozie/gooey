@@ -136,6 +136,12 @@ class GHOST_WindowWayland : public GHOST_Window {
 
   GHOST_TSuccess setOrder(GHOST_TWindowOrder order) override;
 
+  GHOST_TSuccess beginFullScreen() const override;
+
+  GHOST_TSuccess endFullScreen() const override;
+
+  GHOST_TSuccess beginWindowMove() override;
+
   bool isDialog() const override;
 
 #ifdef WITH_INPUT_IME

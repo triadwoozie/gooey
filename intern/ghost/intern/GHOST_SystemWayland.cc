@@ -785,16 +785,21 @@ struct GWL_SeatStatePointer_Events {
 
 static void gwl_pointer_handle_frame_event_add(GWL_SeatStatePointer_Events *pointer_events,
                                                const GWL_Pointer_EventTypes ty,
-                                               const uint64_t event_ms)
+                                               uint64_t event_ms)
 {
   /* It's a quirk of WAYLAND that most scroll events don't have a time-stamp.
    * Scroll events use their own time-stamp (see #GWL_SeatStatePointerScroll::event_ms usage).
    * Ensure the API is used as intended. */
   if (ty == GWL_Pointer_EventTypes::Scroll) {
     GHOST_ASSERT(event_ms == 0, "Scroll events must not have a time-stamp");
+    event_ms = 0;
   }
   else {
-    GHOST_ASSERT(event_ms != 0, "Non-scroll events must have a time-stamp");
+    /* Non-scroll events should have a timestamp, but some compositors send 0 for synthetic
+     * or initial pointer events. Avoid triggering a fatal abort if event_ms is 0. */
+    if (UNLIKELY(event_ms == 0)) {
+      event_ms = 1;
+    }
   }
 
   const int ty_mask = 1 << int(ty);
@@ -3957,7 +3962,10 @@ static void pointer_handle_motion(void *data,
                                   const wl_fixed_t surface_y)
 {
   GWL_Seat *seat = static_cast<GWL_Seat *>(data);
-  const uint64_t event_ms = seat->system->ms_from_input_time(time);
+  uint64_t event_ms = seat->system->ms_from_input_time(time);
+  if (UNLIKELY(event_ms == 0)) {
+    event_ms = seat->system->getMilliSeconds();
+  }
 
   seat->pointer.xy[0] = surface_x;
   seat->pointer.xy[1] = surface_y;
@@ -3981,6 +3989,7 @@ static void pointer_handle_button(void *data,
 
   /* Always set the serial, even if the button event is not sent. */
   seat->data_source_serial = serial;
+  seat->pointer.serial = serial;
 
   int button_release;
   switch (state) {
@@ -4003,7 +4012,10 @@ static void pointer_handle_button(void *data,
   const GWL_Pointer_EventTypes ty = GWL_Pointer_EventTypes(
       int(GWL_Pointer_EventTypes::Button0_Down) + ((button_index * 2) + button_release));
 
-  const uint64_t event_ms = seat->system->ms_from_input_time(time);
+  uint64_t event_ms = seat->system->ms_from_input_time(time);
+  if (UNLIKELY(event_ms == 0)) {
+    event_ms = seat->system->getMilliSeconds();
+  }
   gwl_pointer_handle_frame_event_add(&seat->pointer_events, ty, event_ms);
 }
 
@@ -9222,6 +9234,10 @@ GHOST_WindowWayland *ghost_wl_surface_user_data(wl_surface *wl_surface)
 
 uint64_t GHOST_SystemWayland::ms_from_input_time(const uint32_t timestamp_as_uint)
 {
+  if (UNLIKELY(timestamp_as_uint == 0)) {
+    return getMilliSeconds();
+  }
+
   /* NOTE(@ideasman42): Return a time compatible with `getMilliSeconds()`,
    * this is needed as WAYLAND time-stamps don't have a well defined beginning
    * use `timestamp_as_uint` to calculate an offset which is applied to future events.
@@ -9280,6 +9296,10 @@ uint64_t GHOST_SystemWayland::ms_from_input_time(const uint32_t timestamp_as_uin
     }
   }
 
+  if (UNLIKELY(timestamp == 0)) {
+    return getMilliSeconds();
+  }
+
   return timestamp;
 }
 
@@ -9308,7 +9328,7 @@ wl_seat *GHOST_SystemWayland::wl_seat_active_get_with_input_serial(uint32_t &ser
     return nullptr;
   }
 
-  serial = seat->data_source_serial;
+  serial = seat->pointer.serial ? seat->pointer.serial : seat->data_source_serial;
   return seat->wl.seat;
 }
 

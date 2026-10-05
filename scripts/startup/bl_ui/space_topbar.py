@@ -14,6 +14,66 @@ from bpy.app.translations import (
 class TOPBAR_HT_upper_bar(Header):
     bl_space_type = 'TOPBAR'
 
+    _project_cache = {}
+
+    @classmethod
+    def get_active_project_name(cls, context):
+        """
+        Hook active project name from BKE_project.hh / BKE_blender_project:
+        1. RNA binding: bpy.data.project.name or context.project.name
+        2. Window manager or Scene custom property: project_name
+        3. On-disk TOML configuration: .blender_project/project.toml or config.toml
+        """
+        # 1. BKE_blender_project RNA binding
+        project = getattr(bpy.data, "project", None) or getattr(context, "project", None)
+        if project is not None and getattr(project, "name", None):
+            return project.name
+
+        # 2. Window manager or Scene custom property override
+        wm = getattr(context, "window_manager", None)
+        if wm and "project_name" in wm and wm["project_name"]:
+            return str(wm["project_name"])
+
+        scene = getattr(context, "scene", None)
+        if scene and "project_name" in scene and scene["project_name"]:
+            return str(scene["project_name"])
+
+        # 3. Filesystem search around current blend filepath
+        filepath = bpy.data.filepath
+        if not filepath:
+            return None
+
+        import os
+        from pathlib import Path
+
+        try:
+            mtime = os.path.getmtime(filepath) if os.path.isfile(filepath) else 0
+            cache_key = (filepath, mtime)
+            if cache_key in cls._project_cache:
+                return cls._project_cache[cache_key]
+
+            blend_path = Path(filepath)
+            for parent in blend_path.parents:
+                proj_dir = parent / ".blender_project"
+                if proj_dir.is_dir():
+                    for cfg_name in ("project.toml", "config.toml"):
+                        cfg_file = proj_dir / cfg_name
+                        if cfg_file.is_file():
+                            import tomllib
+                            with open(cfg_file, "rb") as f:
+                                cfg = tomllib.load(f)
+                            name = cfg.get("name") or cfg.get("project", {}).get("name")
+                            if name:
+                                cls._project_cache[cache_key] = name
+                                return name
+                    cls._project_cache[cache_key] = parent.name
+                    return parent.name
+
+            cls._project_cache[cache_key] = None
+            return None
+        except Exception:
+            return None
+
     def draw(self, context):
         region = context.region
 
@@ -30,12 +90,15 @@ class TOPBAR_HT_upper_bar(Header):
 
         TOPBAR_MT_editor_menus.draw_collapsible(context, layout)
 
-        layout.separator()
+        layout.separator(type='LINE')
 
         if not screen.show_fullscreen:
             layout.template_ID_tabs(window, "workspace", new="workspace.add", menu="TOPBAR_MT_workspace_menu")
         else:
             layout.operator("screen.back_to_previous", icon='SCREEN_BACK', text="Back to Previous")
+
+        # Generous drag region following workspace tabs
+        layout.separator(factor=4.0)
 
     def draw_right(self, context):
         layout = self.layout
@@ -49,16 +112,34 @@ class TOPBAR_HT_upper_bar(Header):
             layout.template_reports_banner()
             layout.template_running_jobs()
 
-        # Active workspace view-layer is retrieved through window, not through workspace.
-        layout.template_ID(window, "scene", new="scene.new", unlink="scene.delete")
+        # Generous drag region separating center from scene picker
+        layout.separator(factor=6.0)
 
-        row = layout.row(align=True)
-        row.template_search(
+        # Active workspace view-layer is retrieved through window, not through workspace.
+        picker_row = layout.row(align=True)
+        picker_row.template_ID(window, "scene", new="scene.new", unlink="scene.delete")
+        picker_row.separator(factor=0.4)
+        picker_row.template_search(
             window, "view_layer",
             scene, "view_layers",
             new="scene.view_layer_add",
             unlink="scene.view_layer_remove",
         )
+
+        # Generous interactive window drag zone before window controls
+        layout.separator(factor=2.5)
+        layout.separator(type='LINE')
+        layout.separator(factor=1.5)
+
+        # Integrated Window Controls: Minimize, Maximize / Restore, Close
+        win_controls = layout.row(align=True)
+        if hasattr(bpy.ops.wm, "window_minimize"):
+            win_controls.operator("wm.window_minimize", text="", icon='REMOVE')
+        if hasattr(bpy.ops.wm, "window_maximize_toggle"):
+            win_controls.operator("wm.window_maximize_toggle", text="", icon='WINDOW')
+        else:
+            win_controls.operator("wm.window_fullscreen_toggle", text="", icon='WINDOW')
+        win_controls.operator("wm.quit_blender", text="", icon='PANEL_CLOSE')
 
 
 class TOPBAR_PT_tool_settings_extra(Panel):
@@ -120,6 +201,9 @@ class TOPBAR_MT_editor_menus(Menu):
         layout.menu("TOPBAR_MT_edit")
 
         layout.menu("TOPBAR_MT_render")
+
+        if getattr(bpy.data, "project", None) or TOPBAR_HT_upper_bar.get_active_project_name(context):
+            layout.menu("TOPBAR_MT_project")
 
         layout.menu("TOPBAR_MT_window")
         layout.menu("TOPBAR_MT_help")
@@ -191,6 +275,10 @@ class TOPBAR_MT_file(Menu):
 
         layout.separator()
 
+        layout.menu("TOPBAR_MT_file_project", icon='PROJECT')
+
+        layout.separator()
+
         layout.menu("TOPBAR_MT_file_import", icon='IMPORT')
         layout.menu("TOPBAR_MT_file_export", icon='EXPORT')
         row = layout.row()
@@ -209,6 +297,21 @@ class TOPBAR_MT_file(Menu):
         layout.separator()
 
         layout.operator("wm.quit_blender", text="Quit", icon='QUIT')
+
+
+class TOPBAR_MT_file_project(Menu):
+    bl_label = "Project"
+    bl_translation_context = i18n_contexts.editor_preferences
+
+    def draw(self, _context):
+        layout = self.layout
+
+        if hasattr(bpy.ops, "project") and hasattr(bpy.ops.project, "new_project"):
+            layout.operator("project.new_project", text="New Project...", icon='ADD')
+        if hasattr(bpy.ops, "project") and hasattr(bpy.ops.project, "open_blend_in_project"):
+            layout.operator("project.open_blend_in_project", icon='FILE_FOLDER')
+        if hasattr(bpy.ops.screen, "project_setup_show"):
+            layout.operator("screen.project_setup_show", text="Project Settings...", icon='PREFERENCES')
 
 
 class TOPBAR_MT_file_new(Menu):
@@ -258,17 +361,29 @@ class TOPBAR_MT_file_new(Menu):
 
         # Draw application templates.
         if not use_more:
-            props = layout.operator("wm.read_homefile", text="General", icon=icon)
+            props = layout.operator("wm.read_homefile", text="General", icon='FILE_NEW')
             props.app_template = ""
 
         for d in paths:
+            icon = 'FILE_NEW'
+            # Set icon per template.
+            if d == "2D_Animation":
+                icon = 'GREASEPENCIL_LAYER_GROUP'
+            elif d == "Sculpting":
+                icon = 'SCULPTMODE_HLT'
+            elif d == "Storyboarding":
+                icon = 'GREASEPENCIL'
+            elif d == "VFX":
+                icon = 'TRACKER'
+            elif d == "Video_Editing":
+                icon = 'SEQUENCE'
             props = layout.operator("wm.read_homefile", text=bpy.path.display_name(iface_(d)), icon=icon)
             props.app_template = d
 
         layout.operator_context = 'EXEC_DEFAULT'
 
         if show_more:
-            layout.menu("TOPBAR_MT_templates_more", text="...")
+            layout.menu("TOPBAR_MT_templates_more", text="More...")
 
     def draw(self, context):
         TOPBAR_MT_file_new.draw_ex(self.layout, context)
@@ -462,6 +577,11 @@ class TOPBAR_MT_render(Menu):
         layout = self.layout
 
         rd = context.scene.render
+        scene = context.scene
+        seq_scene = getattr(context, "sequencer_scene", None)
+        strips = getattr(context, "strips", ())
+
+        can_render_seq = seq_scene and seq_scene.render.use_sequencer and strips
 
         layout.operator("render.render", text="Render Image", icon='RENDER_STILL').use_viewport = True
         props = layout.operator("render.render", text="Render Animation", icon='RENDER_ANIMATION')
@@ -469,6 +589,20 @@ class TOPBAR_MT_render(Menu):
         props.use_viewport = True
 
         layout.separator()
+
+        if can_render_seq and (seq_scene != scene):
+            props = layout.operator("render.render", text="Render Sequencer Image", icon='RENDER_STILL')
+            props.use_viewport = True
+            if hasattr(props, "use_sequencer_scene"):
+                props.use_sequencer_scene = True
+
+            props = layout.operator("render.render", text="Render Sequencer Animation", icon='RENDER_ANIMATION')
+            props.animation = True
+            props.use_viewport = True
+            if hasattr(props, "use_sequencer_scene"):
+                props.use_sequencer_scene = True
+
+            layout.separator()
 
         layout.operator("sound.mixdown", text="Render Audio...")
 
@@ -490,8 +624,8 @@ class TOPBAR_MT_edit(Menu):
 
         show_developer = context.preferences.view.show_developer_ui
 
-        layout.operator("ed.undo")
-        layout.operator("ed.redo")
+        layout.operator("ed.undo", icon='LOOP_BACK')
+        layout.operator("ed.redo", icon='LOOP_FORWARDS')
         layout.menu("TOPBAR_MT_undo_history")
 
         layout.separator()
@@ -526,6 +660,27 @@ class TOPBAR_MT_edit(Menu):
         layout.operator("screen.userpref_show", text="Preferences...", icon='PREFERENCES')
 
 
+class TOPBAR_MT_project(Menu):
+    bl_label = "Project"
+
+    def draw(self, context):
+        layout = self.layout
+
+        project_name = TOPBAR_HT_upper_bar.get_active_project_name(context)
+        if project_name:
+            layout.label(text=f"Active: {project_name}", icon='CHECKMARK')
+            layout.separator()
+
+        if hasattr(bpy.ops.screen, "project_setup_show"):
+            layout.operator("screen.project_setup_show", text="Settings...", icon='PREFERENCES')
+
+        if hasattr(bpy.ops, "project"):
+            if hasattr(bpy.ops.project, "open_blend_in_project"):
+                layout.operator("project.open_blend_in_project", icon='FILE_FOLDER')
+            if hasattr(bpy.ops.project, "new_project"):
+                layout.operator("project.new_project", text="New Project...", icon='ADD')
+
+
 class TOPBAR_MT_window(Menu):
     bl_label = "Window"
 
@@ -553,14 +708,14 @@ class TOPBAR_MT_window(Menu):
 
         layout.separator()
 
-        layout.operator("screen.screenshot")
+        layout.operator("screen.screenshot", text="Save Screenshot...")
 
         # Showing the status in the area doesn't work well in this case.
         # - From the top-bar, the text replaces the file-menu (not so bad but strange).
         # - From menu-search it replaces the area that the user may want to screen-shot.
         # Setting the context to screen causes the status to show in the global status-bar.
         with operator_context(layout, 'INVOKE_SCREEN'):
-            layout.operator("screen.screenshot_area")
+            layout.operator("screen.screenshot_area", text="Save Screenshot (Editor)...")
 
         if sys.platform[:3] == "win":
             layout.separator()
@@ -580,10 +735,10 @@ class TOPBAR_MT_help(Menu):
         show_developer = context.preferences.view.show_developer_ui
 
         layout.operator("wm.url_open_preset", text="Manual", icon='URL').type = 'MANUAL'
-        layout.operator("wm.url_open_preset", text="Release Notes").type = 'RELEASE_NOTES'
-        layout.operator("wm.url_open", text="Tutorials").url = "https://www.blender.org/tutorials"
         layout.operator("wm.url_open", text="Support").url = "https://www.blender.org/support"
         layout.operator("wm.url_open", text="User Communities").url = "https://www.blender.org/community/"
+        layout.operator("wm.url_open", text="Get Involved").url = "https://www.blender.org/get-involved/"
+        layout.operator("wm.url_open_preset", text="Release Notes").type = 'RELEASE_NOTES'
 
         layout.separator()
 
@@ -636,8 +791,10 @@ class TOPBAR_MT_workspace_menu(Menu):
         layout = self.layout
 
         layout.operator("workspace.duplicate", text="Duplicate", icon='DUPLICATE')
-        if len(bpy.data.workspaces) > 1:
-            layout.operator("workspace.delete", text="Delete", icon='REMOVE')
+        if len(bpy.data.workspaces) <= 1:
+            return
+
+        layout.operator("workspace.delete", text="Delete", icon='REMOVE')
 
         layout.separator()
 
@@ -651,6 +808,11 @@ class TOPBAR_MT_workspace_menu(Menu):
         props.direction = 'PREV'
         props = layout.operator("screen.workspace_cycle", text="Next Workspace")
         props.direction = 'NEXT'
+
+        layout.separator()
+
+        if hasattr(bpy.ops.workspace, "delete_all_others"):
+            layout.operator("workspace.delete_all_others")
 
 
 # Grease Pencil Object - Primitive curve
@@ -752,6 +914,14 @@ class TOPBAR_PT_name_marker(Panel):
 
     @staticmethod
     def get_selected_marker(context):
+        selected_markers = getattr(context, "selected_markers", None)
+        if selected_markers is not None:
+            sd = context.space_data
+            if sd.type == 'SEQUENCE_EDITOR' and hasattr(context, "sequencer_scene"):
+                with context.temp_override(scene=context.sequencer_scene):
+                    return context.selected_markers[0] if context.selected_markers else None
+            return selected_markers[0] if selected_markers else None
+
         if TOPBAR_PT_name_marker.is_using_pose_markers(context):
             markers = context.space_data.action.pose_markers
         else:
@@ -790,6 +960,8 @@ class TOPBAR_PT_name_marker(Panel):
         icon = 'TIME'
         if marker.camera is not None:
             icon = 'CAMERA_DATA'
+        elif getattr(getattr(marker, "id_data", None), "id_type", None) == 'ACTION':
+            icon = 'ARMATURE_DATA'
         elif self.is_using_pose_markers(context):
             icon = 'ARMATURE_DATA'
         row = self.row_with_icon(layout, icon)
@@ -832,6 +1004,7 @@ classes = (
     TOPBAR_MT_file_new,
     TOPBAR_MT_file_recover,
     TOPBAR_MT_file_defaults,
+    TOPBAR_MT_file_project,
     TOPBAR_MT_templates_more,
     TOPBAR_MT_file_import,
     TOPBAR_MT_file_export,
@@ -840,6 +1013,7 @@ classes = (
     TOPBAR_MT_file_previews,
     TOPBAR_MT_edit,
     TOPBAR_MT_render,
+    TOPBAR_MT_project,
     TOPBAR_MT_window,
     TOPBAR_MT_help,
     TOPBAR_PT_tool_fallback,

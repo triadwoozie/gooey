@@ -354,6 +354,19 @@ class GHOST_IWindow {
     return GHOST_kSuccess;
   }
 
+  /** */
+  virtual GHOST_TSuccess beginFullScreen() const = 0;
+  virtual GHOST_TSuccess endFullScreen() const = 0;
+
+  /**
+   * Starts interactive window dragging/moving via window manager.
+   * \return Indication of success.
+   */
+  virtual GHOST_TSuccess beginWindowMove()
+  {
+    return GHOST_kFailure;
+  }
+
   virtual float getNativePixelSize() = 0;
 
   /**

@@ -685,6 +685,13 @@ extern GHOST_TSuccess GHOST_SetWindowState(GHOST_WindowHandle windowhandle,
                                            GHOST_TWindowState state);
 
 /**
+ * Starts interactive window dragging/moving via window manager.
+ * \param windowhandle: The handle to the window.
+ * \return Indication of success.
+ */
+extern GHOST_TSuccess GHOST_BeginWindowMove(GHOST_WindowHandle windowhandle);
+
+/**
  * Sets the window "modified" status, indicating unsaved changes.
  * \param windowhandle: The handle to the window.
  * \param isUnsavedChanges: Unsaved changes or not.

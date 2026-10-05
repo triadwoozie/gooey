@@ -999,6 +999,22 @@ def km_view2d_buttons_list(_params):
     return keymap
 
 
+def km_topbar(_params):
+    items = []
+    keymap = (
+        "Top Bar",
+        {"space_type": 'TOPBAR', "region_type": 'HEADER'},
+        {"items": items},
+    )
+
+    items.extend([
+        ("wm.window_drag_start", {"type": 'LEFTMOUSE', "value": 'CLICK_DRAG'}, None),
+        ("wm.window_maximize_toggle", {"type": 'LEFTMOUSE', "value": 'DOUBLE_CLICK'}, None),
+    ])
+
+    return keymap
+
+
 def km_user_interface(_params):
     items = []
     keymap = (
@@ -8355,6 +8371,7 @@ def generate_keymaps(params=None):
         km_view2d(params),
         km_view2d_buttons_list(params),
         km_user_interface(params),
+        km_topbar(params),
         km_property_editor(params),
 
         # Editors.

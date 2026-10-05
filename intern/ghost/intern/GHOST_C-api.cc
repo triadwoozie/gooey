@@ -686,6 +686,15 @@ GHOST_TSuccess GHOST_SetWindowState(GHOST_WindowHandle windowhandle, GHOST_TWind
   return window->setState(state);
 }
 
+GHOST_TSuccess GHOST_BeginWindowMove(GHOST_WindowHandle windowhandle)
+{
+  GHOST_IWindow *window = (GHOST_IWindow *)windowhandle;
+  if (!window) {
+    return GHOST_kFailure;
+  }
+  return window->beginWindowMove();
+}
+
 GHOST_TSuccess GHOST_SetWindowModifiedState(GHOST_WindowHandle windowhandle, bool isUnsavedChanges)
 {
   GHOST_IWindow *window = (GHOST_IWindow *)windowhandle;

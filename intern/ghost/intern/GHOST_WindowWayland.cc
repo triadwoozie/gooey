@@ -580,26 +580,16 @@ static GHOST_TWindowState gwl_window_state_get(const GWL_Window *win)
  */
 static bool gwl_window_state_set_for_libdecor(libdecor_frame *frame,
                                               const GHOST_TWindowState state,
-                                              const GHOST_TWindowState state_current)
+                                              const GHOST_TWindowState /*state_current*/)
 {
   switch (state) {
     case GHOST_kWindowStateNormal:
-      /* Unset states. */
-      switch (state_current) {
-        case GHOST_kWindowStateMaximized: {
-          libdecor_frame_unset_maximized(frame);
-          break;
-        }
-        case GHOST_kWindowStateFullScreen: {
-          libdecor_frame_unset_fullscreen(frame);
-          break;
-        }
-        default: {
-          break;
-        }
-      }
+      /* Unset states unconditionally to ensure return to normal floating window. */
+      libdecor_frame_unset_maximized(frame);
+      libdecor_frame_unset_fullscreen(frame);
       break;
     case GHOST_kWindowStateMaximized: {
+      libdecor_frame_unset_fullscreen(frame);
       libdecor_frame_set_maximized(frame);
       break;
     }
@@ -622,26 +612,16 @@ static bool gwl_window_state_set_for_libdecor(libdecor_frame *frame,
  */
 static bool gwl_window_state_set_for_xdg(xdg_toplevel *toplevel,
                                          const GHOST_TWindowState state,
-                                         const GHOST_TWindowState state_current)
+                                         const GHOST_TWindowState /*state_current*/)
 {
   switch (state) {
     case GHOST_kWindowStateNormal:
-      /* Unset states. */
-      switch (state_current) {
-        case GHOST_kWindowStateMaximized: {
-          xdg_toplevel_unset_maximized(toplevel);
-          break;
-        }
-        case GHOST_kWindowStateFullScreen: {
-          xdg_toplevel_unset_fullscreen(toplevel);
-          break;
-        }
-        default: {
-          break;
-        }
-      }
+      /* Unset states unconditionally to ensure return to normal floating window. */
+      xdg_toplevel_unset_maximized(toplevel);
+      xdg_toplevel_unset_fullscreen(toplevel);
       break;
     case GHOST_kWindowStateMaximized: {
+      xdg_toplevel_unset_fullscreen(toplevel);
       xdg_toplevel_set_maximized(toplevel);
       break;
     }
@@ -2478,6 +2458,75 @@ GHOST_TSuccess GHOST_WindowWayland::setOrder(GHOST_TWindowOrder order)
   }
 
   return GHOST_kSuccess;
+}
+
+GHOST_TSuccess GHOST_WindowWayland::beginFullScreen() const
+{
+#ifdef USE_EVENT_BACKGROUND_THREAD
+  std::lock_guard lock_server_guard{*system_->server_mutex};
+#endif
+
+#ifdef WITH_GHOST_WAYLAND_LIBDECOR
+  if (use_libdecor) {
+    libdecor_frame_set_fullscreen(window_->libdecor->frame, nullptr);
+  }
+  else
+#endif
+  {
+    xdg_toplevel_set_fullscreen(window_->xdg_decor->toplevel, nullptr);
+  }
+
+  return GHOST_kSuccess;
+}
+
+GHOST_TSuccess GHOST_WindowWayland::endFullScreen() const
+{
+#ifdef USE_EVENT_BACKGROUND_THREAD
+  std::lock_guard lock_server_guard{*system_->server_mutex};
+#endif
+
+#ifdef WITH_GHOST_WAYLAND_LIBDECOR
+  if (use_libdecor) {
+    libdecor_frame_unset_fullscreen(window_->libdecor->frame);
+  }
+  else
+#endif
+  {
+    xdg_toplevel_unset_fullscreen(window_->xdg_decor->toplevel);
+  }
+  return GHOST_kSuccess;
+}
+
+GHOST_TSuccess GHOST_WindowWayland::beginWindowMove()
+{
+#ifdef USE_EVENT_BACKGROUND_THREAD
+  std::lock_guard lock_server_guard{*system_->server_mutex};
+#endif
+
+  uint32_t serial = 0;
+  struct wl_seat *seat = system_->wl_seat_active_get_with_input_serial(serial);
+  if (!seat) {
+    return GHOST_kFailure;
+  }
+
+#ifdef WITH_GHOST_WAYLAND_LIBDECOR
+  if (use_libdecor && window_->libdecor && window_->libdecor->frame) {
+    xdg_toplevel *toplevel = libdecor_frame_get_xdg_toplevel(window_->libdecor->frame);
+    if (toplevel) {
+      xdg_toplevel_move(toplevel, seat, serial);
+      wl_display_flush(system_->wl_display_get());
+      return GHOST_kSuccess;
+    }
+  }
+#endif
+
+  if (window_->xdg_decor && window_->xdg_decor->toplevel) {
+    xdg_toplevel_move(window_->xdg_decor->toplevel, seat, serial);
+    wl_display_flush(system_->wl_display_get());
+    return GHOST_kSuccess;
+  }
+
+  return GHOST_kFailure;
 }
 
 bool GHOST_WindowWayland::isDialog() const

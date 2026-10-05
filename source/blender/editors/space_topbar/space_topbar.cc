@@ -32,6 +32,7 @@
 #include "RNA_access.hh"
 
 #include "WM_api.hh"
+#include "WM_keymap.hh"
 #include "WM_message.hh"
 #include "WM_types.hh"
 
@@ -95,15 +96,33 @@ static void topbar_main_region_init(wmWindowManager *wm, ARegion *region)
 
 static void topbar_operatortypes() {}
 
-static void topbar_keymap(wmKeyConfig * /*keyconf*/) {}
+static void topbar_keymap(wmKeyConfig *keyconf)
+{
+  wmKeyMap *keymap = WM_keymap_ensure(keyconf, "Top Bar", SPACE_TOPBAR, RGN_TYPE_HEADER);
+
+  KeyMapItem_Params params_drag{};
+  params_drag.type = LEFTMOUSE;
+  params_drag.value = KM_CLICK_DRAG;
+  params_drag.direction = KM_ANY;
+  WM_keymap_add_item(keymap, "WM_OT_window_drag_start", &params_drag);
+
+  KeyMapItem_Params params_dbl{};
+  params_dbl.type = LEFTMOUSE;
+  params_dbl.value = KM_DBL_CLICK;
+  params_dbl.direction = KM_ANY;
+  WM_keymap_add_item(keymap, "WM_OT_window_maximize_toggle", &params_dbl);
+}
 
 /* add handlers, stuff you only do once or on area/region changes */
-static void topbar_header_region_init(wmWindowManager * /*wm*/, ARegion *region)
+static void topbar_header_region_init(wmWindowManager *wm, ARegion *region)
 {
   if (RGN_ALIGN_ENUM_FROM_MASK(region->alignment) == RGN_ALIGN_RIGHT) {
     region->flag |= RGN_FLAG_DYNAMIC_SIZE;
   }
   ED_region_header_init(region);
+
+  wmKeyMap *keymap = WM_keymap_ensure(wm->defaultconf, "Top Bar", SPACE_TOPBAR, RGN_TYPE_HEADER);
+  WM_event_add_keymap_handler_priority(&region->runtime->handlers, keymap, 0);
 }
 
 static void topbar_main_region_listener(const wmRegionListenerParams *params)
