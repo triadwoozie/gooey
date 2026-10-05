@@ -3,6 +3,8 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 set(INC
+  ../../blenkernel
+  ../../blenlib
   .
   ../common
   ../../editors/include
@@ -25,6 +27,8 @@ set(SRC
 )
 
 set(LIB
+  bf_blenkernel
+  bf_blenlib
   PRIVATE bf::blenkernel
   PRIVATE bf::blenlib
   PRIVATE bf::blenloader
