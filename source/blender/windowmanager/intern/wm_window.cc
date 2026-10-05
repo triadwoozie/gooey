@@ -28,6 +28,7 @@
 #include "MEM_guardedalloc.h"
 
 #include "GHOST_C-api.h"
+#include "GHOST_IWindow.hh"
 
 #include "BLI_listbase.h"
 #include "BLI_math_vector.h"
@@ -1281,6 +1282,19 @@ wmOperatorStatus wm_window_fullscreen_toggle_exec(bContext *C, wmOperator * /*op
     return OPERATOR_CANCELLED;
   }
 
+  GHOST_TWindowState state = GHOST_GetWindowState(
+      static_cast<GHOST_WindowHandle>(window->ghostwin));
+  if (state != GHOST_kWindowStateFullScreen) {
+    GHOST_SetWindowState(static_cast<GHOST_WindowHandle>(window->ghostwin),
+                         GHOST_kWindowStateFullScreen);
+  }
+  else {
+    GHOST_SetWindowState(static_cast<GHOST_WindowHandle>(window->ghostwin),
+                         GHOST_kWindowStateNormal);
+  }
+
+  return OPERATOR_FINISHED;
+}
 
 /* Window control & drag operators */
 wmOperatorStatus wm_window_minimize_exec(bContext *C, wmOperator * /*op*/)
@@ -1293,28 +1307,6 @@ wmOperatorStatus wm_window_minimize_exec(bContext *C, wmOperator * /*op*/)
 
   GHOST_SetWindowState(static_cast<GHOST_WindowHandle>(window->ghostwin),
                        GHOST_kWindowStateMinimized);
-
-  return OPERATOR_FINISHED;
-}
-
-wmOperatorStatus wm_window_maximize_toggle_exec(bContext *C, wmOperator * /*op*/)
-{
-  wmWindow *window = CTX_wm_window(C);
-
-  if (G.background || !window || !window->ghostwin) {
-    return OPERATOR_CANCELLED;
-  }
-
-  GHOST_TWindowState state = GHOST_GetWindowState(
-      static_cast<GHOST_WindowHandle>(window->ghostwin));
-  if (state == GHOST_kWindowStateMaximized) {
-    GHOST_SetWindowState(static_cast<GHOST_WindowHandle>(window->ghostwin),
-                         GHOST_kWindowStateNormal);
-  }
-  else {
-    GHOST_SetWindowState(static_cast<GHOST_WindowHandle>(window->ghostwin),
-                         GHOST_kWindowStateMaximized);
-  }
 
   return OPERATOR_FINISHED;
 }
@@ -1334,19 +1326,6 @@ wmOperatorStatus wm_window_drag_start_invoke(bContext *C, wmOperator * /*op*/, c
   return OPERATOR_PASS_THROUGH;
 }
 
-  GHOST_TWindowState state = GHOST_GetWindowState(
-      static_cast<GHOST_WindowHandle>(window->ghostwin));
-  if (state != GHOST_kWindowStateFullScreen) {
-    GHOST_SetWindowState(static_cast<GHOST_WindowHandle>(window->ghostwin),
-                         GHOST_kWindowStateFullScreen);
-  }
-  else {
-    GHOST_SetWindowState(static_cast<GHOST_WindowHandle>(window->ghostwin),
-                         GHOST_kWindowStateNormal);
-  }
-
-  return OPERATOR_FINISHED;
-}
 
 /** \} */
 
