@@ -3,6 +3,9 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 set(INC
+  ${CMAKE_SOURCE_DIR}/extern/nanosvg
+  ../../../../extern/nanosvg
+  ../../functions
   ../../bmesh
   ../../windowmanager
   ../../geometry
@@ -31,6 +34,8 @@ set(SRC
 )
 
 set(LIB
+  bf_geometry
+  bf_functions
   bf_windowmanager
   bf_depsgraph
   bf_blenkernel
