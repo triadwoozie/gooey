@@ -326,7 +326,7 @@ static void node_declare(NodeDeclarationBuilder &b)
 
 static void node_init(bNodeTree * /*ntree*/, bNode *node)
 {
-  NodeFSR1 *data = MEM_new<NodeFSR1>(__func__);
+  NodeFSR1 *data = MEM_callocN<NodeFSR1>(__func__);
   data->sharpness = 0.2f;
   data->scale = 2.0f;
   node->storage = data;
