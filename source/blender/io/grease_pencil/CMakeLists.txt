@@ -3,6 +3,10 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 set(INC
+  ../../bmesh
+  ../../windowmanager
+  ../../geometry
+  ../../depsgraph
   ../../blenkernel
   ../../blenlib
   .
@@ -27,6 +31,8 @@ set(SRC
 )
 
 set(LIB
+  bf_windowmanager
+  bf_depsgraph
   bf_blenkernel
   bf_blenlib
   PRIVATE bf::blenkernel
