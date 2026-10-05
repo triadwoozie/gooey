@@ -16,6 +16,8 @@ set(INC
 
   # For `*_info.hh` includes.
   ../compositor/shaders/infos
+  ../draw/engines/gooengine
+  ../draw/engines/gooengine/shaders/infos
   ../draw/engines/eevee
   ../draw/engines/eevee/shaders/infos
   ../draw/engines/gpencil
