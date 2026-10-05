@@ -25,9 +25,17 @@ set(LIB
 )
 
 if(WITH_HARU)
-  list(APPEND LIB
-    ${HARU_LIBRARY}
-  )
+  if(UNIX AND NOT APPLE)
+    list(APPEND LIB
+      "-Wl,--whole-archive"
+      ${HARU_LIBRARY}
+      "-Wl,--no-whole-archive"
+    )
+  else()
+    list(APPEND LIB
+      ${HARU_LIBRARY}
+    )
+  endif()
 endif()
 
 if(HAVE_FEENABLEEXCEPT)
