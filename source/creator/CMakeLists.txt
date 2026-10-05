@@ -24,6 +24,12 @@ set(LIB
   PRIVATE bf::dependencies::optional::opencolorio
 )
 
+if(WITH_HARU)
+  list(APPEND LIB
+    ${HARU_LIBRARIES}
+  )
+endif()
+
 if(HAVE_FEENABLEEXCEPT)
   add_definitions(-DHAVE_FEENABLEEXCEPT)
 endif()

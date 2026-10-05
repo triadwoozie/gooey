@@ -300,7 +300,7 @@ if(WITH_CODEC_FFMPEG)
     # Override FFMPEG components to also include static library dependencies
     # included with precompiled libraries, and to ensure correct link order.
     set(FFMPEG_FIND_COMPONENTS
-      avformat avcodec avdevice avutil swresample swscale
+      avdevice avfilter avformat avcodec swscale swresample avutil
       sndfile
       FLAC
       mp3lame
