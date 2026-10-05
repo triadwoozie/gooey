@@ -15,6 +15,11 @@
  ******************************************************************************/
 
 #include "FFMPEGReader.h"
+
+#ifndef AV_INPUT_BUFFER_MIN_SIZE
+#  define AV_INPUT_BUFFER_MIN_SIZE 16384
+#endif
+
 #include "Exception.h"
 
 #include <algorithm>
