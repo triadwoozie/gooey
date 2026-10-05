@@ -129,6 +129,11 @@ wmOperatorStatus wm_window_close_exec(bContext *C, wmOperator *op);
  * Full-screen operator callback.
  */
 wmOperatorStatus wm_window_fullscreen_toggle_exec(bContext *C, wmOperator *op);
+
+/* Window controls & Wayland/X11 dragging */
+wmOperatorStatus wm_window_minimize_exec(bContext *C, wmOperator *op);
+wmOperatorStatus wm_window_maximize_toggle_exec(bContext *C, wmOperator *op);
+wmOperatorStatus wm_window_drag_start_invoke(bContext *C, wmOperator *op, const wmEvent *event);
 /**
  * Call the quit confirmation prompt or exit directly if needed. The use can
  * still cancel via the confirmation popup. Also, this may not quit Blender

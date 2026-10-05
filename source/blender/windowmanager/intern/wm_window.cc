@@ -1281,6 +1281,59 @@ wmOperatorStatus wm_window_fullscreen_toggle_exec(bContext *C, wmOperator * /*op
     return OPERATOR_CANCELLED;
   }
 
+
+/* Window control & drag operators */
+wmOperatorStatus wm_window_minimize_exec(bContext *C, wmOperator * /*op*/)
+{
+  wmWindow *window = CTX_wm_window(C);
+
+  if (G.background || !window || !window->ghostwin) {
+    return OPERATOR_CANCELLED;
+  }
+
+  GHOST_SetWindowState(static_cast<GHOST_WindowHandle>(window->ghostwin),
+                       GHOST_kWindowStateMinimized);
+
+  return OPERATOR_FINISHED;
+}
+
+wmOperatorStatus wm_window_maximize_toggle_exec(bContext *C, wmOperator * /*op*/)
+{
+  wmWindow *window = CTX_wm_window(C);
+
+  if (G.background || !window || !window->ghostwin) {
+    return OPERATOR_CANCELLED;
+  }
+
+  GHOST_TWindowState state = GHOST_GetWindowState(
+      static_cast<GHOST_WindowHandle>(window->ghostwin));
+  if (state == GHOST_kWindowStateMaximized) {
+    GHOST_SetWindowState(static_cast<GHOST_WindowHandle>(window->ghostwin),
+                         GHOST_kWindowStateNormal);
+  }
+  else {
+    GHOST_SetWindowState(static_cast<GHOST_WindowHandle>(window->ghostwin),
+                         GHOST_kWindowStateMaximized);
+  }
+
+  return OPERATOR_FINISHED;
+}
+
+wmOperatorStatus wm_window_drag_start_invoke(bContext *C, wmOperator * /*op*/, const wmEvent * /*event*/)
+{
+  wmWindow *window = CTX_wm_window(C);
+
+  if (G.background || !window || !window->ghostwin) {
+    return OPERATOR_PASS_THROUGH;
+  }
+
+  if (GHOST_BeginWindowMove(static_cast<GHOST_WindowHandle>(window->ghostwin)) == GHOST_kSuccess) {
+    return OPERATOR_FINISHED;
+  }
+
+  return OPERATOR_PASS_THROUGH;
+}
+
   GHOST_TWindowState state = GHOST_GetWindowState(
       static_cast<GHOST_WindowHandle>(window->ghostwin));
   if (state != GHOST_kWindowStateFullScreen) {
