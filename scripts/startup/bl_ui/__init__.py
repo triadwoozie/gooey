@@ -88,6 +88,7 @@ _modules = [
     "space_userpref",
     "space_view3d",
     "space_view3d_toolbar",
+    "space_view3d_vehicle",
 
     # XXX, keep last so panels show after all other tool options.
     "properties_workspace",
@@ -120,6 +121,8 @@ def register():
             register_class(cls)
 
     space_filebrowser.register_props()
+    if hasattr(space_view3d_vehicle, "register"):
+        space_view3d_vehicle.register()
 
     from bpy.props import (
         EnumProperty,
@@ -189,6 +192,9 @@ def unregister():
     for cls in reversed(classes):
         if cls.is_registered:
             unregister_class(cls)
+
+    if hasattr(space_view3d_vehicle, "unregister"):
+        space_view3d_vehicle.unregister()
 
     try:
         bpy.app.handlers.translation_update_post.remove(translation_update)
