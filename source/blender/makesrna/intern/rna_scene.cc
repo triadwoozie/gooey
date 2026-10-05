@@ -1038,8 +1038,7 @@ static float rna_Scene_frame_current_final_get(PointerRNA *ptr)
 static void rna_Scene_start_frame_set(PointerRNA *ptr, int value)
 {
   Scene *data = (Scene *)ptr->data;
-  /* MINFRAME not MINAFRAME, since some output formats can't taken negative frames */
-  CLAMP(value, MINFRAME, MAXFRAME);
+  CLAMP(value, MINAFRAME, MAXFRAME);
   data->r.sfra = value;
 
   if (value > data->r.efra) {
@@ -1050,11 +1049,11 @@ static void rna_Scene_start_frame_set(PointerRNA *ptr, int value)
 static void rna_Scene_end_frame_set(PointerRNA *ptr, int value)
 {
   Scene *data = (Scene *)ptr->data;
-  CLAMP(value, MINFRAME, MAXFRAME);
+  CLAMP(value, MINAFRAME, MAXFRAME);
   data->r.efra = value;
 
   if (data->r.sfra > value) {
-    data->r.sfra = std::max(value, MINFRAME);
+    data->r.sfra = std::max(value, MINAFRAME);
   }
 }
 
@@ -2487,11 +2486,15 @@ static void rna_SceneCamera_update(Main * /*bmain*/, Scene * /*scene*/, PointerR
 {
   Scene *scene = (Scene *)ptr->owner_id;
   Object *camera = scene->camera;
+  Object *gn_camera = scene->gn_camera_override;
 
   blender::seq::cache_cleanup(scene);
 
   if (camera && (camera->type == OB_CAMERA)) {
     DEG_id_tag_update(&camera->id, ID_RECALC_GEOMETRY);
+  }
+  if (gn_camera && (gn_camera->type == OB_CAMERA)) {
+    DEG_id_tag_update(&gn_camera->id, ID_RECALC_GEOMETRY);
   }
 }
 
@@ -3910,6 +3913,17 @@ static void rna_def_tool_settings(BlenderRNA *brna)
   RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
   RNA_def_property_update(prop, NC_SCENE | ND_TOOLSETTINGS, nullptr);
 
+  prop = RNA_def_property(srna, "use_gpencil_autoclose_strokes", PROP_BOOLEAN, PROP_NONE);
+  RNA_def_property_boolean_sdna(prop, NULL, "gpencil_flags", GP_TOOL_FLAG_AUTOCLOSE_STROKE);
+  RNA_def_property_boolean_default(prop, false);
+  RNA_def_property_ui_icon(prop, ICON_AUTOMERGE_OFF, 1);
+  RNA_def_property_ui_text(
+      prop,
+      "Autoclose",
+      "Close the last drawn stroke before post processing");
+  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
+  RNA_def_property_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL);
+
   prop = RNA_def_property(srna, "gpencil_sculpt", PROP_POINTER, PROP_NONE);
   RNA_def_property_pointer_sdna(prop, nullptr, "gp_sculpt");
   RNA_def_property_flag(prop, PROP_DEG_SYNC_ONLY);
@@ -4900,14 +4914,10 @@ static void rna_def_view_layer_eevee(BlenderRNA *brna)
   RNA_def_property_ui_text(prop, "Volume Light", "Deliver volume direct light pass");
   RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "rna_ViewLayer_pass_update");
 
-#  if 1
-  /* Bloom is deprecated since Blender 4.2, is kept for add-on compatibility reasons and needs to
-   * be removed in a future release. */
   prop = RNA_def_property(srna, "use_pass_bloom", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, nullptr, "render_passes", 0 /*EEVEE_RENDER_PASS_BLOOM*/);
-  RNA_def_property_ui_text(prop, "Bloom", "Deliver bloom pass (deprecated)");
+  RNA_def_property_boolean_sdna(prop, nullptr, "render_passes", EEVEE_RENDER_PASS_BLOOM);
+  RNA_def_property_ui_text(prop, "Bloom", "Deliver bloom pass");
   RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "rna_ViewLayer_pass_update");
-#  endif
 
   prop = RNA_def_property(srna, "use_pass_transparent", PROP_BOOLEAN, PROP_NONE);
   RNA_def_property_boolean_sdna(prop, nullptr, "render_passes", EEVEE_RENDER_PASS_TRANSPARENT);
@@ -6930,7 +6940,7 @@ static void rna_def_scene_render_data(BlenderRNA *brna)
   };
 
   static const EnumPropertyItem engine_items[] = {
-      {0, "BLENDER_EEVEE_NEXT", 0, "EEVEE", ""},
+      {0, "BLENDER_EEVEE", 0, "EEVEE", ""},
       {0, nullptr, 0, nullptr, nullptr},
   };
 
@@ -8268,6 +8278,15 @@ static void rna_def_scene_eevee(BlenderRNA *brna)
                            "Size of the shadow map applied to each irradiance sample");
   RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
 
+  prop = RNA_def_property(srna, "gi_irradiance_smoothing", PROP_FLOAT, PROP_FACTOR);
+  RNA_def_property_range(prop, 0.0f, FLT_MAX);
+  RNA_def_property_ui_range(prop, 0.0f, 1.0f, 5, 2);
+  RNA_def_property_ui_text(prop,
+                           "Irradiance Smoothing",
+                           "Smoother irradiance interpolation but introduce light bleeding");
+  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, nullptr);
+
   prop = RNA_def_property(srna, "gi_glossy_clamp", PROP_FLOAT, PROP_NONE);
   RNA_def_property_ui_text(prop,
                            "Clamp Glossy",
@@ -8275,6 +8294,56 @@ static void rna_def_scene_eevee(BlenderRNA *brna)
                            "from reflection cubemaps (0 to disable)");
   RNA_def_property_range(prop, 0.0f, FLT_MAX);
   RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+
+  prop = RNA_def_property(srna, "gi_filter_quality", PROP_FLOAT, PROP_NONE);
+  RNA_def_property_ui_text(
+      prop, "Filter Quality", "Take more samples during cubemap filtering to remove artifacts");
+  RNA_def_property_range(prop, 1.0f, 8.0f);
+  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+
+  /* TODO(Miguel Pozo): Remove once EEVEE is fully replaced. */
+  {
+    prop = RNA_def_property(srna, "gi_show_irradiance", PROP_BOOLEAN, PROP_NONE);
+    RNA_def_property_boolean_sdna(prop, nullptr, "flag", SCE_EEVEE_SHOW_IRRADIANCE);
+    RNA_def_property_ui_icon(prop, ICON_HIDE_ON, 1);
+    RNA_def_property_ui_text(
+        prop, "Show Irradiance Cache", "Display irradiance samples in the viewport");
+    RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+    RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, nullptr);
+
+    prop = RNA_def_property(srna, "gi_show_cubemaps", PROP_BOOLEAN, PROP_NONE);
+    RNA_def_property_boolean_sdna(prop, nullptr, "flag", SCE_EEVEE_SHOW_CUBEMAPS);
+    RNA_def_property_ui_icon(prop, ICON_HIDE_ON, 1);
+    RNA_def_property_ui_text(
+        prop, "Show Cubemap Cache", "Display captured cubemaps in the viewport");
+    RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+    RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, nullptr);
+
+    prop = RNA_def_property(srna, "gi_irradiance_display_size", PROP_FLOAT, PROP_DISTANCE);
+    RNA_def_property_float_sdna(prop, nullptr, "gi_irradiance_draw_size");
+    RNA_def_property_range(prop, 0.0f, FLT_MAX);
+    RNA_def_property_ui_range(prop, 0.01f, 1.0f, 1, 3);
+    RNA_def_property_ui_text(prop,
+                             "Irradiance Display Size",
+                             "Size of the irradiance sample spheres to debug captured light");
+    RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, nullptr);
+
+    prop = RNA_def_property(srna, "gi_cubemap_display_size", PROP_FLOAT, PROP_DISTANCE);
+    RNA_def_property_float_sdna(prop, nullptr, "gi_cubemap_draw_size");
+    RNA_def_property_range(prop, 0.05f, 10.0f);
+    RNA_def_property_ui_text(
+        prop, "Cubemap Display Size", "Size of the cubemap spheres to debug captured light");
+    RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, nullptr);
+  }
+
+  prop = RNA_def_property(srna, "gi_auto_bake", PROP_BOOLEAN, PROP_NONE);
+  RNA_def_property_boolean_sdna(prop, nullptr, "flag", SCE_EEVEE_GI_AUTOBAKE);
+  RNA_def_property_ui_text(prop, "Auto Bake", "Auto bake indirect lighting when editing probes");
+
+  prop = RNA_def_property(srna, "gi_cache_info", PROP_STRING, PROP_NONE);
+  RNA_def_property_string_sdna(prop, nullptr, "light_cache_info");
+  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
+  RNA_def_property_ui_text(prop, "Light Cache Info", "Info on current cache status");
 
   prop = RNA_def_property(srna, "gi_irradiance_pool_size", PROP_ENUM, PROP_NONE);
   RNA_def_property_enum_items(prop, eevee_pool_size_items);
@@ -8310,6 +8379,72 @@ static void rna_def_scene_eevee(BlenderRNA *brna)
   RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
   RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, nullptr);
   RNA_def_property_flag(prop, PROP_ANIMATABLE);
+
+  /* Screen Space Subsurface Scattering */
+  prop = RNA_def_property(srna, "sss_samples", PROP_INT, PROP_NONE);
+  RNA_def_property_ui_text(prop, "Samples", "Number of samples to compute the scattering effect");
+  RNA_def_property_range(prop, 1, 32);
+  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, nullptr);
+
+  prop = RNA_def_property(srna, "sss_jitter_threshold", PROP_FLOAT, PROP_FACTOR);
+  RNA_def_property_ui_text(
+      prop, "Jitter Threshold", "Rotate samples that are below this threshold");
+  RNA_def_property_range(prop, 0.0f, 1.0f);
+  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, nullptr);
+
+  /* Screen Space Reflection */
+  prop = RNA_def_property(srna, "use_ssr", PROP_BOOLEAN, PROP_NONE);
+  RNA_def_property_boolean_sdna(prop, nullptr, "flag", SCE_EEVEE_SSR_ENABLED);
+  RNA_def_property_ui_text(prop, "Screen Space Reflections", "Enable screen space reflection");
+  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, nullptr);
+
+  prop = RNA_def_property(srna, "use_ssr_refraction", PROP_BOOLEAN, PROP_NONE);
+  RNA_def_property_boolean_sdna(prop, nullptr, "flag", SCE_EEVEE_SSR_REFRACTION);
+  RNA_def_property_ui_text(prop, "Screen Space Refractions", "Enable screen space Refractions");
+  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, nullptr);
+
+  prop = RNA_def_property(srna, "use_ssr_halfres", PROP_BOOLEAN, PROP_NONE);
+  RNA_def_property_boolean_sdna(prop, nullptr, "flag", SCE_EEVEE_SSR_HALF_RESOLUTION);
+  RNA_def_property_ui_text(prop, "Half Res Trace", "Raytrace at a lower resolution");
+  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, nullptr);
+
+  prop = RNA_def_property(srna, "ssr_quality", PROP_FLOAT, PROP_FACTOR);
+  RNA_def_property_ui_text(prop, "Trace Precision", "Precision of the screen space ray-tracing");
+  RNA_def_property_range(prop, 0.0f, 1.0f);
+  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, nullptr);
+
+  prop = RNA_def_property(srna, "ssr_max_roughness", PROP_FLOAT, PROP_FACTOR);
+  RNA_def_property_ui_text(
+      prop, "Max Roughness", "Do not raytrace reflections for roughness above this value");
+  RNA_def_property_range(prop, 0.0f, 1.0f);
+  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, nullptr);
+
+  prop = RNA_def_property(srna, "ssr_thickness", PROP_FLOAT, PROP_DISTANCE);
+  RNA_def_property_ui_text(prop, "Thickness", "Pixel thickness used to detect intersection");
+  RNA_def_property_translation_context(prop, BLT_I18NCONTEXT_ID_MATERIAL);
+  RNA_def_property_range(prop, 1e-6f, FLT_MAX);
+  RNA_def_property_ui_range(prop, 0.001f, FLT_MAX, 5, 3);
+  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, nullptr);
+
+  prop = RNA_def_property(srna, "ssr_border_fade", PROP_FLOAT, PROP_FACTOR);
+  RNA_def_property_ui_text(prop, "Edge Fading", "Screen percentage used to fade the SSR");
+  RNA_def_property_range(prop, 0.0f, 0.5f);
+  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, nullptr);
+
+  prop = RNA_def_property(srna, "ssr_firefly_fac", PROP_FLOAT, PROP_NONE);
+  RNA_def_property_ui_text(prop, "Clamp", "Clamp pixel intensity to remove noise (0 to disable)");
+  RNA_def_property_range(prop, 0.0f, FLT_MAX);
+  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, nullptr);
 
   prop = RNA_def_property(srna, "ray_tracing_method", PROP_ENUM, PROP_NONE);
   RNA_def_property_enum_items(prop, ray_tracing_method_items);
@@ -8420,6 +8555,13 @@ static void rna_def_scene_eevee(BlenderRNA *brna)
   RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
   RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, nullptr);
 
+  prop = RNA_def_property(srna, "use_volumetric_lights", PROP_BOOLEAN, PROP_NONE);
+  RNA_def_property_boolean_sdna(prop, nullptr, "flag", SCE_EEVEE_VOLUMETRIC_LIGHTS);
+  RNA_def_property_ui_text(
+      prop, "Volumetric Lighting", "Enable scene light interactions with volumetrics");
+  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, nullptr);
+
   prop = RNA_def_property(srna, "volumetric_light_clamp", PROP_FLOAT, PROP_NONE);
   RNA_def_property_range(prop, 0.0f, FLT_MAX);
   RNA_def_property_ui_text(prop, "Clamp", "Maximum light contribution, reducing noise");
@@ -8458,10 +8600,30 @@ static void rna_def_scene_eevee(BlenderRNA *brna)
   RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
   RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, nullptr);
 
-  /* TODO: remove this, kept for EEVEE 4.2 compatibility,
-   * this is a duplicate of "fast_gi_quality"). */
+  prop = RNA_def_property(srna, "use_gtao_bent_normals", PROP_BOOLEAN, PROP_NONE);
+  RNA_def_property_boolean_sdna(prop, nullptr, "flag", SCE_EEVEE_GTAO_BENT_NORMALS);
+  RNA_def_property_ui_text(
+      prop, "Bent Normals", "Compute main non occluded direction to sample the environment");
+  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, nullptr);
+
+  prop = RNA_def_property(srna, "use_gtao_bounce", PROP_BOOLEAN, PROP_NONE);
+  RNA_def_property_boolean_sdna(prop, nullptr, "flag", SCE_EEVEE_GTAO_BOUNCE);
+  RNA_def_property_ui_text(prop,
+                           "Bounces Approximation",
+                           "An approximation to simulate light bounces "
+                           "giving less occlusion on brighter objects");
+  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, nullptr);
+
+  prop = RNA_def_property(srna, "gtao_factor", PROP_FLOAT, PROP_FACTOR);
+  RNA_def_property_ui_text(prop, "Factor", "Factor for ambient occlusion blending");
+  RNA_def_property_range(prop, 0.0f, FLT_MAX);
+  RNA_def_property_ui_range(prop, 0.0f, 1.0f, 0.1f, 2);
+  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, nullptr);
+
   prop = RNA_def_property(srna, "gtao_quality", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, nullptr, "fast_gi_quality");
   RNA_def_property_ui_text(prop, "Trace Precision", "Precision of the horizon search");
   RNA_def_property_range(prop, 0.0f, 1.0f);
   RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
@@ -8585,6 +8747,22 @@ static void rna_def_scene_eevee(BlenderRNA *brna)
   RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
   RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, nullptr);
 
+  prop = RNA_def_property(srna, "bokeh_denoise_fac", PROP_FLOAT, PROP_FACTOR);
+  RNA_def_property_ui_text(
+      prop, "Denoise Amount", "Amount of flicker removal applied to bokeh highlights");
+  RNA_def_property_range(prop, 0.0f, 1.0f);
+  RNA_def_property_ui_range(prop, 0.0f, 1.0f, 10, 2);
+  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, nullptr);
+
+  prop = RNA_def_property(srna, "use_bokeh_high_quality_slight_defocus", PROP_BOOLEAN, PROP_NONE);
+  RNA_def_property_boolean_sdna(prop, nullptr, "flag", SCE_EEVEE_DOF_HQ_SLIGHT_FOCUS);
+  RNA_def_property_ui_text(prop,
+                           "High Quality Slight Defocus",
+                           "Sample all pixels in almost in-focus regions to eliminate noise");
+  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, nullptr);
+
   prop = RNA_def_property(srna, "use_bokeh_jittered", PROP_BOOLEAN, PROP_NONE);
   RNA_def_property_boolean_sdna(prop, nullptr, "flag", SCE_EEVEE_DOF_JITTER);
   RNA_def_property_ui_text(prop,
@@ -8602,6 +8780,54 @@ static void rna_def_scene_eevee(BlenderRNA *brna)
   RNA_def_property_range(prop, 0, 100);
   RNA_def_property_ui_range(prop, 0.0f, 20.0f, 1, 1);
   RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+
+  /* Bloom */
+  prop = RNA_def_property(srna, "use_bloom", PROP_BOOLEAN, PROP_NONE);
+  RNA_def_property_boolean_sdna(prop, nullptr, "flag", SCE_EEVEE_BLOOM_ENABLED);
+  RNA_def_property_ui_text(prop, "Bloom", "High brightness pixels generate a glowing effect");
+  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, nullptr);
+
+  prop = RNA_def_property(srna, "bloom_threshold", PROP_FLOAT, PROP_FACTOR);
+  RNA_def_property_ui_text(prop, "Threshold", "Filters out pixels under this level of brightness");
+  RNA_def_property_range(prop, 0.0f, 100000.0f);
+  RNA_def_property_ui_range(prop, 0.0f, 10.0f, 1, 3);
+  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, nullptr);
+
+  prop = RNA_def_property(srna, "bloom_color", PROP_FLOAT, PROP_COLOR);
+  RNA_def_property_array(prop, 3);
+  RNA_def_property_ui_text(prop, "Color", "Color applied to the bloom effect");
+  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, nullptr);
+
+  prop = RNA_def_property(srna, "bloom_knee", PROP_FLOAT, PROP_FACTOR);
+  RNA_def_property_ui_text(prop, "Knee", "Makes transition between under/over-threshold gradual");
+  RNA_def_property_range(prop, 0.0f, 1.0f);
+  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, nullptr);
+
+  prop = RNA_def_property(srna, "bloom_radius", PROP_FLOAT, PROP_FACTOR);
+  RNA_def_property_ui_text(prop, "Radius", "Bloom spread distance");
+  RNA_def_property_range(prop, 0.0f, 100.0f);
+  RNA_def_property_ui_range(prop, 0.0f, 10.0f, 1, 3);
+  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, nullptr);
+
+  prop = RNA_def_property(srna, "bloom_clamp", PROP_FLOAT, PROP_FACTOR);
+  RNA_def_property_ui_text(
+      prop, "Clamp", "Maximum intensity a bloom pixel can have (0 to disable)");
+  RNA_def_property_range(prop, 0.0f, 100000.0f);
+  RNA_def_property_ui_range(prop, 0.0f, 1000.0f, 1, 3);
+  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, nullptr);
+
+  prop = RNA_def_property(srna, "bloom_intensity", PROP_FLOAT, PROP_FACTOR);
+  RNA_def_property_ui_text(prop, "Intensity", "Blend factor");
+  RNA_def_property_range(prop, 0.0f, 10000.0f);
+  RNA_def_property_ui_range(prop, 0.0f, 0.1f, 1, 3);
+  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, nullptr);
 
   /* Motion blur */
   prop = RNA_def_property(srna, "motion_blur_depth_scale", PROP_FLOAT, PROP_NONE);
@@ -8638,6 +8864,20 @@ static void rna_def_scene_eevee(BlenderRNA *brna)
   RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
   RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, nullptr);
 
+  prop = RNA_def_property(srna, "shadow_cube_size", PROP_ENUM, PROP_NONE);
+  RNA_def_property_enum_items(prop, eevee_shadow_size_items);
+  RNA_def_property_ui_text(
+      prop, "Cube Shadows Resolution", "Size of point and area light shadow maps (deprecated)");
+  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, nullptr);
+
+  prop = RNA_def_property(srna, "shadow_cascade_size", PROP_ENUM, PROP_NONE);
+  RNA_def_property_enum_items(prop, eevee_shadow_size_items);
+  RNA_def_property_ui_text(
+      prop, "Directional Shadows Resolution", "Size of sun light shadow maps (deprecated)");
+  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, nullptr);
+
   prop = RNA_def_property(srna, "shadow_pool_size", PROP_ENUM, PROP_NONE);
   RNA_def_property_enum_items(prop, eevee_pool_size_items);
   RNA_def_property_ui_text(prop,
@@ -8659,6 +8899,25 @@ static void rna_def_scene_eevee(BlenderRNA *brna)
   RNA_def_property_range(prop, 1, 16);
   RNA_def_property_ui_text(
       prop, "Shadow Step Count", "Amount of shadow map sample per shadow ray");
+  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, nullptr);
+
+  prop = RNA_def_property(srna, "use_shadow_high_bitdepth", PROP_BOOLEAN, PROP_NONE);
+  RNA_def_property_boolean_sdna(prop, nullptr, "flag", SCE_EEVEE_SHADOW_HIGH_BITDEPTH);
+  RNA_def_property_ui_text(prop, "High Bit Depth", "Use 32-bit shadows");
+  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, nullptr);
+
+  prop = RNA_def_property(srna, "use_shadow_id_high_bitdepth", PROP_BOOLEAN, PROP_NONE);
+  RNA_def_property_boolean_sdna(prop, nullptr, "flag", SCE_EEVEE_SHADOW_ID_HIGH_BITDEPTH);
+  RNA_def_property_ui_text(prop, "High ID Bit Depth", "Use 32-bit shadow IDs (Enable if self-shadow does not work for some objects)");
+  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, nullptr);
+
+  prop = RNA_def_property(srna, "use_soft_shadows", PROP_BOOLEAN, PROP_NONE);
+  RNA_def_property_boolean_sdna(prop, nullptr, "flag", SCE_EEVEE_SHADOW_SOFT);
+  RNA_def_property_ui_text(
+      prop, "Soft Shadows", "Randomize shadowmaps origin to create soft shadows");
   RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
   RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, nullptr);
 
@@ -8831,6 +9090,14 @@ void RNA_def_scene(BlenderRNA *brna)
   RNA_def_property_ui_text(prop, "Camera", "Active camera, used for rendering the scene");
   RNA_def_property_update(prop, NC_SCENE | NA_EDITED, "rna_Scene_camera_update");
 
+  prop = RNA_def_property(srna, "gn_camera_override", PROP_POINTER, PROP_NONE);
+  RNA_def_property_flag(prop, PROP_EDITABLE | PROP_ID_SELF_CHECK);
+  RNA_def_property_struct_type(prop, "Object");
+  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  RNA_def_property_pointer_funcs(prop, nullptr, nullptr, nullptr, "rna_Camera_object_poll");
+  RNA_def_property_ui_text(prop, "GeoNodes Active Camera Override", "Active camera, used for calculating geometry nodes active camera node");
+  RNA_def_property_update(prop, NC_SCENE | NA_EDITED, "rna_Scene_frame_update");
+
   prop = RNA_def_property(srna, "background_set", PROP_POINTER, PROP_NONE);
   RNA_def_property_pointer_sdna(prop, nullptr, "set");
   RNA_def_property_struct_type(prop, "Scene");
@@ -8894,7 +9161,7 @@ void RNA_def_scene(BlenderRNA *brna)
   RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
   RNA_def_property_int_sdna(prop, nullptr, "r.sfra");
   RNA_def_property_int_funcs(prop, nullptr, "rna_Scene_start_frame_set", nullptr);
-  RNA_def_property_range(prop, MINFRAME, MAXFRAME);
+  RNA_def_property_range(prop, MINAFRAME, MAXFRAME);
   RNA_def_property_ui_text(prop, "Start Frame", "First frame of the playback/rendering range");
   RNA_def_property_update(prop, NC_SCENE | ND_FRAME_RANGE, nullptr);
 
@@ -8902,7 +9169,7 @@ void RNA_def_scene(BlenderRNA *brna)
   RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
   RNA_def_property_int_sdna(prop, nullptr, "r.efra");
   RNA_def_property_int_funcs(prop, nullptr, "rna_Scene_end_frame_set", nullptr);
-  RNA_def_property_range(prop, MINFRAME, MAXFRAME);
+  RNA_def_property_range(prop, MINAFRAME, MAXFRAME);
   RNA_def_property_ui_text(prop, "End Frame", "Final frame of the playback/rendering range");
   RNA_def_property_update(prop, NC_SCENE | ND_FRAME_RANGE, nullptr);
 
