@@ -55,8 +55,8 @@ include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(Haru DEFAULT_MSG HARU_LIBRARY HARU_INCLUDE_DIR)
 
 if(HARU_FOUND)
-  set(HARU_LIBRARIES ${HARU_LIBRARY})
-  set(HARU_INCLUDE_DIRS ${HARU_INCLUDE_DIR})
+  set(HARU_LIBRARIES ${HARU_LIBRARY} CACHE STRING "Haru libraries")
+  set(HARU_INCLUDE_DIRS ${HARU_INCLUDE_DIR} CACHE STRING "Haru include directories")
 endif()
 
 mark_as_advanced(

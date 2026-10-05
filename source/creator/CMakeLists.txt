@@ -26,7 +26,7 @@ set(LIB
 
 if(WITH_HARU)
   list(APPEND LIB
-    ${HARU_LIBRARIES}
+    ${HARU_LIBRARY}
   )
 endif()
 
