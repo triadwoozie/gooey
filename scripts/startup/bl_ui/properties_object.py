@@ -379,6 +379,7 @@ class OBJECT_PT_visibility(ObjectButtonsPanel, Panel):
     bl_options = {'DEFAULT_CLOSED'}
     COMPAT_ENGINES = {
         'BLENDER_RENDER',
+        'BLENDER_EEVEE',
         'BLENDER_EEVEE_NEXT',
         'BLENDER_WORKBENCH',
     }
@@ -454,6 +455,7 @@ class OBJECT_PT_shading(ObjectButtonsPanel, Panel):
 
     COMPAT_ENGINES = {
         'BLENDER_RENDER',
+        'BLENDER_EEVEE',
         'BLENDER_EEVEE_NEXT',
     }
 
@@ -564,6 +566,7 @@ class OBJECT_PT_shadow_terminator(ObjectButtonsPanel, Panel):
     bl_parent_id = "OBJECT_PT_shading"
     bl_context = "object"
     COMPAT_ENGINES = {
+        'BLENDER_EEVEE',
         'BLENDER_EEVEE_NEXT',
         'CYCLES',
     }

@@ -636,6 +636,20 @@ set(GLSL_SRC
   shaders/material/gpu_shader_material_voronoi.glsl
   shaders/material/gpu_shader_material_wireframe.glsl
   shaders/material/gpu_shader_material_world_normals.glsl
+  shaders/material/gpu_shader_material_curvature.glsl
+  shaders/material/gpu_shader_material_light_info.glsl
+  shaders/material/gpu_shader_material_oklab_colorramp.glsl
+  shaders/material/gpu_shader_material_screenspace_info.glsl
+  shaders/material/gpu_shader_material_sdf_noise.glsl
+  shaders/material/gpu_shader_material_sdf_op.glsl
+  shaders/material/gpu_shader_material_sdf_primitive.glsl
+  shaders/material/gpu_shader_material_sdf_util.glsl
+  shaders/material/gpu_shader_material_sdf_vector_op.glsl
+  shaders/material/gpu_shader_material_set_depth.glsl
+  shaders/material/gpu_shader_material_shader_info.glsl
+  shaders/material/gpu_shader_material_tex_hexagon.glsl
+  shaders/material/gpu_shader_material_twirl.glsl
+  shaders/material/gpu_shader_material_water_ripples.glsl
 
   shaders/gpu_shader_gpencil_stroke_vert.glsl
   shaders/gpu_shader_gpencil_stroke_frag.glsl

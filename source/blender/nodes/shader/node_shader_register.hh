@@ -112,3 +112,17 @@ void register_node_type_sh_volume_scatter();
 void register_node_type_sh_volume_coefficients();
 void register_node_type_sh_wavelength();
 void register_node_type_sh_wireframe();
+
+void register_node_type_sh_curvature();
+void register_node_type_sh_light_info();
+void register_node_type_sh_oklab_color_ramp();
+void register_node_type_sh_screenspace_info();
+void register_node_type_sh_sdf_noise();
+void register_node_type_sh_sdf_op();
+void register_node_type_sh_sdf_primitive();
+void register_node_type_sh_sdf_vector_op();
+void register_node_type_sh_set_depth();
+void register_node_type_sh_shader_info();
+void register_node_type_sh_tex_hexagon();
+void register_node_type_sh_twirl();
+void register_node_type_sh_water_ripples();

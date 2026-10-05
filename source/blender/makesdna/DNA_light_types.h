@@ -80,6 +80,9 @@ typedef struct Light {
   float shadow_maximum_resolution;
   float shadow_jitter_overblur;
 
+  /* Goo-engine */
+  int light_group_bits[4];
+
   /* Preview */
   struct PreviewImage *preview;
 

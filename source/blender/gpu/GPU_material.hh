@@ -79,6 +79,13 @@ enum eGPUMaterialFlag {
 
   GPU_MATFLAG_BARYCENTRIC = (1 << 20),
 
+  /* Optimization to only add the branches of the principled shader that are necessary. */
+  GPU_MATFLAG_PRINCIPLED_COAT = (1 << 21),
+  GPU_MATFLAG_PRINCIPLED_METALLIC = (1 << 22),
+  GPU_MATFLAG_PRINCIPLED_DIELECTRIC = (1 << 23),
+  GPU_MATFLAG_PRINCIPLED_GLASS = (1 << 24),
+  GPU_MATFLAG_PRINCIPLED_ANY = (1 << 25),
+
   /* Tells the render engine the material was just compiled or updated. */
   GPU_MATFLAG_UPDATED = (1 << 29),
 };
@@ -157,6 +164,9 @@ bool GPU_material_has_volume_output(GPUMaterial *mat);
 bool GPU_material_has_displacement_output(GPUMaterial *mat);
 
 bool GPU_material_flag_get(const GPUMaterial *mat, eGPUMaterialFlag flag);
+bool GPU_material_gooengine_get(const GPUMaterial *mat);
+void GPU_material_light_group_bits_get(GPUMaterial *mat, int *out);
+void GPU_material_light_group_shadow_bits_get(GPUMaterial *mat, int *out);
 
 uint64_t GPU_material_uuid_get(GPUMaterial *mat);
 

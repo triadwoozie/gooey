@@ -244,10 +244,16 @@ typedef struct Material {
   /** Runtime cache for GLSL materials. */
   ListBase gpumaterial;
 
+  /* Goo-engine */
+  int light_group_bits[4];
+  int light_group_shadow_bits[4];
+
   /** Grease pencil color. */
   struct MaterialGPencilStyle *gp_style;
   struct MaterialLineArt lineart;
 } Material;
+
+#define MA_GROUPS_ALL 0xFFFFFFFF
 
 /* **************** MATERIAL ********************* */
 

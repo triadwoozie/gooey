@@ -44,6 +44,7 @@
     .att_dist = 40.0f, \
     .sun_angle = DEG2RADF(0.526f), \
     .area_spread = DEG2RADF(180.0f), \
+    .light_group_bits = {0, 0, 0, 1}, \
   }
 
 /** \} */

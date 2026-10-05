@@ -113,4 +113,18 @@ void register_shader_nodes()
   register_node_type_sh_volume_coefficients();
   register_node_type_sh_wavelength();
   register_node_type_sh_wireframe();
+
+  register_node_type_sh_curvature();
+  register_node_type_sh_light_info();
+  register_node_type_sh_oklab_color_ramp();
+  register_node_type_sh_screenspace_info();
+  register_node_type_sh_sdf_noise();
+  register_node_type_sh_sdf_op();
+  register_node_type_sh_sdf_primitive();
+  register_node_type_sh_sdf_vector_op();
+  register_node_type_sh_set_depth();
+  register_node_type_sh_shader_info();
+  register_node_type_sh_tex_hexagon();
+  register_node_type_sh_twirl();
+  register_node_type_sh_water_ripples();
 }

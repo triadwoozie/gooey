@@ -12,6 +12,7 @@
 #include "RE_engine.h"
 
 extern RenderEngineType DRW_engine_viewport_eevee_type;
+extern RenderEngineType DRW_engine_viewport_goo_type;
 
 namespace blender::eevee {
 

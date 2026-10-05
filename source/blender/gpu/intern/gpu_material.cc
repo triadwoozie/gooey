@@ -355,6 +355,41 @@ bool GPU_material_flag_get(const GPUMaterial *mat, eGPUMaterialFlag flag)
   return (mat->flag & flag) != 0;
 }
 
+bool GPU_material_gooengine_get(const GPUMaterial * /*mat*/)
+{
+  return true;
+}
+
+void GPU_material_light_group_bits_get(GPUMaterial *mat, int *out)
+{
+  Material *ma = mat->source_material;
+  const int grps_all[4] = {static_cast<int>(MA_GROUPS_ALL),
+                           static_cast<int>(MA_GROUPS_ALL),
+                           static_cast<int>(MA_GROUPS_ALL),
+                           static_cast<int>(MA_GROUPS_ALL)};
+  if (ma) {
+    copy_v4_v4_int(out, ma->light_group_bits);
+  }
+  else {
+    copy_v4_v4_int(out, grps_all);
+  }
+}
+
+void GPU_material_light_group_shadow_bits_get(GPUMaterial *mat, int *out)
+{
+  Material *ma = mat->source_material;
+  const int grps_all[4] = {static_cast<int>(MA_GROUPS_ALL),
+                           static_cast<int>(MA_GROUPS_ALL),
+                           static_cast<int>(MA_GROUPS_ALL),
+                           static_cast<int>(MA_GROUPS_ALL)};
+  if (ma) {
+    copy_v4_v4_int(out, ma->light_group_shadow_bits);
+  }
+  else {
+    copy_v4_v4_int(out, grps_all);
+  }
+}
+
 eGPUMaterialFlag GPU_material_flag(const GPUMaterial *mat)
 {
   return mat->flag;
