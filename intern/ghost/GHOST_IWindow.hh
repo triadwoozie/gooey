@@ -355,8 +355,15 @@ class GHOST_IWindow {
   }
 
   /** */
-  virtual GHOST_TSuccess beginFullScreen() const = 0;
-  virtual GHOST_TSuccess endFullScreen() const = 0;
+  virtual GHOST_TSuccess beginFullScreen() const
+  {
+    return GHOST_kFailure;
+  }
+
+  virtual GHOST_TSuccess endFullScreen() const
+  {
+    return GHOST_kFailure;
+  }
 
   /**
    * Starts interactive window dragging/moving via window manager.
