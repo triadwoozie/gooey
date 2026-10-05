@@ -11,6 +11,10 @@
 
 #ifdef WITH_FFMPEG
 
+#  ifndef AV_INPUT_BUFFER_MIN_SIZE
+#    define AV_INPUT_BUFFER_MIN_SIZE 16384
+#  endif
+
 #  include <cstdio>
 #  include <cstring>
 
