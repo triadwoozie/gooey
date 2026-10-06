@@ -587,7 +587,10 @@ static void point_distribution_calculate(GeometrySet &geometry_set,
   else {
     pointcloud->positions_for_write().copy_from(positions);
   }
-  point_attributes.add<float>("radius", bke::AttrDomain::Point, bke::AttributeInitValue(0.05f));
+  bke::SpanAttributeWriter<float> point_radii =
+      point_attributes.lookup_or_add_for_write_only_span<float>("radius", bke::AttrDomain::Point);
+  point_radii.span.fill(0.05f);
+  point_radii.finish();
 
   geometry_set.replace_pointcloud(pointcloud);
 
