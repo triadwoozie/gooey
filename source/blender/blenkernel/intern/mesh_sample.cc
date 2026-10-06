@@ -22,14 +22,14 @@ BLI_NOINLINE static void sample_point_attribute(const Span<int> corner_verts,
                                                 const MutableSpan<T> dst)
 {
   mask.foreach_index(
+      GrainSize(4096),
       [&](const int i) {
         const int3 &tri = corner_tris[tri_indices[i]];
         dst[i] = attribute_math::mix3(bary_coords[i],
                                       src[corner_verts[tri[0]]],
                                       src[corner_verts[tri[1]]],
                                       src[corner_verts[tri[2]]]);
-      },
-      exec_mode::grain_size(4096));
+      });
 }
 
 void sample_point_normals(const Span<int> corner_verts,
@@ -41,6 +41,7 @@ void sample_point_normals(const Span<int> corner_verts,
                           const MutableSpan<float3> dst)
 {
   mask.foreach_index(
+      GrainSize(4096),
       [&](const int i) {
         const int3 &tri = corner_tris[tri_indices[i]];
         const float3 value = attribute_math::mix3(bary_coords[i],
@@ -48,8 +49,7 @@ void sample_point_normals(const Span<int> corner_verts,
                                                   src[corner_verts[tri[1]]],
                                                   src[corner_verts[tri[2]]]);
         dst[i] = math::normalize(value);
-      },
-      exec_mode::grain_size(4096));
+      });
 }
 
 void sample_point_attribute(const Span<int> corner_verts,
@@ -79,6 +79,7 @@ BLI_NOINLINE static void sample_corner_attribute(const Span<int3> corner_tris,
                                                  const MutableSpan<T> dst)
 {
   mask.foreach_index(
+      GrainSize(4096),
       [&](const int i) {
         if constexpr (check_indices) {
           if (tri_indices[i] == -1) {
@@ -88,8 +89,7 @@ BLI_NOINLINE static void sample_corner_attribute(const Span<int3> corner_tris,
         }
         const int3 &tri = corner_tris[tri_indices[i]];
         dst[i] = sample_corner_attribute_with_bary_coords(bary_coords[i], tri, src);
-      },
-      exec_mode::grain_size(4096));
+      });
 }
 
 void sample_corner_normals(const Span<int3> corner_tris,
@@ -100,12 +100,12 @@ void sample_corner_normals(const Span<int3> corner_tris,
                            const MutableSpan<float3> dst)
 {
   mask.foreach_index(
+      GrainSize(4096),
       [&](const int i) {
         const int3 &tri = corner_tris[tri_indices[i]];
         const float3 value = sample_corner_attribute_with_bary_coords(bary_coords[i], tri, src);
         dst[i] = math::normalize(value);
-      },
-      exec_mode::grain_size(4096));
+      });
 }
 
 void sample_corner_attribute(const Span<int3> corner_tris,
@@ -133,12 +133,12 @@ void sample_face_attribute(const Span<int> tri_faces,
                            const MutableSpan<T> dst)
 {
   mask.foreach_index(
+      GrainSize(4096),
       [&](const int i) {
         const int tri_index = tri_indices[i];
         const int face_index = tri_faces[tri_index];
         dst[i] = src[face_index];
-      },
-      exec_mode::grain_size(4096));
+      });
 }
 
 void sample_face_attribute(const Span<int> corner_tri_faces,
