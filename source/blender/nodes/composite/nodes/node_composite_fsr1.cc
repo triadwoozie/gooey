@@ -309,6 +309,12 @@ static void node_declare(NodeDeclarationBuilder &b)
   b.add_input<decl::Color>("Image")
       .default_value({1.0f, 1.0f, 1.0f, 1.0f})
       .compositor_realization_mode(CompositorInputRealizationMode::None);
+  b.add_input<decl::Float>("Mask")
+      .default_value(1.0f)
+      .min(0.0f)
+      .max(1.0f)
+      .subtype(PROP_FACTOR)
+      .compositor_realization_mode(CompositorInputRealizationMode::None);
   b.add_input<decl::Float>("Sharpness")
       .default_value(0.2f)
       .min(0.0f)
@@ -329,13 +335,20 @@ static void node_init(bNodeTree * /*ntree*/, bNode *node)
   NodeFSR1 *data = MEM_callocN<NodeFSR1>(__func__);
   data->sharpness = 0.2f;
   data->scale = 2.0f;
+  data->mode = CMP_NODE_FSR1_MODE_FULL;
   node->storage = data;
 }
 
 static void node_buts_fsr1(uiLayout *layout, bContext * /*C*/, PointerRNA *ptr)
 {
-  layout->prop(ptr, "scale", UI_ITEM_R_SPLIT_EMPTY_NAME, "", ICON_NONE);
-  layout->prop(ptr, "sharpness", UI_ITEM_R_SPLIT_EMPTY_NAME, "", ICON_NONE);
+  layout->prop(ptr, "mode", UI_ITEM_R_SPLIT_EMPTY_NAME, "", ICON_NONE);
+  const int mode = RNA_enum_get(ptr, "mode");
+  if (mode != CMP_NODE_FSR1_MODE_RCAS_ONLY) {
+    layout->prop(ptr, "scale", UI_ITEM_R_SPLIT_EMPTY_NAME, "", ICON_NONE);
+  }
+  if (mode != CMP_NODE_FSR1_MODE_EASU_ONLY) {
+    layout->prop(ptr, "sharpness", UI_ITEM_R_SPLIT_EMPTY_NAME, "", ICON_NONE);
+  }
 }
 
 class FSR1Operation : public NodeOperation {
@@ -345,6 +358,7 @@ class FSR1Operation : public NodeOperation {
   void execute() override
   {
     Result &input = get_input("Image");
+    Result &mask = get_input("Mask");
     Result &output = get_result("Image");
     if (input.is_single_value()) {
       output.share_data(input);
@@ -352,10 +366,16 @@ class FSR1Operation : public NodeOperation {
     }
 
     const NodeFSR1 &settings = *static_cast<const NodeFSR1 *>(bnode().storage);
-    const float scale = get_parameter("Scale", settings.scale);
+    const int mode = settings.mode;
+    const float raw_scale = (mode == CMP_NODE_FSR1_MODE_RCAS_ONLY) ?
+                                1.0f :
+                                get_parameter("Scale", settings.scale);
+    const float scale = (mode == CMP_NODE_FSR1_MODE_RCAS_ONLY) ? 1.0f : raw_scale;
     const float sharpness = get_parameter("Sharpness", settings.sharpness);
     const int2 input_size = input.domain().size;
-    const int2 output_size = int2(float2(input_size) * scale + float2(0.5f));
+    const int2 output_size = (mode == CMP_NODE_FSR1_MODE_RCAS_ONLY) ?
+                                 input_size :
+                                 int2(float2(input_size) * scale + float2(0.5f));
     const float2 input_to_output_scale = float2(input_size) / float2(output_size);
 
     Domain output_domain = input.domain();
@@ -366,17 +386,113 @@ class FSR1Operation : public NodeOperation {
     pixel_scale[1][1] = input_to_output_scale.y;
     output_domain.transformation = input.domain().transformation * pixel_scale;
 
-    Result intermediate = context().create_result(ResultType::Color);
-    intermediate.allocate_texture(output_domain);
     output.allocate_texture(output_domain);
 
-    if (context().use_gpu()) {
-      execute_gpu(input, intermediate, output, output_domain, input_to_output_scale, sharpness);
+    const bool has_mask = node().input_by_identifier("Mask")->is_logically_linked();
+    const bool is_gpu = context().use_gpu();
+
+    if (mode == CMP_NODE_FSR1_MODE_RCAS_ONLY) {
+      /* RCAS-only pass: run directly on input at native resolution. */
+      if (has_mask) {
+        Result sharpened = context().create_result(ResultType::Color);
+        sharpened.allocate_texture(output_domain);
+
+        if (is_gpu) {
+          execute_rcas_gpu(input, sharpened, output_domain, sharpness);
+          execute_blend_gpu(input, sharpened, mask, output, output_domain);
+        }
+        else {
+          parallel_for(output_size, [&](const int2 pixel) {
+            sharpened.store_pixel(pixel, fsr1_rcas_pixel(input, pixel, sharpness));
+          });
+          execute_blend_cpu(input, sharpened, mask, output, output_size, false);
+        }
+        sharpened.release();
+      }
+      else {
+        if (is_gpu) {
+          execute_rcas_gpu(input, output, output_domain, sharpness);
+        }
+        else {
+          parallel_for(output_size, [&](const int2 pixel) {
+            output.store_pixel(pixel, fsr1_rcas_pixel(input, pixel, sharpness));
+          });
+        }
+      }
+    }
+    else if (mode == CMP_NODE_FSR1_MODE_EASU_ONLY) {
+      /* EASU-only pass: spatial upsampling without sharpening. */
+      if (has_mask) {
+        Result easu_result = context().create_result(ResultType::Color);
+        easu_result.allocate_texture(output_domain);
+
+        if (is_gpu) {
+          execute_easu_gpu(input, easu_result, output_domain, input_to_output_scale);
+          execute_blend_gpu(input, easu_result, mask, output, output_domain);
+        }
+        else {
+          parallel_for(output_size, [&](const int2 pixel) {
+            easu_result.store_pixel(pixel,
+                                    fsr1_easu_pixel(input, pixel, input_to_output_scale));
+          });
+          execute_blend_cpu(input, easu_result, mask, output, output_size, true);
+        }
+        easu_result.release();
+      }
+      else {
+        if (is_gpu) {
+          execute_easu_gpu(input, output, output_domain, input_to_output_scale);
+        }
+        else {
+          parallel_for(output_size, [&](const int2 pixel) {
+            output.store_pixel(pixel, fsr1_easu_pixel(input, pixel, input_to_output_scale));
+          });
+        }
+      }
     }
     else {
-      execute_cpu(input, intermediate, output, output_size, input_to_output_scale, sharpness);
+      /* Full mode: EASU spatial upsampling followed by RCAS sharpening. */
+      Result intermediate = context().create_result(ResultType::Color);
+      intermediate.allocate_texture(output_domain);
+
+      if (has_mask) {
+        Result sharpened = context().create_result(ResultType::Color);
+        sharpened.allocate_texture(output_domain);
+
+        if (is_gpu) {
+          execute_easu_gpu(input, intermediate, output_domain, input_to_output_scale);
+          execute_rcas_gpu(intermediate, sharpened, output_domain, sharpness);
+          execute_blend_gpu(input, sharpened, mask, output, output_domain);
+        }
+        else {
+          parallel_for(output_size, [&](const int2 pixel) {
+            intermediate.store_pixel(pixel,
+                                     fsr1_easu_pixel(input, pixel, input_to_output_scale));
+          });
+          parallel_for(output_size, [&](const int2 pixel) {
+            sharpened.store_pixel(pixel, fsr1_rcas_pixel(intermediate, pixel, sharpness));
+          });
+          execute_blend_cpu(input, sharpened, mask, output, output_size, true);
+        }
+        sharpened.release();
+      }
+      else {
+        if (is_gpu) {
+          execute_easu_gpu(input, intermediate, output_domain, input_to_output_scale);
+          execute_rcas_gpu(intermediate, output, output_domain, sharpness);
+        }
+        else {
+          parallel_for(output_size, [&](const int2 pixel) {
+            intermediate.store_pixel(pixel,
+                                     fsr1_easu_pixel(input, pixel, input_to_output_scale));
+          });
+          parallel_for(output_size, [&](const int2 pixel) {
+            output.store_pixel(pixel, fsr1_rcas_pixel(intermediate, pixel, sharpness));
+          });
+        }
+      }
+      intermediate.release();
     }
-    intermediate.release();
   }
 
  private:
@@ -391,48 +507,85 @@ class FSR1Operation : public NodeOperation {
                                    math::clamp(linked_value, 0.0f, 2.0f);
   }
 
-  void execute_gpu(const Result &input,
-                   Result &intermediate,
-                   Result &output,
-                   const Domain &output_domain,
-                   const float2 input_to_output_scale,
-                   const float sharpness)
+  void execute_easu_gpu(const Result &input,
+                        Result &output,
+                        const Domain &output_domain,
+                        const float2 input_to_output_scale)
   {
     GPUShader *easu_shader = context().get_shader("compositor_fsr1_easu");
     GPU_shader_bind(easu_shader);
-    GPU_shader_uniform_2fv(
-        easu_shader, "input_to_output_scale", input_to_output_scale);
+    GPU_shader_uniform_2fv(easu_shader, "input_to_output_scale", input_to_output_scale);
     input.bind_as_texture(easu_shader, "input_tx");
-    intermediate.bind_as_image(easu_shader, "output_img");
+    output.bind_as_image(easu_shader, "output_img");
     compute_dispatch_threads_at_least(easu_shader, output_domain.size);
     input.unbind_as_texture();
-    intermediate.unbind_as_image();
-    GPU_shader_unbind();
-
-    GPUShader *rcas_shader = context().get_shader("compositor_fsr1_rcas");
-    GPU_shader_bind(rcas_shader);
-    GPU_shader_uniform_1f(rcas_shader, "sharpness", sharpness);
-    intermediate.bind_as_texture(rcas_shader, "input_tx");
-    output.bind_as_image(rcas_shader, "output_img");
-    compute_dispatch_threads_at_least(rcas_shader, output_domain.size);
-    intermediate.unbind_as_texture();
     output.unbind_as_image();
     GPU_shader_unbind();
   }
 
-  void execute_cpu(const Result &input,
-                   Result &intermediate,
-                   Result &output,
-                   const int2 output_size,
-                   const float2 input_to_output_scale,
-                   const float sharpness)
+  void execute_rcas_gpu(const Result &input,
+                        Result &output,
+                        const Domain &output_domain,
+                        const float sharpness)
+  {
+    GPUShader *rcas_shader = context().get_shader("compositor_fsr1_rcas");
+    GPU_shader_bind(rcas_shader);
+    GPU_shader_uniform_1f(rcas_shader, "sharpness", sharpness);
+    input.bind_as_texture(rcas_shader, "input_tx");
+    output.bind_as_image(rcas_shader, "output_img");
+    compute_dispatch_threads_at_least(rcas_shader, output_domain.size);
+    input.unbind_as_texture();
+    output.unbind_as_image();
+    GPU_shader_unbind();
+  }
+
+  void execute_blend_gpu(const Result &base,
+                         const Result &upscaled,
+                         const Result &mask,
+                         Result &output,
+                         const Domain &output_domain)
+  {
+    GPUShader *blend_shader = context().get_shader("compositor_fsr1_blend");
+    GPU_shader_bind(blend_shader);
+    base.bind_as_texture(blend_shader, "base_tx");
+    upscaled.bind_as_texture(blend_shader, "upscaled_tx");
+    mask.bind_as_texture(blend_shader, "mask_tx");
+    output.bind_as_image(blend_shader, "output_img");
+    compute_dispatch_threads_at_least(blend_shader, output_domain.size);
+    base.unbind_as_texture();
+    upscaled.unbind_as_texture();
+    mask.unbind_as_texture();
+    output.unbind_as_image();
+    GPU_shader_unbind();
+  }
+
+  void execute_blend_cpu(const Result &base,
+                         const Result &upscaled,
+                         const Result &mask,
+                         Result &output,
+                         const int2 output_size,
+                         const bool resample_base)
   {
     parallel_for(output_size, [&](const int2 pixel) {
-      intermediate.store_pixel(
-          pixel, fsr1_easu_pixel(input, pixel, input_to_output_scale));
-    });
-    parallel_for(output_size, [&](const int2 pixel) {
-      output.store_pixel(pixel, fsr1_rcas_pixel(intermediate, pixel, sharpness));
+      float4 base_color;
+      if (resample_base) {
+        const float2 uv = (float2(pixel) + float2(0.5f)) / float2(output_size);
+        base_color = base.sample_bilinear_extended(uv);
+      }
+      else {
+        base_color = base.load_pixel<float4>(pixel);
+      }
+      const float4 upscaled_color = upscaled.load_pixel<float4>(pixel);
+      float mask_val = 1.0f;
+      if (mask.is_single_value()) {
+        mask_val = mask.get_single_value_default(1.0f);
+      }
+      else {
+        const float2 uv = (float2(pixel) + float2(0.5f)) / float2(output_size);
+        mask_val = mask.sample_bilinear_extended(uv).x;
+      }
+      const float fac = math::clamp(mask_val, 0.0f, 1.0f);
+      output.store_pixel(pixel, math::interpolate(base_color, upscaled_color, fac));
     });
   }
 };

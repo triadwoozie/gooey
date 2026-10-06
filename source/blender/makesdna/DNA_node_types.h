@@ -1179,9 +1179,17 @@ typedef struct NodeBlurData {
   int image_in_width, image_in_height;
 } NodeBlurData;
 
+typedef enum eNodeFSR1Mode {
+  CMP_NODE_FSR1_MODE_FULL = 0,
+  CMP_NODE_FSR1_MODE_EASU_ONLY = 1,
+  CMP_NODE_FSR1_MODE_RCAS_ONLY = 2,
+} eNodeFSR1Mode;
+
 typedef struct NodeFSR1 {
   float sharpness;
   float scale;
+  int mode;
+  int _pad;
 } NodeFSR1;
 
 typedef struct NodeDBlurData {

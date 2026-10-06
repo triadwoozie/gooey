@@ -8526,6 +8526,19 @@ static void def_cmp_fsr1(BlenderRNA * /*brna*/, StructRNA *srna)
   RNA_def_property_range(prop, 1.0f, 4.0f);
   RNA_def_property_ui_text(prop, "Scale", "Target upscaling multiplier");
   RNA_def_property_update(prop, NC_NODE | NA_EDITED, "rna_Node_update");
+
+  static const EnumPropertyItem mode_items[] = {
+      {CMP_NODE_FSR1_MODE_FULL, "FULL", 0, "Full (EASU + RCAS)", "Run spatial upsampling followed by contrast-adaptive sharpening"},
+      {CMP_NODE_FSR1_MODE_EASU_ONLY, "EASU_ONLY", 0, "EASU Only", "Run edge-adaptive spatial upsampling only"},
+      {CMP_NODE_FSR1_MODE_RCAS_ONLY, "RCAS_ONLY", 0, "RCAS Only", "Run contrast-adaptive sharpening only at native scale"},
+      {0, nullptr, 0, nullptr, nullptr},
+  };
+  prop = RNA_def_property(srna, "mode", PROP_ENUM, PROP_NONE);
+  RNA_def_property_enum_sdna(prop, nullptr, "mode");
+  RNA_def_property_enum_items(prop, mode_items);
+  RNA_def_property_enum_default(prop, CMP_NODE_FSR1_MODE_FULL);
+  RNA_def_property_ui_text(prop, "Mode", "Pass isolation mode");
+  RNA_def_property_update(prop, NC_NODE | NA_EDITED, "rna_Node_update");
 }
 
 static void def_cmp_scale(BlenderRNA * /*brna*/, StructRNA *srna)
