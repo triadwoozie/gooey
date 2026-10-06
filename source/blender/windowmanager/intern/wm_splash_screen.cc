@@ -58,7 +58,8 @@ static void wm_block_splash_close(bContext *C, void *arg_block, void * /*arg*/)
   UI_popup_block_close(C, win, static_cast<uiBlock *>(arg_block));
 }
 
-static void wm_block_splash_add_label(uiBlock *block, const char *label, int x, int y)
+static void wm_block_splash_add_label(
+    uiBlock *block, const char *label, int x, int y, uchar alpha = 255)
 {
   if (!(label && label[0])) {
     return;
@@ -71,8 +72,8 @@ static void wm_block_splash_add_label(uiBlock *block, const char *label, int x, 
   UI_but_drawflag_disable(but, UI_BUT_TEXT_LEFT);
   UI_but_drawflag_enable(but, UI_BUT_TEXT_RIGHT);
 
-  /* Regardless of theme, this text should always be bright white. */
-  uchar color[4] = {255, 255, 255, 255};
+  /* Splash label color with configurable opacity. */
+  uchar color[4] = {255, 255, 255, alpha};
   UI_but_color_set(but, color);
 
   UI_block_emboss_set(block, blender::ui::EmbossType::Emboss);
@@ -313,6 +314,13 @@ static uiBlock *wm_block_splash_create(bContext *C, ARegion *region, void * /*ar
                               BKE_blender_version_string(),
                               splash_width - 8.0 * UI_SCALE_FAC,
                               splash_height - 13.0 * UI_SCALE_FAC);
+
+    /* Subtle artist watermark on bottom-right of splash image. */
+    wm_block_splash_add_label(block,
+                              "Art by 878hyuop",
+                              splash_width - 8.0 * UI_SCALE_FAC,
+                              0.5f * U.widget_unit + 4.0 * UI_SCALE_FAC,
+                              115); /* ~0.45 opacity */
   }
 
   /* Banner image passed through the environment, to overlay on the splash and
