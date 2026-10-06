@@ -23,6 +23,10 @@
 - **TEPD - Temporal Energy Preserving Dither (`CMP_NODE_TEPD`)**:
   - High-precision anti-banding quantization dither using low-discrepancy Weyl sequence temporal phase shifts ($\phi \approx 0.6180339887 \cdot \text{frame\_idx}$).
   - Triangular probability distribution function (TPDF) kernel ensuring zero integrated DC energy drift.
+- **AMD FSR 3.1.5 & Live Telemetry HUD**:
+  - Full Render and Output panel exposure with Quality Mode presets, sharpness slider, and real-time upscaling telemetry (resolution, ratio, frametime, reconstructed frames).
+- **Upstream 5.3 Geometry & Scatter Backports**:
+  - Multi-threaded surface point distribution and mesh sampling optimizations (up to 6.4x faster scatter on dense geometry).
 - **Native Viewport FSR 3.1 Temporal Pipeline**:
   - Temporal integration leveraging Viewport/Render Depth and Motion Vector passes via Vulkan/ffx_api_vk bridge for interactive 3D Viewport playback and final animation rendering.
 
