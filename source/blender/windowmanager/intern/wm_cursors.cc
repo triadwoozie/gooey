@@ -63,12 +63,29 @@ static GHOST_TStandardCursor convert_to_ghost_standard_cursor(WMCursorType curs)
       return GHOST_kStandardCursorWait;
     case WM_CURSOR_EDIT:
     case WM_CURSOR_CROSS:
+    case WM_CURSOR_PAINT:
+    case WM_CURSOR_DOT:
+    case WM_CURSOR_CROSSC:
+    case WM_CURSOR_KNIFE:
+    case WM_CURSOR_BLADE:
+    case WM_CURSOR_VERTEX_LOOP:
       return GHOST_kStandardCursorCrosshair;
     case WM_CURSOR_MOVE:
+    case WM_CURSOR_SWAP_AREA:
+    case WM_CURSOR_PICK_AREA:
       return GHOST_kStandardCursorMove;
     case WM_CURSOR_X_MOVE:
+    case WM_CURSOR_EW_ARROW:
+    case WM_CURSOR_EW_SCROLL:
+    case WM_CURSOR_H_SPLIT:
+    case WM_CURSOR_LEFT_HANDLE:
+    case WM_CURSOR_RIGHT_HANDLE:
+    case WM_CURSOR_BOTH_HANDLES:
       return GHOST_kStandardCursorLeftRight;
     case WM_CURSOR_Y_MOVE:
+    case WM_CURSOR_NS_ARROW:
+    case WM_CURSOR_NS_SCROLL:
+    case WM_CURSOR_V_SPLIT:
       return GHOST_kStandardCursorUpDown;
     case WM_CURSOR_COPY:
       return GHOST_kStandardCursorCopy;
@@ -78,34 +95,23 @@ static GHOST_TStandardCursor convert_to_ghost_standard_cursor(WMCursorType curs)
       return GHOST_kStandardCursorHandClosed;
     case WM_CURSOR_HAND_POINT:
       return GHOST_kStandardCursorHandPoint;
-    case WM_CURSOR_H_SPLIT:
-      return GHOST_kStandardCursorHorizontalSplit;
-    case WM_CURSOR_V_SPLIT:
-      return GHOST_kStandardCursorVerticalSplit;
     case WM_CURSOR_STOP:
+    case WM_CURSOR_MUTE:
       return GHOST_kStandardCursorStop;
-    case WM_CURSOR_KNIFE:
-      return GHOST_kStandardCursorKnife;
     case WM_CURSOR_NSEW_SCROLL:
       return GHOST_kStandardCursorNSEWScroll;
-    case WM_CURSOR_NS_SCROLL:
-      return GHOST_kStandardCursorNSScroll;
-    case WM_CURSOR_EW_SCROLL:
-      return GHOST_kStandardCursorEWScroll;
     case WM_CURSOR_EYEDROPPER:
       return GHOST_kStandardCursorEyedropper;
     case WM_CURSOR_N_ARROW:
       return GHOST_kStandardCursorUpArrow;
     case WM_CURSOR_S_ARROW:
       return GHOST_kStandardCursorDownArrow;
-    case WM_CURSOR_PAINT:
-      return GHOST_kStandardCursorCrosshairA;
-    case WM_CURSOR_DOT:
-      return GHOST_kStandardCursorCrosshairB;
-    case WM_CURSOR_CROSSC:
-      return GHOST_kStandardCursorCrosshairC;
-    case WM_CURSOR_ERASER:
-      return GHOST_kStandardCursorEraser;
+    case WM_CURSOR_E_ARROW:
+      return GHOST_kStandardCursorRightArrow;
+    case WM_CURSOR_W_ARROW:
+      return GHOST_kStandardCursorLeftArrow;
+    case WM_CURSOR_NW_ARROW:
+      return GHOST_kStandardCursorTopLeftCorner;
     case WM_CURSOR_ZOOM_IN:
       return GHOST_kStandardCursorZoomIn;
     case WM_CURSOR_ZOOM_OUT:
@@ -113,21 +119,10 @@ static GHOST_TStandardCursor convert_to_ghost_standard_cursor(WMCursorType curs)
     case WM_CURSOR_TEXT_EDIT:
       return GHOST_kStandardCursorText;
     case WM_CURSOR_PAINT_BRUSH:
+    case WM_CURSOR_ERASER:
       return GHOST_kStandardCursorPencil;
-    case WM_CURSOR_E_ARROW:
-      return GHOST_kStandardCursorRightArrow;
-    case WM_CURSOR_W_ARROW:
-      return GHOST_kStandardCursorLeftArrow;
-    case WM_CURSOR_LEFT_HANDLE:
-      return GHOST_kStandardCursorLeftHandle;
-    case WM_CURSOR_RIGHT_HANDLE:
-      return GHOST_kStandardCursorRightHandle;
-    case WM_CURSOR_BOTH_HANDLES:
-      return GHOST_kStandardCursorBothHandles;
-    case WM_CURSOR_BLADE:
-      return GHOST_kStandardCursorBlade;
     default:
-      return GHOST_kStandardCursorCustom;
+      return GHOST_kStandardCursorDefault;
   }
 }
 
@@ -202,23 +197,15 @@ void WM_cursor_set(wmWindow *win, int curs)
 
   GHOST_TStandardCursor ghost_cursor = convert_to_ghost_standard_cursor(WMCursorType(curs));
 
-  if (ghost_cursor != GHOST_kStandardCursorCustom &&
-      GHOST_HasCursorShape(static_cast<GHOST_WindowHandle>(win->ghostwin), ghost_cursor))
-  {
-    /* Use native GHOST cursor when available. */
+  /* Map window manager cursor directly to standard GHOST system cursor.
+   * If the standard shape is supported by the OS windowing backend, set it;
+   * otherwise fallback directly to OS default arrow without software bitmap blitting. */
+  if (GHOST_HasCursorShape(static_cast<GHOST_WindowHandle>(win->ghostwin), ghost_cursor)) {
     GHOST_SetCursorShape(static_cast<GHOST_WindowHandle>(win->ghostwin), ghost_cursor);
   }
   else {
-    BCursor *bcursor = BlenderCursor[curs];
-    if (bcursor) {
-      /* Use custom bitmap cursor. */
-      window_set_custom_cursor(win, bcursor);
-    }
-    else {
-      /* Fall back to default cursor if no bitmap found. */
-      GHOST_SetCursorShape(static_cast<GHOST_WindowHandle>(win->ghostwin),
-                           GHOST_kStandardCursorDefault);
-    }
+    GHOST_SetCursorShape(static_cast<GHOST_WindowHandle>(win->ghostwin),
+                         GHOST_kStandardCursorDefault);
   }
 }
 

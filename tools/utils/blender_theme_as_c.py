@@ -157,11 +157,22 @@ def dna_rename_defs(blend):
 
 
 def theme_data(userpref_filename):
-    import blendfile
+    try:
+        import blendfile
+    except ModuleNotFoundError:
+        # System python doesn't have zstandard; re-invoke with Blender's bundled python
+        blender_bin = os.path.abspath(os.path.join(
+            os.path.dirname(__file__), "..", "..", "..", "build_linux_4.5", "bin", "blender"
+        ))
+        import sys, shutil, subprocess
+        if not os.path.exists(blender_bin):
+            blender_bin = shutil.which("blender") or "blender"
+        cmd = [blender_bin, "--background", "--factory-startup", "--python", __file__, "--"] + sys.argv[1:]
+        subprocess.run(cmd, check=True)
+        sys.exit(0)
     blend = blendfile.open_blend(userpref_filename)
     dna_rename_defs(blend)
     u = next((c for c in blend.blocks if c.code == b'USER'), None)
-    # theme_type = b.sdna_index_from_id[b'bTheme']
     t = u.get_pointer((b'themes', b'first'))
     t.refine_type(b'bTheme')
     return blend, t
@@ -286,12 +297,50 @@ def file_remove_empty_braces(source_dst):
 
 def main():
     import sys
-    blend, theme = theme_data(sys.argv[-1])
-    with open(source_dst, 'w', encoding='utf-8') as fh:
-        convert_data(blend, theme, fh)
+    import shutil
+    import subprocess
 
-    # Microsoft Visual Studio doesn't support empty braces.
-    file_remove_empty_braces(source_dst)
+    argv = sys.argv
+    if "--" in argv:
+        argv = argv[argv.index("--") + 1:]
+
+    input_file = argv[0] if argv else source_dst
+    target_dst = argv[1] if len(argv) > 1 else source_dst
+
+    if input_file.endswith(".xml"):
+        # If an XML preset was passed, convert via Blender headless into temporary userpref.blend
+        blender_bin = os.path.abspath(os.path.join(
+            os.path.dirname(__file__), "..", "..", "..", "build_linux_4.5", "bin", "blender"
+        ))
+        if not os.path.exists(blender_bin):
+            blender_bin = shutil.which("blender") or "blender"
+
+        tmp_dir = "/tmp/theme_c_conv"
+        os.makedirs(tmp_dir, exist_ok=True)
+        py_cmd = (
+            f"import bpy, rna_xml; "
+            f"rna_xml.xml_file_run(bpy.context, '{os.path.abspath(input_file)}', "
+            f"(('preferences.themes[0]', 'Theme'), ('preferences.ui_styles[0]', 'ThemeStyle'))); "
+            f"bpy.ops.wm.save_userpref()"
+        )
+        env = os.environ.copy()
+        env["BLENDER_USER_CONFIG"] = tmp_dir
+        subprocess.run([blender_bin, "--background", "--factory-startup", "--python-expr", py_cmd],
+                       env=env, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        blend_path = os.path.join(tmp_dir, "userpref.blend")
+        blend, theme = theme_data(blend_path)
+    else:
+        blend, theme = theme_data(input_file)
+
+    os.makedirs(os.path.dirname(target_dst), exist_ok=True)
+    with open(target_dst, 'w', encoding='utf-8') as fh:
+        convert_data(blend, theme, fh)
+    file_remove_empty_braces(target_dst)
+
+    # If target_dst is not standard source_dst, also sync source_dst
+    if os.path.abspath(target_dst) != os.path.abspath(source_dst):
+        os.makedirs(os.path.dirname(source_dst), exist_ok=True)
+        shutil.copyfile(target_dst, source_dst)
 
 
 if __name__ == "__main__":

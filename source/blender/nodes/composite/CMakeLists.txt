@@ -74,6 +74,7 @@ set(SRC
   nodes/node_composite_kuwahara.cc
   nodes/node_composite_lensdist.cc
   nodes/node_composite_levels.cc
+  nodes/node_composite_lfga.cc
   nodes/node_composite_luma_matte.cc
   nodes/node_composite_map_range.cc
   nodes/node_composite_map_uv.cc
@@ -106,6 +107,7 @@ set(SRC
   nodes/node_composite_sunbeams.cc
   nodes/node_composite_switch.cc
   nodes/node_composite_switchview.cc
+  nodes/node_composite_tepd.cc
   nodes/node_composite_texture.cc
   nodes/node_composite_tonemap.cc
   nodes/node_composite_trackpos.cc

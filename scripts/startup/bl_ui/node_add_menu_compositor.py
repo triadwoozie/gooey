@@ -157,6 +157,8 @@ class NODE_MT_category_compositor_filter(Menu):
         layout.separator()
         node_add_menu.add_node_type_with_searchable_enum(context, layout, "CompositorNodeFilter", "filter_type")
         node_add_menu.add_node_type(layout, "CompositorNodeFSR1")
+        node_add_menu.add_node_type(layout, "CompositorNodeLFGA")
+        node_add_menu.add_node_type(layout, "CompositorNodeTEPD")
         node_add_menu.add_node_type_with_searchable_enum(context, layout, "CompositorNodeGlare", "glare_type")
         node_add_menu.add_node_type(layout, "CompositorNodeKuwahara")
         node_add_menu.add_node_type(layout, "CompositorNodePixelate")

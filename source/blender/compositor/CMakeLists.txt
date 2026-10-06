@@ -190,6 +190,8 @@ set(GLSL_SRC
   shaders/compositor_fsr1_easu.glsl
   shaders/compositor_fsr1_rcas.glsl
   shaders/compositor_gamma_correct.glsl
+  shaders/compositor_lfga.glsl
+  shaders/compositor_tepd.glsl
   shaders/compositor_glare_bloom_downsample.glsl
   shaders/compositor_glare_bloom_upsample.glsl
   shaders/compositor_glare_ghost_accumulate.glsl

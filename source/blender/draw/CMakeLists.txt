@@ -17,10 +17,19 @@ set(INC
   ../compositor/derived_resources
 
   ../../../intern/opensubdiv
+  ../../../intern/nvngx_bridge/include
 )
 
 set(INC_SYS
 )
+
+set(_nvngx_vulkan_inc "${CMAKE_SOURCE_DIR}/lib/linux_x64/vulkan/include")
+if(NOT EXISTS "${_nvngx_vulkan_inc}/vulkan/vulkan.h")
+  set(_nvngx_vulkan_inc "${CMAKE_SOURCE_DIR}/../lib/linux_x64/vulkan/include")
+endif()
+if(EXISTS "${_nvngx_vulkan_inc}/vulkan/vulkan.h")
+  list(APPEND INC_SYS "${_nvngx_vulkan_inc}")
+endif()
 
 set(SRC
   intern/attribute_convert.cc
@@ -117,6 +126,7 @@ set(SRC
   engines/eevee/eevee_shadow.cc
   engines/eevee/eevee_subsurface.cc
   engines/eevee/eevee_sync.cc
+  engines/eevee/eevee_upscale.cc
   engines/eevee/eevee_velocity.cc
   engines/eevee/eevee_view.cc
   engines/eevee/eevee_volume.cc
@@ -212,6 +222,7 @@ set(SRC
   engines/eevee/eevee_shadow.hh
   engines/eevee/eevee_subsurface.hh
   engines/eevee/eevee_sync.hh
+  engines/eevee/eevee_upscale.hh
   engines/eevee/eevee_velocity.hh
   engines/eevee/eevee_view.hh
   engines/eevee/eevee_volume.hh
@@ -308,6 +319,7 @@ set(LIB
   PRIVATE bf::windowmanager
   PRIVATE bf::intern::atomic
   PRIVATE bf::extern::fmtlib
+  bf_intern_nvngx_bridge
 )
 
 set(GLSL_SRC

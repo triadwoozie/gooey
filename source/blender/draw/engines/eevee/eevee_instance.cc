@@ -211,6 +211,7 @@ void Instance::init(const int2 &output_res,
   volume_probes.init();
   volume.init();
   lookdev.init(visible_rect);
+  upscale.init();
 
   /* Request static shaders */
   ShaderGroups shader_request = DEFERRED_LIGHTING_SHADERS | SHADOW_SHADERS | FILM_SHADERS |
@@ -348,6 +349,7 @@ void Instance::begin_sync()
   ambient_occlusion.sync();
   volume_probes.sync();
   lookdev.sync();
+  upscale.begin_sync();
 
   use_surfaces = (view_layer->layflag & SCE_LAY_SOLID) != 0;
   use_curves = (view_layer->layflag & SCE_LAY_STRAND) != 0;
@@ -463,6 +465,7 @@ void Instance::end_sync()
   light_probes.end_sync();
   sphere_probes.end_sync();
   planar_probes.end_sync();
+  upscale.end_sync();
 
   uniform_data.push_update();
 

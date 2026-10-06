@@ -77,3 +77,5 @@ if(UNIX AND NOT APPLE)
     add_subdirectory(wayland_dynload)
   endif()
 endif()
+
+add_subdirectory(nvngx_bridge)

@@ -47,6 +47,7 @@
 #include "eevee_shadow.hh"
 #include "eevee_subsurface.hh"
 #include "eevee_sync.hh"
+#include "eevee_upscale.hh"
 #include "eevee_view.hh"
 #include "eevee_volume.hh"
 #include "eevee_world.hh"
@@ -119,6 +120,7 @@ class Instance : public DrawEngine {
   VolumeProbeModule volume_probes;
   LightProbeModule light_probes;
   VolumeModule volume;
+  UpscaleModule upscale;
 
   /** Input data. */
   Depsgraph *depsgraph;
@@ -198,7 +200,8 @@ class Instance : public DrawEngine {
         planar_probes(*this),
         volume_probes(*this),
         light_probes(*this),
-        volume(*this, uniform_data.data.volumes){};
+        volume(*this, uniform_data.data.volumes),
+        upscale(*this){};
   ~Instance(){};
 
   blender::StringRefNull name_get() final

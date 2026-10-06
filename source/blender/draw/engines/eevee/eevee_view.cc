@@ -159,6 +159,10 @@ void ShadingView::render()
 
   GPUTexture *combined_final_tx = render_postfx(rbufs.combined_tx);
   inst_.film.accumulate(jitter_view_, combined_final_tx);
+  if (inst_.upscale.is_enabled()) {
+    inst_.upscale.process(
+        render_view_, combined_final_tx, rbufs.depth_tx, rbufs.vector_tx);
+  }
 
   rbufs.release();
   postfx_tx_.release();

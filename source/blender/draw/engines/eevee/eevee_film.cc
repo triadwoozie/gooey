@@ -303,8 +303,8 @@ void Film::init(const int2 &extent, const rcti *output_rect)
                                                    inst_.v3d->shading.render_pass) |
                                                viewport_compositor_enabled_passes_;
 
-      if (inst_.overlays_enabled() || inst_.gpencil_engine_enabled()) {
-        /* Overlays and Grease Pencil needs the depth for correct compositing.
+      if (inst_.overlays_enabled() || inst_.gpencil_engine_enabled() || inst_.upscale.is_enabled()) {
+        /* Overlays, Grease Pencil, and FSR 3.1 upscale need the depth for correct compositing.
          * Using the render pass ensure we store the center depth. */
         enabled_passes |= EEVEE_RENDER_PASS_Z;
       }
@@ -694,8 +694,8 @@ float2 Film::pixel_jitter_get() const
 
 eViewLayerEEVEEPassType Film::enabled_passes_get() const
 {
-  if (inst_.is_viewport() && use_reprojection_) {
-    /* Enable motion vector rendering but not the accumulation buffer. */
+  if ((inst_.is_viewport() && use_reprojection_) || inst_.upscale.is_enabled()) {
+    /* Enable motion vector rendering. */
     return enabled_passes_ | EEVEE_RENDER_PASS_VECTOR;
   }
   return enabled_passes_;

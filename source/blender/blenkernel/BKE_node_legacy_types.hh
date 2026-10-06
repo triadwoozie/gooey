@@ -272,6 +272,8 @@
 #define CMP_NODE_SEPARATE_COLOR 333
 #define CMP_NODE_IMAGE_INFO 334
 #define CMP_NODE_FSR1 850
+#define CMP_NODE_LFGA 851
+#define CMP_NODE_TEPD 852
 
 /* channel toggles */
 #define CMP_CHAN_RGB 1

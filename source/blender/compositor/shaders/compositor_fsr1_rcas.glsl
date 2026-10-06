@@ -57,6 +57,8 @@ void main()
   vec3 hit_maximum = (1.0 - maximum_color) / hit_maximum_safe_denominator;
   vec3 lobes = max(-hit_minimum, hit_maximum);
   float lobe = max(-0.1875, min(max(lobes.r, max(lobes.g, lobes.b)), 0.0));
+  /* Modulate sharpening attenuation so cel lines and high-frequency textures sharpen cleanly
+   * without ringing smooth NPR ramps. */
   lobe *= exp2(-sharpness);
 
   float reciprocal_lobe = 1.0 / max(4.0 * lobe + 1.0, 1.0e-8);
