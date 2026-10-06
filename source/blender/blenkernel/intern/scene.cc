@@ -2947,6 +2947,29 @@ int BKE_render_preview_pixel_size(const RenderData *r)
   return r->preview_pixel_size;
 }
 
+static Fsr3Telemetry g_fsr3_telemetry = {
+    false, false, 0, 0, 0, 0, 1.0f, 0.0f, 0, "Standby"};
+
+void BKE_render_fsr3_telemetry_get(const RenderData *r, Fsr3Telemetry *r_telemetry)
+{
+  if (!r_telemetry) {
+    return;
+  }
+  *r_telemetry = g_fsr3_telemetry;
+  if (!r || !r->use_fsr3) {
+    r_telemetry->enabled = false;
+    r_telemetry->active = false;
+    STRNCPY(r_telemetry->status, "Disabled (Checkmark to Enable)");
+  }
+}
+
+void BKE_render_fsr3_telemetry_set(const Fsr3Telemetry *telemetry)
+{
+  if (telemetry) {
+    g_fsr3_telemetry = *telemetry;
+  }
+}
+
 /******************** multiview *************************/
 
 int BKE_scene_multiview_num_views_get(const RenderData *rd)

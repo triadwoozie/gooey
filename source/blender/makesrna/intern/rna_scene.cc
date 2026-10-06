@@ -1780,6 +1780,113 @@ static bool rna_RenderSettings_use_spherical_stereo_get(PointerRNA *ptr)
   return BKE_scene_use_spherical_stereo(scene);
 }
 
+static void rna_RenderSettings_fsr3_stats_render_res_get(PointerRNA *ptr, char *value)
+{
+  RenderData *rd = (RenderData *)ptr->data;
+  Fsr3Telemetry tel;
+  BKE_render_fsr3_telemetry_get(rd, &tel);
+  if (tel.render_w > 0 && tel.render_h > 0) {
+    snprintf(value, 64, "%d × %d", tel.render_w, tel.render_h);
+  }
+  else {
+    strcpy(value, "—");
+  }
+}
+
+static int rna_RenderSettings_fsr3_stats_render_res_length(PointerRNA *ptr)
+{
+  char buf[64];
+  rna_RenderSettings_fsr3_stats_render_res_get(ptr, buf);
+  return int(strlen(buf));
+}
+
+static void rna_RenderSettings_fsr3_stats_display_res_get(PointerRNA *ptr, char *value)
+{
+  RenderData *rd = (RenderData *)ptr->data;
+  Fsr3Telemetry tel;
+  BKE_render_fsr3_telemetry_get(rd, &tel);
+  if (tel.display_w > 0 && tel.display_h > 0) {
+    snprintf(value, 64, "%d × %d", tel.display_w, tel.display_h);
+  }
+  else {
+    strcpy(value, "—");
+  }
+}
+
+static int rna_RenderSettings_fsr3_stats_display_res_length(PointerRNA *ptr)
+{
+  char buf[64];
+  rna_RenderSettings_fsr3_stats_display_res_get(ptr, buf);
+  return int(strlen(buf));
+}
+
+static void rna_RenderSettings_fsr3_stats_scale_get(PointerRNA *ptr, char *value)
+{
+  RenderData *rd = (RenderData *)ptr->data;
+  Fsr3Telemetry tel;
+  BKE_render_fsr3_telemetry_get(rd, &tel);
+  if (tel.scale > 0.0f && tel.scale != 1.0f) {
+    snprintf(value, 64, "%.2f× (%.2f× area)", tel.scale, tel.scale * tel.scale);
+  }
+  else if (tel.scale == 1.0f && tel.active) {
+    strcpy(value, "1.00× (Native AA)");
+  }
+  else {
+    strcpy(value, "1.00× (Native)");
+  }
+}
+
+static int rna_RenderSettings_fsr3_stats_scale_length(PointerRNA *ptr)
+{
+  char buf[64];
+  rna_RenderSettings_fsr3_stats_scale_get(ptr, buf);
+  return int(strlen(buf));
+}
+
+static void rna_RenderSettings_fsr3_stats_time_get(PointerRNA *ptr, char *value)
+{
+  RenderData *rd = (RenderData *)ptr->data;
+  Fsr3Telemetry tel;
+  BKE_render_fsr3_telemetry_get(rd, &tel);
+  if (tel.time_ms > 0.0f) {
+    snprintf(value, 64, "%.2f ms", tel.time_ms);
+  }
+  else {
+    strcpy(value, "—");
+  }
+}
+
+static int rna_RenderSettings_fsr3_stats_time_length(PointerRNA *ptr)
+{
+  char buf[64];
+  rna_RenderSettings_fsr3_stats_time_get(ptr, buf);
+  return int(strlen(buf));
+}
+
+static int rna_RenderSettings_fsr3_stats_frames_get(PointerRNA *ptr)
+{
+  RenderData *rd = (RenderData *)ptr->data;
+  Fsr3Telemetry tel;
+  BKE_render_fsr3_telemetry_get(rd, &tel);
+  return tel.frames;
+}
+
+static void rna_RenderSettings_fsr3_stats_status_get(PointerRNA *ptr, char *value)
+{
+  RenderData *rd = (RenderData *)ptr->data;
+  Fsr3Telemetry tel;
+  BKE_render_fsr3_telemetry_get(rd, &tel);
+  strncpy(value, tel.status, 63);
+  value[63] = '\0';
+}
+
+static int rna_RenderSettings_fsr3_stats_status_length(PointerRNA *ptr)
+{
+  char buf[64];
+  rna_RenderSettings_fsr3_stats_status_get(ptr, buf);
+  return int(strlen(buf));
+}
+
 void rna_Scene_render_update(Main * /*bmain*/, Scene * /*scene*/, PointerRNA *ptr)
 {
   Scene *scene = (Scene *)ptr->owner_id;
@@ -7036,6 +7143,16 @@ static void rna_def_scene_render_data(BlenderRNA *brna)
       {0, nullptr, 0, nullptr, nullptr},
   };
 
+  static const EnumPropertyItem fsr3_quality_items[] = {
+      {SCE_FSR3_AUTO, "AUTO", 0, "Auto", "Automatically derive scaling from viewport pixel size and render resolution percentage"},
+      {SCE_FSR3_QUALITY, "QUALITY", 0, "Quality (1.5x)", "1.5x upscale ratio (67% render scale)"},
+      {SCE_FSR3_BALANCED, "BALANCED", 0, "Balanced (1.7x)", "1.7x upscale ratio (59% render scale)"},
+      {SCE_FSR3_PERFORMANCE, "PERFORMANCE", 0, "Performance (2.0x)", "2.0x upscale ratio (50% render scale)"},
+      {SCE_FSR3_ULTRA_PERFORMANCE, "ULTRA_PERFORMANCE", 0, "Ultra Performance (3.0x)", "3.0x upscale ratio (33% render scale)"},
+      {SCE_FSR3_NATIVE_AA, "NATIVE_AA", 0, "Native AA (1.0x)", "Native resolution temporal anti-aliasing"},
+      {0, nullptr, 0, nullptr, nullptr},
+  };
+
   rna_def_scene_ffmpeg_settings(brna);
 
   srna = RNA_def_struct(brna, "RenderSettings", nullptr);
@@ -7827,6 +7944,83 @@ static void rna_def_scene_render_data(BlenderRNA *brna)
                            "The quality used by denoise nodes during the compositing of final "
                            "renders if the nodes' quality option is set to Follow Scene");
   RNA_def_property_update(prop, NC_NODE | ND_DISPLAY, "rna_Scene_compositor_update");
+
+  /* AMD FSR 3.1.5 Temporal Upscaling */
+  prop = RNA_def_property(srna, "use_fsr3", PROP_BOOLEAN, PROP_NONE);
+  RNA_def_property_boolean_sdna(prop, nullptr, "use_fsr3", 1);
+  RNA_def_property_ui_text(prop,
+                           "Use AMD FSR 3.1.5",
+                           "Enable AMD FidelityFX Super Resolution 3.1.5 temporal upscaling");
+  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "rna_Scene_render_update");
+
+  prop = RNA_def_property(srna, "fsr3_sharpness", PROP_FLOAT, PROP_FACTOR);
+  RNA_def_property_float_sdna(prop, nullptr, "fsr3_sharpness");
+  RNA_def_property_range(prop, 0.0f, 1.0f);
+  RNA_def_property_ui_range(prop, 0.0f, 1.0f, 0.05f, 2);
+  RNA_def_property_ui_text(prop,
+                           "FSR 3.1.5 Sharpness",
+                           "Contrast adaptive sharpening factor for FSR 3.1.5 temporal reconstruction");
+  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "rna_Scene_render_update");
+
+  prop = RNA_def_property(srna, "fsr3_quality", PROP_ENUM, PROP_NONE);
+  RNA_def_property_enum_sdna(prop, nullptr, "fsr3_quality");
+  RNA_def_property_enum_items(prop, fsr3_quality_items);
+  RNA_def_property_enum_default(prop, SCE_FSR3_AUTO);
+  RNA_def_property_ui_text(prop,
+                           "FSR 3.1.5 Quality Mode",
+                           "Quality preset determining internal render scale and reconstruct ratio");
+  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "rna_Scene_render_update");
+
+  prop = RNA_def_property(srna, "show_fsr3_stats", PROP_BOOLEAN, PROP_NONE);
+  RNA_def_property_boolean_sdna(prop, nullptr, "show_fsr3_stats", 1);
+  RNA_def_property_ui_text(prop,
+                           "Show FSR 3.1.5 Statistics",
+                           "Display live resolution, timing, and upscale telemetry");
+
+  prop = RNA_def_property(srna, "fsr3_stats_render_res", PROP_STRING, PROP_NONE);
+  RNA_def_property_string_funcs(prop,
+                                "rna_RenderSettings_fsr3_stats_render_res_get",
+                                "rna_RenderSettings_fsr3_stats_render_res_length",
+                                nullptr);
+  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
+  RNA_def_property_ui_text(prop, "FSR Render Resolution", "Internal low-resolution render buffer dimensions");
+
+  prop = RNA_def_property(srna, "fsr3_stats_display_res", PROP_STRING, PROP_NONE);
+  RNA_def_property_string_funcs(prop,
+                                "rna_RenderSettings_fsr3_stats_display_res_get",
+                                "rna_RenderSettings_fsr3_stats_display_res_length",
+                                nullptr);
+  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
+  RNA_def_property_ui_text(prop, "FSR Display Resolution", "Reconstructed native display buffer dimensions");
+
+  prop = RNA_def_property(srna, "fsr3_stats_scale", PROP_STRING, PROP_NONE);
+  RNA_def_property_string_funcs(prop,
+                                "rna_RenderSettings_fsr3_stats_scale_get",
+                                "rna_RenderSettings_fsr3_stats_scale_length",
+                                nullptr);
+  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
+  RNA_def_property_ui_text(prop, "FSR Scale Ratio", "Effective upscaling multiplier and fill factor");
+
+  prop = RNA_def_property(srna, "fsr3_stats_time", PROP_STRING, PROP_NONE);
+  RNA_def_property_string_funcs(prop,
+                                "rna_RenderSettings_fsr3_stats_time_get",
+                                "rna_RenderSettings_fsr3_stats_time_length",
+                                nullptr);
+  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
+  RNA_def_property_ui_text(prop, "FSR Frame Time", "Measured GPU compute execution time per frame");
+
+  prop = RNA_def_property(srna, "fsr3_stats_frames", PROP_INT, PROP_NONE);
+  RNA_def_property_int_funcs(prop, "rna_RenderSettings_fsr3_stats_frames_get", nullptr, nullptr);
+  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
+  RNA_def_property_ui_text(prop, "FSR Frames", "Total number of temporal frames processed");
+
+  prop = RNA_def_property(srna, "fsr3_stats_status", PROP_STRING, PROP_NONE);
+  RNA_def_property_string_funcs(prop,
+                                "rna_RenderSettings_fsr3_stats_status_get",
+                                "rna_RenderSettings_fsr3_stats_status_length",
+                                nullptr);
+  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
+  RNA_def_property_ui_text(prop, "FSR Status", "Active reconstruction pipeline state");
 
   /* Nestled Data. */
   /* *** Non-Animated *** */

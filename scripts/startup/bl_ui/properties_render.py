@@ -832,6 +832,46 @@ class RENDER_PT_eevee_performance_memory(RenderButtonsPanel, Panel):
         layout.prop(props, "gi_irradiance_pool_size", text="Light Probes Volume Pool")
 
 
+class RENDER_PT_eevee_next_fsr3(RenderButtonsPanel, Panel):
+    bl_label = "FSR 3 / FidelityFX"
+    bl_options = {'DEFAULT_CLOSED'}
+    bl_order = 6
+    COMPAT_ENGINES = {
+        'BLENDER_EEVEE',
+        'BLENDER_EEVEE_NEXT',
+        'CYCLES',
+        'BLENDER_WORKBENCH',
+    }
+
+    def draw_header(self, context):
+        rd = context.scene.render
+        self.layout.prop(rd, "use_fsr3", text="")
+
+    def draw(self, context):
+        layout = self.layout
+        layout.use_property_split = True
+        layout.use_property_decorate = False
+
+        rd = context.scene.render
+        layout.active = rd.use_fsr3
+
+        col = layout.column()
+        col.prop(rd, "use_fsr3", text="Enable AMD FSR 3.1.5")
+        if rd.use_fsr3:
+            col.prop(rd, "fsr3_quality", text="Quality Mode")
+            col.prop(rd, "fsr3_sharpness", text="Sharpness", slider=True)
+            col.prop(rd, "preview_pixel_size", text="Viewport Pixel Size")
+            col.prop(rd, "show_fsr3_stats", text="Display HUD / Telemetry")
+
+            if rd.show_fsr3_stats:
+                box = layout.box()
+                box.use_property_split = False
+                box.label(text=f"Status: {rd.fsr3_stats_status}", icon='INFO')
+                box.label(text=f"Render: {rd.fsr3_stats_render_res}  →  Display: {rd.fsr3_stats_display_res}")
+                box.label(text=f"Scale: {rd.fsr3_stats_scale}  |  Frametime: {rd.fsr3_stats_time}")
+                box.label(text=f"Frames Reconstructed: {rd.fsr3_stats_frames}")
+
+
 class RENDER_PT_eevee_performance_viewport(RenderButtonsPanel, Panel):
     bl_label = "Viewport"
     bl_parent_id = "RENDER_PT_eevee_performance"
@@ -852,6 +892,20 @@ class RENDER_PT_eevee_performance_viewport(RenderButtonsPanel, Panel):
 
         col = layout.column()
         col.prop(rd, "preview_pixel_size", text="Pixel Size")
+        col.separator()
+        col.prop(rd, "use_fsr3", text="Use AMD FSR 3.1.5")
+        if rd.use_fsr3:
+            sub = col.column(align=True)
+            sub.prop(rd, "fsr3_quality", text="Quality")
+            sub.prop(rd, "fsr3_sharpness", text="Sharpness", slider=True)
+            sub.prop(rd, "show_fsr3_stats", text="Show FSR Stats")
+            if rd.show_fsr3_stats:
+                box = col.box()
+                box.use_property_split = False
+                box.label(text=f"Status: {rd.fsr3_stats_status}", icon='INFO')
+                box.label(text=f"Render: {rd.fsr3_stats_render_res}  →  Display: {rd.fsr3_stats_display_res}")
+                box.label(text=f"Ratio: {rd.fsr3_stats_scale}  |  Time: {rd.fsr3_stats_time}")
+                box.label(text=f"Frames: {rd.fsr3_stats_frames}")
 
 
 # TODO(falk): To rename for 5.0
@@ -1134,6 +1188,7 @@ classes = (
     RENDER_PT_eevee_performance,
     RENDER_PT_eevee_performance_memory,
     RENDER_PT_eevee_performance_viewport,
+    RENDER_PT_eevee_next_fsr3,
     RENDER_PT_eevee_performance_compositor,
     RENDER_PT_eevee_performance_compositor_denoise_settings,
 

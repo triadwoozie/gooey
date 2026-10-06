@@ -237,6 +237,22 @@ int BKE_render_num_threads(const RenderData *r);
 void BKE_render_resolution(const RenderData *r, const bool use_crop, int *r_width, int *r_height);
 int BKE_render_preview_pixel_size(const RenderData *r);
 
+struct Fsr3Telemetry {
+  bool enabled;
+  bool active;
+  int render_w;
+  int render_h;
+  int display_w;
+  int display_h;
+  float scale;
+  float time_ms;
+  int frames;
+  char status[128];
+};
+
+void BKE_render_fsr3_telemetry_get(const RenderData *r, Fsr3Telemetry *r_telemetry);
+void BKE_render_fsr3_telemetry_set(const Fsr3Telemetry *telemetry);
+
 /**********************************/
 
 /* Multi-view. */

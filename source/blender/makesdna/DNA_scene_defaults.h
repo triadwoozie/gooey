@@ -134,6 +134,10 @@
 \
     .compositor_denoise_final_quality = SCE_COMPOSITOR_DENOISE_HIGH, \
     .compositor_denoise_preview_quality = SCE_COMPOSITOR_DENOISE_BALANCED, \
+    .use_fsr3 = 0, \
+    .show_fsr3_stats = 0, \
+    .fsr3_quality = 0, \
+    .fsr3_sharpness = 0.5f, \
   }
 
 #define _DNA_DEFAULT_AudioData \

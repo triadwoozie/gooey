@@ -119,6 +119,21 @@ class RENDER_PT_format(RenderOutputButtonsPanel, Panel):
         col.prop(rd, "resolution_y", text="Y")
         col.prop(rd, "resolution_percentage", text="%")
 
+        col.separator()
+        col.prop(rd, "use_fsr3", text="Enable AMD FSR 3.1.5")
+        if rd.use_fsr3:
+            sub = col.column(align=True)
+            sub.prop(rd, "fsr3_quality", text="Quality Mode")
+            sub.prop(rd, "fsr3_sharpness", text="Sharpness", slider=True)
+            sub.prop(rd, "show_fsr3_stats", text="Display HUD / Telemetry")
+            if rd.show_fsr3_stats:
+                box = col.box()
+                box.use_property_split = False
+                box.label(text=f"Status: {rd.fsr3_stats_status}", icon='INFO')
+                box.label(text=f"Render: {rd.fsr3_stats_render_res}  →  Display: {rd.fsr3_stats_display_res}")
+                box.label(text=f"Scale: {rd.fsr3_stats_scale}  |  Frametime: {rd.fsr3_stats_time}")
+                box.label(text=f"Frames Reconstructed: {rd.fsr3_stats_frames}")
+
         col = layout.column(align=True)
         col.prop(rd, "pixel_aspect_x", text="Aspect X")
         col.prop(rd, "pixel_aspect_y", text="Y")
