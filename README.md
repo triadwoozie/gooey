@@ -28,7 +28,7 @@
 
 ### 3. Native System Cursors & UI Refinement
 - **Native System Cursors**: Window manager cursor calls map directly to standard host desktop environment / OS system cursors (Wayland, X11, Win32, macOS) without software bitmap blitting.
-- **Tokyo Night UI**: Darkened interface theme with flat inactive workspace tabs, soft rounded active pills, and seamless header integration.
+- **Darkened & Tokyo Themes**: Polished interface themes featuring flat inactive workspace tabs, soft rounded active pills, and seamless header integration.
 
 ---
 
@@ -37,6 +37,8 @@
 - **Splash Artwork**: *Art by 878hyuop*
 - **Base Engine**: Blender 4.5.14 LTS
 - **Stylized Shading**: Goo Engine NPR Project
+- **Tokyo Dark / Tokyo Night Theme**: Inspired by Tiago Ventura ([tokyodark.nvim](https://github.com/tiagovla/tokyodark.nvim)) and enkia ([tokyo-night](https://github.com/enkia/tokyo-night-vscode-theme))
+- **Alien Pink Theme**: [Alumx/Alien-Pink-Blender-theme](https://github.com/Alumx/Alien-Pink-Blender-theme)
 
 ---
 
@@ -69,3 +71,44 @@ ninja -C ../build_linux_4.5 blender
 ```bash
 ../build_linux_4.5/bin/blender
 ```
+
+---
+
+<!--
+Keep this document short & concise,
+linking to external resources instead of including content in-line.
+See 'release/text/readme.html' for the end user read-me.
+-->
+
+Blender
+=======
+
+Blender is the free and open source 3D creation suite.
+It supports the entirety of the 3D pipeline—modeling, rigging, animation, simulation, rendering, compositing,
+motion tracking and video editing.
+
+![Blender screenshot](https://code.blender.org/wp-content/uploads/2018/12/springrg.jpg "Blender screenshot")
+
+Project Pages
+-------------
+
+- [Main Website](http://www.blender.org)
+- [Reference Manual](https://docs.blender.org/manual/en/latest/index.html)
+- [User Community](https://www.blender.org/community/)
+
+Development
+-----------
+
+- [Build Instructions](https://developer.blender.org/docs/handbook/building_blender/)
+- [Code Review & Bug Tracker](https://projects.blender.org)
+- [Developer Forum](https://devtalk.blender.org)
+- [Developer Documentation](https://developer.blender.org/docs/)
+
+
+License
+-------
+
+Blender as a whole is licensed under the GNU General Public License, Version 3.
+Individual files may have a different but compatible license.
+
+See [blender.org/about/license](https://www.blender.org/about/license) for details.
