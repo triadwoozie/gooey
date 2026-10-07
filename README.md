@@ -14,7 +14,7 @@
   - Linear scene-space procedural film grain evaluated prior to view/display transforms.
   - Perceptual luminance weighting concentrated in midtones, keeping pure blacks and peak highlights clean.
 - **TEPD - Temporal Energy Preserving Dither (`CMP_NODE_TEPD`)**:
-  - High-precision anti-banding quantization dither using low-discrepancy Weyl sequence temporal phase shifts ($\phi \approx 0.6180339887 \cdot \text{frame\_idx}$).
+  - High-precision anti-banding quantization dither using low-discrepancy Weyl sequence temporal phase shifts.
   - Triangular probability distribution function (TPDF) kernel ensuring zero integrated DC energy drift.
 - **AMD FSR 3.1.5 & Live Telemetry HUD**:
   - Full Render and Output panel exposure with Quality Mode presets, sharpness slider, and real-time upscaling telemetry (resolution, ratio, frametime, reconstructed frames).
