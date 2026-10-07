@@ -23,11 +23,35 @@ static void node_declare(NodeDeclarationBuilder &b)
 
 static void node_shader_init_shader_info(bNodeTree* /*ntree*/, bNode *node)
 {
- NodeShaderInfo *shinfo = MEM_new<NodeShaderInfo>("NodeShaderInfo");
- shinfo->light_group_bits[3] = 1;
- shinfo->light_group_shadow_bits[3] = 1;
- shinfo->use_own_light_groups = 0;
- node->storage = shinfo;
+  NodeShaderInfo *shinfo = static_cast<NodeShaderInfo *>(
+      MEM_callocN(sizeof(NodeShaderInfo), "NodeShaderInfo"));
+  shinfo->light_group_bits[3] = 1;
+  shinfo->light_group_shadow_bits[3] = 1;
+  shinfo->use_own_light_groups = 0;
+  node->storage = shinfo;
+}
+
+static void node_shader_info_copy(bNodeTree * /*dest_ntree*/,
+                                  bNode *dest_node,
+                                  const bNode *src_node)
+{
+  if (src_node->storage) {
+    NodeShaderInfo *dst = static_cast<NodeShaderInfo *>(
+        MEM_mallocN(sizeof(NodeShaderInfo), "NodeShaderInfo"));
+    *dst = *static_cast<const NodeShaderInfo *>(src_node->storage);
+    dest_node->storage = dst;
+  }
+  else {
+    dest_node->storage = nullptr;
+  }
+}
+
+static void node_shader_info_free(bNode *node)
+{
+  if (node->storage) {
+    MEM_freeN(node->storage);
+    node->storage = nullptr;
+  }
 }
 
 static void node_shader_buts_shader_info(struct uiLayout *layout, struct bContext* /* C */, PointerRNA *ptr)
@@ -94,7 +118,7 @@ void register_node_type_sh_shader_info()
   ntype.initfunc = file_ns::node_shader_init_shader_info;
 
   blender::bke::node_type_storage(
-      ntype, "NodeShaderInfo", node_free_standard_storage, node_copy_standard_storage);
+      ntype, "NodeShaderInfo", file_ns::node_shader_info_free, file_ns::node_shader_info_copy);
 
   ntype.gpu_fn = file_ns::node_shader_gpu_shader_info;
 
