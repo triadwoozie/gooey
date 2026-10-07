@@ -307,13 +307,24 @@ class SCENE_PT_steam_audio(SceneButtonsPanel, Panel):
         scene = context.scene
 
         speakers = [ob for ob in scene.objects if ob.type == 'SPEAKER']
+        meshes = [ob for ob in scene.objects if ob.type == 'MESH']
+
         col = layout.column(align=True)
         col.label(text=f"Active Speakers: {len(speakers)}", icon='SPEAKER')
+        col.label(text=f"Scene Meshes: {len(meshes)}", icon='MESH_DATA')
         col.label(text="Binaural Spatialization: HRTF", icon='SOUND')
         col.label(text="Direct Raytracing: Occlusion & Transmission EQ", icon='LIGHT_SUN')
 
         layout.separator()
-        layout.operator("scene.steam_audio_sync_meshes", text="Rebuild Acoustic Mesh Scene", icon='FILE_REFRESH')
+
+        col = layout.column(align=True)
+        col.prop(scene, "steam_audio_all_meshes", text="Simulate All Meshes")
+
+        layout.separator()
+
+        col = layout.column(align=True)
+        col.operator("scene.steam_audio_transition_scene", text="Transition Entire Scene to Phonon", icon='SCENE_DATA')
+        col.operator("scene.steam_audio_sync_meshes", text="Rebuild Acoustic Mesh Scene", icon='FILE_REFRESH')
 
 
 class SCENE_PT_physics(SceneButtonsPanel, Panel):

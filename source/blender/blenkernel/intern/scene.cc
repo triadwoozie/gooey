@@ -157,6 +157,8 @@ static void scene_init_data(ID *id)
 
   MEMCPY_STRUCT_AFTER(scene, DNA_struct_default_get(Scene), id);
 
+  scene->flag_audio |= (SCENE_AUDIO_USE_STEAM_AUDIO | SCENE_AUDIO_STEAM_ALL_MESHES);
+
   STRNCPY(scene->r.bake.filepath, U.renderdir);
 
   mblur_shutter_curve = &scene->r.mblur_shutter_curve;

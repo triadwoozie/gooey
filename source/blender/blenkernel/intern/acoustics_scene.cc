@@ -30,7 +30,7 @@
 
 #include <vector>
 
-static bool object_use_steam_audio(const Object *ob)
+static bool object_use_steam_audio(const Object *ob, bool all_meshes_mode)
 {
   if (!ob) {
     return false;
@@ -38,15 +38,15 @@ static bool object_use_steam_audio(const Object *ob)
   if (ob->id.properties) {
     const IDProperty *prop = IDP_GetPropertyFromGroup(ob->id.properties, "use_steam_audio_mesh");
     if (prop) {
-      if (prop->type == IDP_INT && IDP_Int(prop) != 0) {
-        return true;
+      if (prop->type == IDP_INT) {
+        return IDP_Int(prop) != 0;
       }
-      if (prop->type == IDP_BOOLEAN && IDP_Bool(prop)) {
-        return true;
+      if (prop->type == IDP_BOOLEAN) {
+        return IDP_Bool(prop) != false;
       }
     }
   }
-  return false;
+  return all_meshes_mode;
 }
 
 void BKE_acoustics_scene_init()
@@ -71,6 +71,8 @@ void BKE_acoustics_scene_sync(Depsgraph *depsgraph, Scene *scene)
   BKE_acoustics_scene_init();
   phonon_scene_clear_meshes();
 
+  const bool all_meshes_mode = (scene->flag_audio & SCENE_AUDIO_STEAM_ALL_MESHES) != 0;
+
   DEGObjectIterSettings deg_iter_settings = {nullptr};
   deg_iter_settings.depsgraph = depsgraph;
   deg_iter_settings.flags = DEG_ITER_OBJECT_FLAG_LINKED_DIRECTLY |
@@ -82,9 +84,10 @@ void BKE_acoustics_scene_sync(Depsgraph *depsgraph, Scene *scene)
       continue;
     }
 
-    /* Check if object is flagged for acoustics */
+    /* Check if object is flagged for acoustics or all meshes mode is active */
     const Object *ob_orig = DEG_get_original(ob_eval);
-    if (!object_use_steam_audio(ob_orig) && !object_use_steam_audio(ob_eval)) {
+    if (!object_use_steam_audio(ob_orig, all_meshes_mode) &&
+        !object_use_steam_audio(ob_eval, all_meshes_mode)) {
       continue;
     }
 
@@ -148,6 +151,8 @@ void BKE_acoustics_scene_sync(Depsgraph *depsgraph, Scene *scene)
   DEG_OBJECT_ITER_END;
 
   phonon_scene_commit();
+  printf("[Steam Audio] Scene geometry synchronized: %d meshes committed to simulation BVH\n",
+         phonon_scene_get_mesh_count());
 }
 
 void BKE_acoustics_scene_update_audio(Depsgraph *depsgraph, Scene *scene)

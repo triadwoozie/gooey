@@ -2719,6 +2719,7 @@ enum {
 /** #Scene::flag_audio */
 enum {
   SCENE_AUDIO_USE_STEAM_AUDIO = (1 << 0),
+  SCENE_AUDIO_STEAM_ALL_MESHES = (1 << 1),
 };
 
 /** #FFMpegCodecData::flags */

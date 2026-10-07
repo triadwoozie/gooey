@@ -277,7 +277,7 @@
     .grease_pencil_settings = _DNA_DEFAULT_SceneGreasePencil, \
  \
     .hydra = _DNA_DEFAULT_SceneHydra, \
-    .flag_audio = SCENE_AUDIO_USE_STEAM_AUDIO, \
+    .flag_audio = SCENE_AUDIO_USE_STEAM_AUDIO | SCENE_AUDIO_STEAM_ALL_MESHES, \
     .simulation_frame_start = 1, \
     .simulation_frame_end = 250, \
   }

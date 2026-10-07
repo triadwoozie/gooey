@@ -6542,6 +6542,12 @@ void blo_do_versions_450(FileData * /*fd*/, Library * /*lib*/, Main *bmain)
     FOREACH_MAIN_ID_END;
   }
 
+  if (!MAIN_VERSION_FILE_ATLEAST(bmain, 405, 93)) {
+    LISTBASE_FOREACH (Scene *, scene, &bmain->scenes) {
+      scene->flag_audio |= (SCENE_AUDIO_USE_STEAM_AUDIO | SCENE_AUDIO_STEAM_ALL_MESHES);
+    }
+  }
+
   /* Always run this versioning (keep at the bottom of the function). Meshes are written with the
    * legacy format which always needs to be converted to the new format on file load. To be moved
    * to a subversion check in 5.0. */
