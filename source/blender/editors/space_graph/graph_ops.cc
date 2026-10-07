@@ -81,8 +81,10 @@ static void graphview_cursor_apply(bContext *C, wmOperator *op)
       CLAMP(scene->r.cfra, PSFRA, PEFRA);
     }
     else {
-      /* Prevent negative frames */
-      FRAMENUMBER_MIN_CLAMP(scene->r.cfra);
+      /* Prevent frames before start frame */
+      if (scene->r.cfra < scene->r.sfra) {
+        scene->r.cfra = scene->r.sfra;
+      }
     }
 
     scene->r.subframe = 0.0f;

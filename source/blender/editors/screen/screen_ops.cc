@@ -3192,7 +3192,9 @@ static wmOperatorStatus frame_offset_exec(bContext *C, wmOperator *op)
     delta += 1;
   }
   scene->r.cfra += delta;
-  FRAMENUMBER_MIN_CLAMP(scene->r.cfra);
+  if (scene->r.cfra < scene->r.sfra) {
+    scene->r.cfra = scene->r.sfra;
+  }
   scene->r.subframe = 0.0f;
 
   ED_areas_do_frame_follow(C, false);

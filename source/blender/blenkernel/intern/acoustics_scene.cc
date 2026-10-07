@@ -156,6 +156,11 @@ void BKE_acoustics_scene_update_audio(Depsgraph *depsgraph, Scene *scene)
     return;
   }
 
+  if (!(scene->flag_audio & SCENE_AUDIO_USE_STEAM_AUDIO)) {
+    /* Steam Audio disabled: bypass simulation and return */
+    return;
+  }
+
   BKE_acoustics_scene_init();
   phonon_simulator_init();
 
@@ -173,6 +178,21 @@ void BKE_acoustics_scene_update_audio(Depsgraph *depsgraph, Scene *scene)
     float sa_up[3] = {up.x, up.z, -up.y};
 
     phonon_simulator_set_listener(sa_pos, sa_ahead, sa_up);
+
+    static float last_pos[3] = {-9999.0f, -9999.0f, -9999.0f};
+    static int last_mesh_count = -1;
+    int current_meshes = phonon_scene_get_mesh_count();
+    if (fabsf(sa_pos[0] - last_pos[0]) > 0.01f ||
+        fabsf(sa_pos[1] - last_pos[1]) > 0.01f ||
+        fabsf(sa_pos[2] - last_pos[2]) > 0.01f ||
+        current_meshes != last_mesh_count) {
+      last_pos[0] = sa_pos[0];
+      last_pos[1] = sa_pos[1];
+      last_pos[2] = sa_pos[2];
+      last_mesh_count = current_meshes;
+      printf("[Steam Audio] Active: Listener at (%.2f, %.2f, %.2f) | %d tagged meshes\n",
+             sa_pos[0], sa_pos[1], sa_pos[2], current_meshes);
+    }
   }
 
   /* 2. Update Active Speakers and run Ray-Traced Direct Simulation */

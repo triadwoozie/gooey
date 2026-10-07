@@ -2341,6 +2341,28 @@ static void rna_Scene_use_audio_update(Main * /*bmain*/, Scene * /*scene*/, Poin
   DEG_id_tag_update(ptr->owner_id, ID_RECALC_AUDIO_MUTE);
 }
 
+static bool rna_Scene_use_steam_audio_get(PointerRNA *ptr)
+{
+  Scene *scene = (Scene *)ptr->data;
+  return (scene->flag_audio & SCENE_AUDIO_USE_STEAM_AUDIO) != 0;
+}
+
+static void rna_Scene_use_steam_audio_set(PointerRNA *ptr, bool value)
+{
+  Scene *scene = (Scene *)ptr->data;
+  if (value) {
+    scene->flag_audio |= SCENE_AUDIO_USE_STEAM_AUDIO;
+  }
+  else {
+    scene->flag_audio &= ~SCENE_AUDIO_USE_STEAM_AUDIO;
+  }
+}
+
+static void rna_Scene_steam_audio_update(Main * /*bmain*/, Scene * /*scene*/, PointerRNA *ptr)
+{
+  DEG_id_tag_update(ptr->owner_id, ID_RECALC_AUDIO);
+}
+
 static int rna_Scene_sync_mode_get(PointerRNA *ptr)
 {
   Scene *scene = (Scene *)ptr->data;
@@ -9454,6 +9476,14 @@ void RNA_def_scene(BlenderRNA *brna)
   RNA_def_property_translation_context(prop, BLT_I18NCONTEXT_ID_SOUND);
   RNA_def_property_update(prop, NC_SCENE, nullptr);
   RNA_def_property_update(prop, NC_SCENE, "rna_Scene_volume_update");
+
+  prop = RNA_def_property(srna, "use_steam_audio", PROP_BOOLEAN, PROP_NONE);
+  RNA_def_property_boolean_funcs(
+      prop, "rna_Scene_use_steam_audio_get", "rna_Scene_use_steam_audio_set");
+  RNA_def_property_boolean_default(prop, true);
+  RNA_def_property_ui_text(
+      prop, "Steam Audio", "Enable Steam Audio binaural spatialization and ray-traced acoustics");
+  RNA_def_property_update(prop, NC_SCENE, "rna_Scene_steam_audio_update");
 
   func = RNA_def_function(srna, "update_render_engine", "rna_Scene_update_render_engine");
   RNA_def_function_flag(func, FUNC_NO_SELF | FUNC_USE_MAIN);

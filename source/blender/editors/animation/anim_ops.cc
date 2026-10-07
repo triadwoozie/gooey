@@ -564,7 +564,10 @@ static void change_frame_apply(bContext *C, wmOperator *op, const bool always_up
     scene->r.cfra = round_fl_to_int(frame);
     scene->r.subframe = 0.0f;
   }
-  FRAMENUMBER_MIN_CLAMP(scene->r.cfra);
+  if (scene->r.cfra < scene->r.sfra) {
+    scene->r.cfra = scene->r.sfra;
+    scene->r.subframe = 0.0f;
+  }
 
   /* do updates */
   const bool frame_changed = (old_frame != scene->r.cfra) || (old_subframe != scene->r.subframe);

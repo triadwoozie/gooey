@@ -23,6 +23,10 @@
 #include "BKE_report.hh"
 #include "BKE_scene.hh"
 
+#ifdef WITH_STEAM_AUDIO
+#  include "BKE_acoustics_scene.hh"
+#endif
+
 #include "DEG_depsgraph.hh"
 #include "DEG_depsgraph_build.hh"
 
@@ -422,6 +426,36 @@ static void SCENE_OT_delete(wmOperatorType *ot)
 
 /** \} */
 
+#ifdef WITH_STEAM_AUDIO
+/* -------------------------------------------------------------------- */
+/** \name Steam Audio Rebuild Meshes Operator
+ * \{ */
+
+static wmOperatorStatus scene_steam_audio_sync_meshes_exec(bContext *C, wmOperator *op)
+{
+  Scene *scene = CTX_data_scene(C);
+  Depsgraph *depsgraph = CTX_data_depsgraph_pointer(C);
+  if (depsgraph && scene) {
+    BKE_acoustics_scene_sync(depsgraph, scene);
+    BKE_report(op->reports, RPT_INFO, "Steam Audio: Rebuilt acoustic mesh scene");
+    return OPERATOR_FINISHED;
+  }
+  return OPERATOR_CANCELLED;
+}
+
+static void SCENE_OT_steam_audio_sync_meshes(wmOperatorType *ot)
+{
+  ot->name = "Rebuild Steam Audio Meshes";
+  ot->description = "Rebuild ray-traced acoustic geometry from evaluated scene meshes";
+  ot->idname = "SCENE_OT_steam_audio_sync_meshes";
+
+  ot->exec = scene_steam_audio_sync_meshes_exec;
+  ot->poll = ED_operator_scene_editable;
+}
+
+/** \} */
+#endif
+
 /* -------------------------------------------------------------------- */
 /** \name Registration
  * \{ */
@@ -431,6 +465,9 @@ void ED_operatortypes_scene()
   WM_operatortype_append(SCENE_OT_new);
   WM_operatortype_append(SCENE_OT_delete);
   WM_operatortype_append(SCENE_OT_new_sequencer);
+#ifdef WITH_STEAM_AUDIO
+  WM_operatortype_append(SCENE_OT_steam_audio_sync_meshes);
+#endif
 }
 
 /** \} */

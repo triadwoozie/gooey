@@ -2191,7 +2191,8 @@ typedef struct Scene {
 
   /** None of the dependency graph vars is mean to be saved. */
   struct GHash *depsgraph_hash;
-  char _pad7[4];
+  short flag_audio;
+  char _pad7[2];
 
   /* User-Defined KeyingSets. */
   /**
@@ -2713,6 +2714,11 @@ enum {
   AUDIO_SYNC = 1 << 1,
   AUDIO_SCRUB = 1 << 2,
   AUDIO_VOLUME_ANIMATED = 1 << 3,
+};
+
+/** #Scene::flag_audio */
+enum {
+  SCENE_AUDIO_USE_STEAM_AUDIO = (1 << 0),
 };
 
 /** #FFMpegCodecData::flags */
