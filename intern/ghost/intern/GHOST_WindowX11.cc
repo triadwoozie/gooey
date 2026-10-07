@@ -606,9 +606,10 @@ GHOST_TSuccess GHOST_WindowX11::setDialogHints(GHOST_WindowX11 *parentWindow)
    * Actually, most window managers disable minimizing and maximizing for dialogs, ignoring this.
    * Leaving it here anyway in the hope it brings back maximizing on some window managers at least,
    * we'd preferably have it even for dialog windows (e.g. file browser). */
-  hints.flags = MWM_HINTS_FUNCTIONS;
+  hints.flags = MWM_HINTS_FUNCTIONS | MWM_HINTS_DECORATIONS;
   hints.functions = MWM_FUNCTION_RESIZE | MWM_FUNCTION_MOVE | MWM_FUNCTION_MAXIMIZE |
                     MWM_FUNCTION_CLOSE;
+  hints.decorations = 1; /* MWM_DECOR_ALL */
   XChangeProperty(m_display,
                   m_window,
                   m_system->m_atom._MOTIF_WM_HINTS,

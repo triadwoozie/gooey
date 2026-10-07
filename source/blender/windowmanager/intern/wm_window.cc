@@ -634,6 +634,12 @@ eWM_WindowDecorationStyleFlag WM_window_decoration_style_flags_get(const wmWindo
   if (ghost_style_flags & GHOST_kDecorationColoredTitleBar) {
     wm_style_flags |= WM_WINDOW_DECORATION_STYLE_COLORED_TITLEBAR;
   }
+  if (ghost_style_flags & GHOST_kWindowDecorationTitlebar) {
+    wm_style_flags |= WM_WINDOW_DECORATION_STYLE_TITLEBAR;
+  }
+  if (ghost_style_flags & GHOST_kWindowDecorationClose) {
+    wm_style_flags |= WM_WINDOW_DECORATION_STYLE_CLOSE;
+  }
 
   return wm_style_flags;
 }
@@ -646,6 +652,12 @@ void WM_window_decoration_style_flags_set(const wmWindow *win,
 
   if (style_flags & WM_WINDOW_DECORATION_STYLE_COLORED_TITLEBAR) {
     ghost_style_flags |= GHOST_kDecorationColoredTitleBar;
+  }
+  if (style_flags & WM_WINDOW_DECORATION_STYLE_TITLEBAR) {
+    ghost_style_flags |= GHOST_kWindowDecorationTitlebar;
+  }
+  if (style_flags & WM_WINDOW_DECORATION_STYLE_CLOSE) {
+    ghost_style_flags |= GHOST_kWindowDecorationClose;
   }
 
   GHOST_SetWindowDecorationStyleFlags(
@@ -877,6 +889,13 @@ static void wm_window_ghostwindow_add(wmWindowManager *wm,
     win->ghostwin = ghostwin;
     GHOST_SetWindowUserData(ghostwin, win); /* Pointer back. */
 
+    if (is_dialog || win->parent != nullptr) {
+      GHOST_TWindowDecorationStyleFlags flags = GHOST_GetWindowDecorationStyleFlags(ghostwin);
+      flags = static_cast<GHOST_TWindowDecorationStyleFlags>(
+          flags | GHOST_kWindowDecorationTitlebar | GHOST_kWindowDecorationClose);
+      GHOST_SetWindowDecorationStyleFlags(ghostwin, flags);
+    }
+
     wm_window_ensure_eventstate(win);
 
     /* Store actual window size in blender window. */
@@ -960,7 +979,11 @@ static void wm_window_ghostwindow_ensure(wmWindowManager *wm, wmWindow *win, boo
 
     if (WM_capabilities_flag() & WM_CAPABILITY_WINDOW_DECORATION_STYLES) {
       /* Only decoration style we have for now. */
-      WM_window_decoration_style_flags_set(win, WM_WINDOW_DECORATION_STYLE_COLORED_TITLEBAR);
+      eWM_WindowDecorationStyleFlag style_flags = WM_WINDOW_DECORATION_STYLE_COLORED_TITLEBAR;
+      if (is_dialog || win->parent != nullptr) {
+        style_flags |= WM_WINDOW_DECORATION_STYLE_TITLEBAR | WM_WINDOW_DECORATION_STYLE_CLOSE;
+      }
+      WM_window_decoration_style_flags_set(win, style_flags);
       WM_window_decoration_style_apply(win);
     }
   }

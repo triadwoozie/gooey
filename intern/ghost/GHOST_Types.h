@@ -722,6 +722,8 @@ typedef enum {
 typedef enum {
   GHOST_kDecorationNone = 0,
   GHOST_kDecorationColoredTitleBar = (1 << 0),
+  GHOST_kWindowDecorationTitlebar = (1 << 1),
+  GHOST_kWindowDecorationClose = (1 << 2),
 } GHOST_TWindowDecorationStyleFlags;
 
 typedef struct {

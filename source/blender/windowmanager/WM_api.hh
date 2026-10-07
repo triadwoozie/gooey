@@ -409,8 +409,12 @@ enum eWM_WindowDecorationStyleFlag {
   WM_WINDOW_DECORATION_STYLE_NONE = 0,
   /** Colored TitleBar. */
   WM_WINDOW_DECORATION_STYLE_COLORED_TITLEBAR = (1 << 0),
+  /** Titlebar. */
+  WM_WINDOW_DECORATION_STYLE_TITLEBAR = (1 << 1),
+  /** Close button. */
+  WM_WINDOW_DECORATION_STYLE_CLOSE = (1 << 2),
 };
-ENUM_OPERATORS(eWM_WindowDecorationStyleFlag, WM_WINDOW_DECORATION_STYLE_COLORED_TITLEBAR)
+ENUM_OPERATORS(eWM_WindowDecorationStyleFlag, WM_WINDOW_DECORATION_STYLE_CLOSE)
 
 /**
  * Get the window decoration style flags.
