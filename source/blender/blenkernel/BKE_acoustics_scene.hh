@@ -33,6 +33,13 @@ void BKE_acoustics_scene_free();
  */
 void BKE_acoustics_scene_sync(struct Depsgraph *depsgraph, struct Scene *scene);
 
+/**
+ * Dynamically synchronize listener transform (camera/viewport) and active speaker objects,
+ * run ray-traced direct sound simulation (occlusion, transmission EQ, distance attenuation),
+ * and update Steam Audio DSP parameters.
+ */
+void BKE_acoustics_scene_update_audio(struct Depsgraph *depsgraph, struct Scene *scene);
+
 #ifdef __cplusplus
 }
 #endif

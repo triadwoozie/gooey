@@ -25,6 +25,8 @@
 
 #include "plugins/phonon/phonon_device.h"
 #include "plugins/phonon/phonon_scene.h"
+#include "plugins/phonon/phonon_dsp.h"
+#include "plugins/phonon/phonon_simulator.h"
 
 #include <vector>
 
@@ -146,6 +148,73 @@ void BKE_acoustics_scene_sync(Depsgraph *depsgraph, Scene *scene)
   DEG_OBJECT_ITER_END;
 
   phonon_scene_commit();
+}
+
+void BKE_acoustics_scene_update_audio(Depsgraph *depsgraph, Scene *scene)
+{
+  if (!depsgraph || !scene) {
+    return;
+  }
+
+  BKE_acoustics_scene_init();
+  phonon_simulator_init();
+
+  /* 1. Update Listener Transform from Active Camera */
+  if (scene->camera) {
+    const blender::float4x4 &obmat = scene->camera->object_to_world();
+    blender::float3 loc = obmat.location();
+    /* Blender camera points down -Z, with +Y as up */
+    blender::float3 fwd = -blender::math::normalize(blender::float3(obmat[2].x, obmat[2].y, obmat[2].z));
+    blender::float3 up = blender::math::normalize(blender::float3(obmat[1].x, obmat[1].y, obmat[1].z));
+
+    /* Coordinate conversion Blender (X, Y, Z) -> Steam Audio (X, Z, -Y) */
+    float sa_pos[3] = {loc.x, loc.z, -loc.y};
+    float sa_ahead[3] = {fwd.x, fwd.z, -fwd.y};
+    float sa_up[3] = {up.x, up.z, -up.y};
+
+    phonon_simulator_set_listener(sa_pos, sa_ahead, sa_up);
+  }
+
+  /* 2. Update Active Speakers and run Ray-Traced Direct Simulation */
+  DEGObjectIterSettings deg_iter_settings = {nullptr};
+  deg_iter_settings.depsgraph = depsgraph;
+  deg_iter_settings.flags = DEG_ITER_OBJECT_FLAG_LINKED_DIRECTLY |
+                            DEG_ITER_OBJECT_FLAG_LINKED_INDIRECTLY |
+                            DEG_ITER_OBJECT_FLAG_LINKED_VIA_SET;
+
+  DEG_OBJECT_ITER_BEGIN (&deg_iter_settings, ob_eval) {
+    if (ob_eval->type != OB_SPEAKER) {
+      continue;
+    }
+
+    const blender::float4x4 &obmat = ob_eval->object_to_world();
+    blender::float3 loc = obmat.location();
+    blender::float3 fwd = blender::math::normalize(blender::float3(obmat[1].x, obmat[1].y, obmat[1].z));
+    blender::float3 up = blender::math::normalize(blender::float3(obmat[2].x, obmat[2].y, obmat[2].z));
+
+    float sa_pos[3] = {loc.x, loc.z, -loc.y};
+    float sa_ahead[3] = {fwd.x, fwd.z, -fwd.y};
+    float sa_up[3] = {up.x, up.z, -up.y};
+
+    /* Get or create simulation source for speaker */
+    IPLSource source = phonon_simulator_source_get_or_create(ob_eval);
+    if (!source) {
+      continue;
+    }
+
+    phonon_simulator_source_set_pose(source, sa_pos, sa_ahead, sa_up);
+
+    /* Run raycast simulation against evaluated IPLScene */
+    float occlusion = 0.0f;
+    float transmission[3] = {1.0f, 1.0f, 1.0f};
+    float distance_atten = 1.0f;
+    float rel_direction[3] = {0.0f, 0.0f, -1.0f};
+    phonon_simulator_source_simulate(source, &occlusion, transmission, &distance_atten, rel_direction);
+
+    /* Update DSP effect processor parameters for this speaker */
+    phonon_speaker_dsp_update(ob_eval, occlusion, transmission, distance_atten, rel_direction);
+  }
+  DEG_OBJECT_ITER_END;
 }
 
 #endif /* WITH_STEAM_AUDIO */

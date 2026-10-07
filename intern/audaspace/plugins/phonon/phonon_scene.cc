@@ -149,12 +149,15 @@ void phonon_scene_clear_meshes()
   g_scene_meshes.clear();
 }
 
+#include "phonon_simulator.h"
+
 void phonon_scene_commit()
 {
   std::lock_guard<std::mutex> lock(g_scene_mutex);
   IPLScene scene = phonon_device_get_scene();
   if (scene) {
     iplSceneCommit(scene);
+    phonon_simulator_commit_scene();
   }
 }
 
