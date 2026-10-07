@@ -61,4 +61,23 @@ if(WITH_PYTHON AND WITH_PYTHON_NUMPY)
   add_definitions(-DWITH_PYTHON)
 endif()
 
+if(WITH_STEAM_AUDIO)
+  list(APPEND INC_SYS
+    ${STEAM_AUDIO_INCLUDE_DIR}
+  )
+  list(APPEND LIB
+    ${STEAM_AUDIO_LIBRARY}
+  )
+  list(APPEND SRC
+    plugins/phonon/phonon_device.cc
+    plugins/phonon/phonon_device.h
+    plugins/phonon/phonon_scene.cc
+    plugins/phonon/phonon_scene.h
+  )
+  if(TARGETDIR_LIB)
+    install(FILES ${STEAM_AUDIO_LIBRARY} DESTINATION ${TARGETDIR_LIB})
+  endif()
+  add_definitions(-DWITH_STEAM_AUDIO)
+endif()
+
 blender_add_lib(bf_intern_audaspace "${SRC}" "${INC}" "${INC_SYS}" "${LIB}")

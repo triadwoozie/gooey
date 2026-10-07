@@ -275,7 +275,7 @@ class TOPBAR_MT_file(Menu):
 
         layout.separator()
 
-        layout.menu("TOPBAR_MT_file_project", icon='PROJECT')
+        layout.menu("TOPBAR_MT_file_project", icon='FILE_FOLDER')
 
         layout.separator()
 

@@ -24,6 +24,12 @@ set(LIB
   PRIVATE bf::dependencies::optional::opencolorio
 )
 
+if(WITH_STEAM_AUDIO)
+  list(APPEND LIB
+    PRIVATE ${STEAM_AUDIO_LIBRARY}
+  )
+endif()
+
 if(WITH_HARU)
   if(UNIX AND NOT APPLE)
     list(APPEND LIB
@@ -710,6 +716,13 @@ if(UNIX AND NOT APPLE)
   if(PLATFORM_BUNDLED_LIBRARIES AND TARGETDIR_LIB)
     install(
       FILES ${PLATFORM_BUNDLED_LIBRARIES}
+      DESTINATION ${TARGETDIR_LIB}
+    )
+  endif()
+
+  if(WITH_STEAM_AUDIO AND TARGETDIR_LIB)
+    install(
+      FILES ${STEAM_AUDIO_LIBRARY}
       DESTINATION ${TARGETDIR_LIB}
     )
   endif()
