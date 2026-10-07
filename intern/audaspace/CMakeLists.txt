@@ -63,6 +63,7 @@ endif()
 
 if(WITH_STEAM_AUDIO)
   list(APPEND INC_SYS
+    ${CMAKE_SOURCE_DIR}/extern/audaspace/include
     ${STEAM_AUDIO_INCLUDE_DIR}
   )
   list(APPEND LIB
@@ -73,6 +74,12 @@ if(WITH_STEAM_AUDIO)
     plugins/phonon/phonon_device.h
     plugins/phonon/phonon_scene.cc
     plugins/phonon/phonon_scene.h
+    plugins/phonon/phonon_dsp.cc
+    plugins/phonon/phonon_dsp.h
+    plugins/phonon/phonon_simulator.cc
+    plugins/phonon/phonon_simulator.h
+    plugins/phonon/phonon_reader.cc
+    plugins/phonon/phonon_reader.h
   )
   if(TARGETDIR_LIB)
     install(FILES ${STEAM_AUDIO_LIBRARY} DESTINATION ${TARGETDIR_LIB})

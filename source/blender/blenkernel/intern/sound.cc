@@ -57,6 +57,10 @@
 #include "BKE_packedFile.hh"
 #include "BKE_sound.h"
 
+#ifdef WITH_STEAM_AUDIO
+#  include "BKE_acoustics_scene.hh"
+#endif
+
 #include "DEG_depsgraph.hh"
 #include "DEG_depsgraph_query.hh"
 
@@ -1421,6 +1425,10 @@ void BKE_sound_update_scene(Depsgraph *depsgraph, Scene *scene)
 
   AUD_destroySet(scene->speaker_handles);
   scene->speaker_handles = new_set;
+
+#ifdef WITH_STEAM_AUDIO
+  BKE_acoustics_scene_update_audio(depsgraph, scene);
+#endif
 }
 
 void *BKE_sound_get_factory(void *sound)
