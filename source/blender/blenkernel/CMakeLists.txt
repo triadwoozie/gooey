@@ -632,6 +632,24 @@ if(WITH_AUDASPACE)
   add_definitions(-DWITH_AUDASPACE)
 endif()
 
+if(WITH_STEAM_AUDIO)
+  list(APPEND INC
+    ../../../intern/audaspace
+  )
+  list(APPEND INC_SYS
+    ${STEAM_AUDIO_INCLUDE_DIR}
+  )
+  list(APPEND SRC
+    intern/acoustics_scene.cc
+    BKE_acoustics_scene.hh
+  )
+  list(APPEND LIB
+    bf_intern_audaspace
+    ${STEAM_AUDIO_LIBRARY}
+  )
+  add_definitions(-DWITH_STEAM_AUDIO)
+endif()
+
 if(WITH_BULLET)
   list(APPEND INC_SYS
     ${BULLET_INCLUDE_DIRS}
