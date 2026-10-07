@@ -76,6 +76,12 @@ class OBJECT_MT_modifier_add(ModifierAddMenu, Menu):
 
         layout.operator_context = 'INVOKE_REGION_WIN'
 
+        try:
+            from bl_operators.assets import ensure_essentials_asset_library
+            ensure_essentials_asset_library()
+        except Exception:
+            pass
+
         if geometry_nodes_supported:
             self.operator_modifier_add(layout, 'NODES')
             layout.separator()
@@ -83,6 +89,8 @@ class OBJECT_MT_modifier_add(ModifierAddMenu, Menu):
             layout.menu("OBJECT_MT_modifier_add_edit")
         if ob_type in {'MESH', 'CURVE', 'FONT', 'SURFACE', 'VOLUME', 'GREASEPENCIL'}:
             layout.menu("OBJECT_MT_modifier_add_generate")
+        if ob_type in {'MESH', 'POINTCLOUD', 'CURVE'}:
+            layout.menu("OBJECT_MT_modifier_add_scatter")
         if ob_type in {'MESH', 'CURVE', 'FONT', 'SURFACE', 'LATTICE', 'VOLUME', 'GREASEPENCIL'}:
             layout.menu("OBJECT_MT_modifier_add_deform")
         if ob_type in {'MESH'}:
@@ -270,6 +278,15 @@ class OBJECT_MT_modifier_add_color(ModifierAddMenu, Menu):
         layout.template_modifier_asset_menu_items(catalog_path=self.bl_label)
 
 
+class OBJECT_MT_modifier_add_scatter(ModifierAddMenu, Menu):
+    bl_label = "Scatter"
+    bl_options = {'SEARCH_ON_KEY_PRESS'}
+
+    def draw(self, context):
+        layout = self.layout
+        layout.template_modifier_asset_menu_items(catalog_path=self.bl_label)
+
+
 class AddModifierMenu(Operator):
     bl_idname = "object.add_modifier_menu"
     bl_label = "Add Modifier"
@@ -289,6 +306,7 @@ classes = (
     OBJECT_MT_modifier_add,
     OBJECT_MT_modifier_add_edit,
     OBJECT_MT_modifier_add_generate,
+    OBJECT_MT_modifier_add_scatter,
     OBJECT_MT_modifier_add_deform,
     OBJECT_MT_modifier_add_normals,
     OBJECT_MT_modifier_add_physics,

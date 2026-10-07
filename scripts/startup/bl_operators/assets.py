@@ -155,3 +155,33 @@ classes = (
     ASSET_OT_tag_remove,
     ASSET_OT_open_containing_blend_file,
 )
+
+
+def ensure_essentials_asset_library():
+    try:
+        preferences = getattr(bpy.context, "preferences", None)
+        if preferences and hasattr(preferences, "filepaths"):
+            libs = preferences.filepaths.asset_libraries
+            if "Essentials" not in libs:
+                import os
+                assets_dir = bpy.utils.system_resource('DATAFILES', path='assets')
+                if not assets_dir or not os.path.isdir(assets_dir):
+                    alt_dir = bpy.utils.user_resource('DATAFILES', path='assets')
+                    if os.path.isdir(alt_dir):
+                        assets_dir = alt_dir
+                if assets_dir and os.path.isdir(assets_dir):
+                    libs.new(name="Essentials", directory=assets_dir)
+    except Exception as e:
+        print("[Assets] Failed to ensure Essentials library:", e)
+
+
+@bpy.app.handlers.persistent
+def _ensure_essentials_on_load(_dummy):
+    ensure_essentials_asset_library()
+
+
+if _ensure_essentials_on_load not in bpy.app.handlers.load_post:
+    bpy.app.handlers.load_post.append(_ensure_essentials_on_load)
+
+# Run once upon module import
+ensure_essentials_asset_library()

@@ -923,12 +923,18 @@ typedef struct RenderData {
   int compositor_denoise_final_quality;   /* eCompositorDenoiseQaulity */
 
   /* FSR 3.1.5 Upscaling options. */
-  char use_fsr3;
+  char fsr_viewport_enable;
+  char fsr_viewport_quality;
+  char fsr_render_enable;
+  char fsr_render_quality;
   char show_fsr3_stats;
+  char use_fsr3;
   char fsr3_quality;
   char _pad6[1];
+  float fsr_viewport_sharpness;
+  float fsr_render_sharpness;
   float fsr3_sharpness;
-  char _pad10[4];
+  char _pad10[8];
 } RenderData;
 
 /** #RenderData::fsr3_quality */

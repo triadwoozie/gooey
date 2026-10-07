@@ -10,6 +10,7 @@
 #include "BLI_listbase.h"
 #include "BLI_multi_value_map.hh"
 #include "BLI_string.h"
+#include "BLI_uuid.h"
 
 #include "DNA_modifier_types.h"
 #include "DNA_screen_types.h"
@@ -60,10 +61,13 @@ static asset::AssetItemTree build_catalog_tree(const bContext &C)
     }
     const IDProperty *traits_flag = BKE_asset_metadata_idprop_find(
         &meta_data, "geometry_node_asset_traits_flag");
-    if (traits_flag == nullptr || !(IDP_Int(traits_flag) & GEO_NODE_ASSET_MODIFIER)) {
-      return false;
+    if (traits_flag != nullptr && (IDP_Int(traits_flag) & GEO_NODE_ASSET_MODIFIER)) {
+      return true;
     }
-    return true;
+    if (!BLI_uuid_is_nil(meta_data.catalog_id)) {
+      return true;
+    }
+    return false;
   };
   const AssetLibraryReference library = asset_system::all_library_reference();
   asset_system::all_library_reload_catalogs_if_dirty();
@@ -190,6 +194,7 @@ static void root_catalogs_draw(const bContext *C, Menu *menu)
 
   Set<std::string> all_builtin_menus = [&]() {
     Set<std::string> menus;
+    menus.add_new("Geometry Nodes");
     if (ELEM(object->type, OB_MESH, OB_CURVES_LEGACY, OB_FONT, OB_SURF, OB_LATTICE)) {
       menus.add_new("Edit");
     }
@@ -387,17 +392,43 @@ void ui_template_modifier_asset_menu_items(uiLayout &layout, const StringRef cat
   asset::AssetItemTree &tree = *get_static_item_tree();
   const asset_system::AssetCatalogTreeItem *item = tree.catalogs.find_root_item(catalog_path);
   if (!item) {
-    return;
+    item = tree.catalogs.find_item(catalog_path);
   }
-  asset_system::AssetLibrary *all_library = asset::list::library_get_once_available(
-      asset_system::all_library_reference());
-  if (!all_library) {
-    return;
+  if (!item) {
+    std::string gn_path = "Geometry Nodes/" + std::string(catalog_path);
+    item = tree.catalogs.find_item(gn_path);
   }
-  layout.separator();
-  uiLayout *col = &layout.column(false);
-  uiLayoutSetContextString(col, "asset_catalog_path", item->catalog_path().str());
-  uiItemMContents(col, "OBJECT_MT_add_modifier_catalog_assets");
+
+  if (item != nullptr) {
+    asset_system::AssetLibrary *all_library = asset::list::library_get_once_available(
+        asset_system::all_library_reference());
+    if (all_library) {
+      layout.separator();
+      uiLayout *col = &layout.column(false);
+      uiLayoutSetContextString(col, "asset_catalog_path", item->catalog_path().str());
+      uiItemMContents(col, "OBJECT_MT_add_modifier_catalog_assets");
+    }
+  }
+
+  if (catalog_path == "Scatter") {
+    wmOperatorType *ot = WM_operatortype_find("OBJECT_OT_modifier_add_node_group", true);
+    bool found_scatter = false;
+    for (const Span<asset_system::AssetRepresentation *> assets_span :
+         tree.assets_per_path.values())
+    {
+      for (const asset_system::AssetRepresentation *asset : assets_span) {
+        if (asset->get_name().find("Scatter") != std::string::npos) {
+          if (!found_scatter) {
+            layout.separator();
+            found_scatter = true;
+          }
+          PointerRNA props_ptr = layout.op(
+              ot, IFACE_(asset->get_name()), ICON_NONE, WM_OP_INVOKE_DEFAULT, UI_ITEM_NONE);
+          asset::operator_asset_reference_props_set(*asset, props_ptr);
+        }
+      }
+    }
+  }
 }
 
 }  // namespace blender::ed::object

@@ -2956,7 +2956,7 @@ void BKE_render_fsr3_telemetry_get(const RenderData *r, Fsr3Telemetry *r_telemet
     return;
   }
   *r_telemetry = g_fsr3_telemetry;
-  if (!r || !r->use_fsr3) {
+  if (!r || (!r->fsr_viewport_enable && !r->fsr_render_enable && !r->use_fsr3)) {
     r_telemetry->enabled = false;
     r_telemetry->active = false;
     STRNCPY(r_telemetry->status, "Disabled (Checkmark to Enable)");

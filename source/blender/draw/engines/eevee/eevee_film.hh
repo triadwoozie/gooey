@@ -129,6 +129,13 @@ class Film {
   /** Blit to display. No rendered sample needed. */
   void display();
 
+  /** Invalidate temporal history buffer on FSR preset or status toggle. */
+  void reset_history()
+  {
+    data_.use_history = 0;
+    use_reprojection_ = false;
+  }
+
   float *read_pass(eViewLayerEEVEEPassType pass_type, int layer_offset);
   float *read_aov(ViewLayerAOV *aov);
 

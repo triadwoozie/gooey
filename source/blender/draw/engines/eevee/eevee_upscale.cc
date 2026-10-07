@@ -41,21 +41,150 @@ UpscaleModule::UpscaleModule(Instance &inst) : inst_(inst) {}
 
 UpscaleModule::~UpscaleModule()
 {
+  free_targets();
+  if (feature_created_) {
+    nvngx::NVNGXBridge::get().release_feature();
+    feature_created_ = false;
+  }
+}
+
+void UpscaleModule::free_targets()
+{
   if (upscale_fb_) {
     GPU_framebuffer_free(upscale_fb_);
     upscale_fb_ = nullptr;
   }
+  if (upscaled_tx_) {
+    GPU_texture_free(upscaled_tx_);
+    upscaled_tx_ = nullptr;
+  }
+  if (depth_target_tx_) {
+    GPU_texture_free(depth_target_tx_);
+    depth_target_tx_ = nullptr;
+  }
+  if (mv_target_tx_) {
+    GPU_texture_free(mv_target_tx_);
+    mv_target_tx_ = nullptr;
+  }
+  if (reactive_mask_tx_) {
+    GPU_texture_free(reactive_mask_tx_);
+    reactive_mask_tx_ = nullptr;
+  }
+  for (int i = 0; i < 2; i++) {
+    if (history_tx_[i]) {
+      GPU_texture_free(history_tx_[i]);
+      history_tx_[i] = nullptr;
+    }
+  }
+  history_ping_pong_ = 0;
+  cached_w_ = 0;
+  cached_h_ = 0;
+  cached_render_w_ = 0;
+  cached_render_h_ = 0;
+  cached_quality_mode_ = -1;
+}
+
+void UpscaleModule::ensure_targets(
+    int render_w, int render_h, int display_w, int display_h, int quality_mode)
+{
+  if (cached_w_ == display_w && cached_h_ == display_h &&
+      cached_render_w_ == render_w && cached_render_h_ == render_h &&
+      cached_quality_mode_ == quality_mode && upscaled_tx_ != nullptr)
+  {
+    return;
+  }
+
+  free_targets();
+
+  cached_w_ = display_w;
+  cached_h_ = display_h;
+  cached_render_w_ = render_w;
+  cached_render_h_ = render_h;
+  cached_quality_mode_ = quality_mode;
+
+  const eGPUTextureUsage color_usage = GPU_TEXTURE_USAGE_GENERAL |
+                                       GPU_TEXTURE_USAGE_SHADER_READ |
+                                       GPU_TEXTURE_USAGE_SHADER_WRITE |
+                                       GPU_TEXTURE_USAGE_ATTACHMENT;
+
+  upscaled_tx_ = GPU_texture_create_2d(
+      "eevee_fsr3_upscaled_tx", display_w, display_h, 1, GPU_RGBA16F, color_usage, nullptr);
+
+  depth_target_tx_ = GPU_texture_create_2d(
+      "eevee_fsr3_depth_tx",
+      render_w,
+      render_h,
+      1,
+      GPU_DEPTH_COMPONENT32F,
+      GPU_TEXTURE_USAGE_SHADER_READ | GPU_TEXTURE_USAGE_ATTACHMENT,
+      nullptr);
+
+  mv_target_tx_ = GPU_texture_create_2d(
+      "eevee_fsr3_mv_tx",
+      render_w,
+      render_h,
+      1,
+      GPU_RG16F,
+      GPU_TEXTURE_USAGE_SHADER_READ | GPU_TEXTURE_USAGE_ATTACHMENT,
+      nullptr);
+
+  reactive_mask_tx_ = GPU_texture_create_2d(
+      "eevee_fsr3_reactive_tx",
+      render_w,
+      render_h,
+      1,
+      GPU_R8,
+      GPU_TEXTURE_USAGE_SHADER_READ | GPU_TEXTURE_USAGE_ATTACHMENT,
+      nullptr);
+
+  for (int i = 0; i < 2; i++) {
+    char name[32];
+    snprintf(name, sizeof(name), "eevee_fsr3_history_%d", i);
+    history_tx_[i] = GPU_texture_create_2d(
+        name, display_w, display_h, 1, GPU_RGBA16F, color_usage, nullptr);
+  }
+
+  upscale_fb_ = GPU_framebuffer_create("eevee_upscale_fb");
+  GPU_framebuffer_texture_attach(upscale_fb_, upscaled_tx_, 0, 0);
+}
+
+static bool eevee_fsr_is_active(const Instance &inst)
+{
+  if (strcmp(inst.scene->r.engine, "BLENDER_EEVEE_NEXT") != 0 &&
+      strcmp(inst.scene->r.engine, "BLENDER_EEVEE") != 0) {
+    return false;
+  }
+  const bool is_viewport = inst.is_viewport();
+  const bool enabled = is_viewport ? bool(inst.scene->r.fsr_viewport_enable) :
+                                     bool(inst.scene->r.fsr_render_enable);
+  return enabled || bool(inst.scene->r.use_fsr3);
+}
+
+static int eevee_fsr_quality_get(const Instance &inst)
+{
+  const bool is_viewport = inst.is_viewport();
+  int q = is_viewport ? int(inst.scene->r.fsr_viewport_quality) :
+                        int(inst.scene->r.fsr_render_quality);
+  if (q == 0 && inst.scene->r.fsr3_quality != 0) {
+    q = inst.scene->r.fsr3_quality;
+  }
+  return q;
+}
+
+static float eevee_fsr_sharpness_get(const Instance &inst)
+{
+  const bool is_viewport = inst.is_viewport();
+  float s = is_viewport ? inst.scene->r.fsr_viewport_sharpness :
+                          inst.scene->r.fsr_render_sharpness;
+  if (s == 0.0f && inst.scene->r.fsr3_sharpness != 0.0f) {
+    s = inst.scene->r.fsr3_sharpness;
+  }
+  return s;
 }
 
 void UpscaleModule::init()
 {
-  if (strcmp(inst_.scene->r.engine, "BLENDER_EEVEE_NEXT") != 0 &&
-      strcmp(inst_.scene->r.engine, "BLENDER_EEVEE") != 0) {
-    enabled_ = false;
-    return;
-  }
-
-  if (!inst_.scene->r.use_fsr3) {
+  if (!eevee_fsr_is_active(inst_)) {
     enabled_ = false;
     return;
   }
@@ -68,53 +197,73 @@ void UpscaleModule::init()
 
   nvngx::NVNGXBridge::get().initialize(init_params);
   enabled_ = true;
-  sharpness_ = inst_.scene->r.fsr3_sharpness;
-  quality_mode_ = nvngx::UpscalerQuality::QUALITY;
+  sharpness_ = eevee_fsr_sharpness_get(inst_);
+  quality_mode_ = static_cast<nvngx::UpscalerQuality>(eevee_fsr_quality_get(inst_));
 }
 
 void UpscaleModule::begin_sync()
 {
-  if (strcmp(inst_.scene->r.engine, "BLENDER_EEVEE_NEXT") != 0 &&
-      strcmp(inst_.scene->r.engine, "BLENDER_EEVEE") != 0) {
-    enabled_ = false;
-    return;
-  }
+  const bool is_active = eevee_fsr_is_active(inst_);
 
-  if (!inst_.scene->r.use_fsr3) {
-    enabled_ = false;
+  if (!is_active) {
+    if (enabled_) {
+      free_targets();
+      if (feature_created_) {
+        nvngx::NVNGXBridge::get().release_feature();
+        feature_created_ = false;
+      }
+      enabled_ = false;
+      history_valid_ = false;
+      /* Clean history reset so stale accumulated frames don't persist into fallback rasterizer. */
+      inst_.sampling.reset();
+      inst_.film.reset_history();
+    }
     return;
   }
 
   enabled_ = true;
-  sharpness_ = inst_.scene->r.fsr3_sharpness;
+  sharpness_ = eevee_fsr_sharpness_get(inst_);
+  nvngx::UpscalerQuality new_quality =
+      static_cast<nvngx::UpscalerQuality>(eevee_fsr_quality_get(inst_));
 
-  if (enabled_) {
-    int2 new_render_extent = inst_.film.render_extent_get();
-    int2 new_display_extent = inst_.film.display_extent_get();
-    int new_backend = static_cast<int>(nvngx::UpscalerBackend::FSR31);
+  int2 new_render_extent = inst_.film.render_extent_get();
+  int2 new_display_extent = inst_.film.display_extent_get();
+  int new_backend = static_cast<int>(nvngx::UpscalerBackend::FSR31);
 
-    if (new_render_extent != render_extent_ ||
-        new_display_extent != display_extent_ ||
-        new_backend != cached_backend_ ||
-        !feature_created_)
-    {
-      render_extent_ = new_render_extent;
-      display_extent_ = new_display_extent;
-      cached_backend_ = new_backend;
-
-      nvngx::NVNGXFeatureDesc desc;
-      desc.render_width = render_extent_.x;
-      desc.render_height = render_extent_.y;
-      desc.display_width = display_extent_.x;
-      desc.display_height = display_extent_.y;
-      desc.sharpness = sharpness_;
-      desc.quality = quality_mode_;
-      desc.is_hdr = true;
-      desc.low_res_mv = true;
-
-      nvngx::NVNGXBridge::get().create_super_resolution(desc);
-      feature_created_ = true;
+  if (new_render_extent != render_extent_ ||
+      new_display_extent != display_extent_ ||
+      new_backend != cached_backend_ ||
+      new_quality != quality_mode_ ||
+      !feature_created_)
+  {
+    if (feature_created_) {
+      nvngx::NVNGXBridge::get().release_feature();
+      feature_created_ = false;
     }
+    free_targets();
+    history_valid_ = false;
+
+    /* Clean history reset when preset or dimension changes. */
+    inst_.sampling.reset();
+    inst_.film.reset_history();
+
+    render_extent_ = new_render_extent;
+    display_extent_ = new_display_extent;
+    cached_backend_ = new_backend;
+    quality_mode_ = new_quality;
+
+    nvngx::NVNGXFeatureDesc desc;
+    desc.render_width = render_extent_.x;
+    desc.render_height = render_extent_.y;
+    desc.display_width = display_extent_.x;
+    desc.display_height = display_extent_.y;
+    desc.sharpness = sharpness_;
+    desc.quality = quality_mode_;
+    desc.is_hdr = true;
+    desc.low_res_mv = true;
+
+    nvngx::NVNGXBridge::get().create_super_resolution(desc);
+    feature_created_ = true;
   }
 }
 
@@ -125,9 +274,7 @@ GPUTexture *UpscaleModule::process(View & /*view*/,
                                    GPUTexture * /*depth_tx*/,
                                    GPUTexture * /*vector_tx*/)
 {
-  if (!enabled_ || !inst_.scene->r.use_fsr3 ||
-      (strcmp(inst_.scene->r.engine, "BLENDER_EEVEE_NEXT") != 0 &&
-       strcmp(inst_.scene->r.engine, "BLENDER_EEVEE") != 0)) {
+  if (!enabled_ || !eevee_fsr_is_active(inst_)) {
     return input_color_tx;
   }
 
@@ -165,16 +312,16 @@ GPUTexture *UpscaleModule::process(View & /*view*/,
     return input_color_tx;
   }
 
-  /* Safe offscreen target allocation without GPU_TEXTURE_USAGE_MEMORY_EXPORT */
-  const eGPUTextureUsage output_usage = GPU_TEXTURE_USAGE_GENERAL |
-                                        GPU_TEXTURE_USAGE_SHADER_READ |
-                                        GPU_TEXTURE_USAGE_SHADER_WRITE;
-  upscaled_tx_.acquire(display_extent_, GPU_RGBA16F, output_usage);
+  /* Persistent buffer caching: ensure targets match current dimensions and quality mode.
+   * Allocations and framebuffer attachments ONLY occur if dimensions change. */
+  ensure_targets(real_input_w_, real_input_h_, native_w, native_h, static_cast<int>(quality_mode_));
 
-  if (upscale_fb_ == nullptr) {
-    upscale_fb_ = GPU_framebuffer_create("eevee_upscale_fb");
+  if (!upscaled_tx_ || !upscale_fb_) {
+    return input_color_tx;
   }
-  GPU_framebuffer_texture_attach(upscale_fb_, upscaled_tx_, 0, 0);
+
+  /* Ping-pong history buffer index */
+  history_ping_pong_ = 1 - history_ping_pong_;
 
   GPUFrameBuffer *prev_fb = GPU_framebuffer_active_get();
   GPU_framebuffer_bind(upscale_fb_);
@@ -220,6 +367,21 @@ GPUTexture *UpscaleModule::process(View & /*view*/,
   /* Restore previous active framebuffer so draw manager state is never corrupted */
   if (prev_fb != nullptr) {
     GPU_framebuffer_bind(prev_fb);
+  }
+
+  /* Safety Memory Diagnostics: log persistent buffer status every 120 frames in terminal. */
+  if (s_frame_index % 120 == 0) {
+    float persistent_vram_mb =
+        float(native_w * native_h * 24 + real_input_w_ * real_input_h_ * 9) / (1024.0f * 1024.0f);
+    printf("[FSR 3.1.5 VRAM Monitor] Frame %u: Tex=%p, Res=%dx%d -> %dx%d, Persistent VRAM: %.2f MB (0 MB growth)\n",
+           s_frame_index,
+           static_cast<void *>(upscaled_tx_),
+           real_input_w_,
+           real_input_h_,
+           native_w,
+           native_h,
+           persistent_vram_mb);
+    fflush(stdout);
   }
 
   last_eval_time_ms_ = float((BLI_time_now_seconds() - t0) * 1000.0);

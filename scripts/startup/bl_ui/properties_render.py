@@ -845,7 +845,7 @@ class RENDER_PT_eevee_next_fsr3(RenderButtonsPanel, Panel):
 
     def draw_header(self, context):
         rd = context.scene.render
-        self.layout.prop(rd, "use_fsr3", text="")
+        self.layout.prop(rd, "fsr_viewport_enable", text="")
 
     def draw(self, context):
         layout = self.layout
@@ -853,13 +853,13 @@ class RENDER_PT_eevee_next_fsr3(RenderButtonsPanel, Panel):
         layout.use_property_decorate = False
 
         rd = context.scene.render
-        layout.active = rd.use_fsr3
+        layout.active = rd.fsr_viewport_enable
 
         col = layout.column()
-        col.prop(rd, "use_fsr3", text="Enable AMD FSR 3.1.5")
-        if rd.use_fsr3:
-            col.prop(rd, "fsr3_quality", text="Quality Mode")
-            col.prop(rd, "fsr3_sharpness", text="Sharpness", slider=True)
+        col.prop(rd, "fsr_viewport_enable", text="Enable Viewport FSR 3.1.5")
+        if rd.fsr_viewport_enable:
+            col.prop(rd, "fsr_viewport_quality", text="Quality Mode")
+            col.prop(rd, "fsr_viewport_sharpness", text="Sharpness", slider=True)
             col.prop(rd, "preview_pixel_size", text="Viewport Pixel Size")
             col.prop(rd, "show_fsr3_stats", text="Display HUD / Telemetry")
 
@@ -893,11 +893,11 @@ class RENDER_PT_eevee_performance_viewport(RenderButtonsPanel, Panel):
         col = layout.column()
         col.prop(rd, "preview_pixel_size", text="Pixel Size")
         col.separator()
-        col.prop(rd, "use_fsr3", text="Use AMD FSR 3.1.5")
-        if rd.use_fsr3:
+        col.prop(rd, "fsr_viewport_enable", text="Use Viewport FSR 3.1.5")
+        if rd.fsr_viewport_enable:
             sub = col.column(align=True)
-            sub.prop(rd, "fsr3_quality", text="Quality")
-            sub.prop(rd, "fsr3_sharpness", text="Sharpness", slider=True)
+            sub.prop(rd, "fsr_viewport_quality", text="Quality")
+            sub.prop(rd, "fsr_viewport_sharpness", text="Sharpness", slider=True)
             sub.prop(rd, "show_fsr3_stats", text="Show FSR Stats")
             if rd.show_fsr3_stats:
                 box = col.box()

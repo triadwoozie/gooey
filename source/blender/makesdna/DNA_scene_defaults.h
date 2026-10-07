@@ -134,9 +134,15 @@
 \
     .compositor_denoise_final_quality = SCE_COMPOSITOR_DENOISE_HIGH, \
     .compositor_denoise_preview_quality = SCE_COMPOSITOR_DENOISE_BALANCED, \
-    .use_fsr3 = 0, \
+    .fsr_viewport_enable = 0, \
+    .fsr_viewport_quality = 0, \
+    .fsr_render_enable = 0, \
+    .fsr_render_quality = 1, \
     .show_fsr3_stats = 0, \
+    .use_fsr3 = 0, \
     .fsr3_quality = 0, \
+    .fsr_viewport_sharpness = 0.5f, \
+    .fsr_render_sharpness = 0.5f, \
     .fsr3_sharpness = 0.5f, \
   }
 

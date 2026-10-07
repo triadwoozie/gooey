@@ -40,12 +40,26 @@ class UpscaleModule {
   int real_input_w_ = 0;
   int real_input_h_ = 0;
 
-  draw::TextureFromPool upscaled_tx_ = {"eevee_upscaled_tx"};
+  GPUTexture *upscaled_tx_ = nullptr;
+  GPUTexture *depth_target_tx_ = nullptr;
+  GPUTexture *mv_target_tx_ = nullptr;
+  GPUTexture *reactive_mask_tx_ = nullptr;
+  GPUTexture *history_tx_[2] = {nullptr, nullptr};
+  int history_ping_pong_ = 0;
   GPUFrameBuffer *upscale_fb_ = nullptr;
+
+  int cached_w_ = 0;
+  int cached_h_ = 0;
+  int cached_render_w_ = 0;
+  int cached_render_h_ = 0;
+  int cached_quality_mode_ = -1;
 
   float4x4 last_viewmat_ = float4x4::identity();
   float4x4 last_winmat_ = float4x4::identity();
   bool history_valid_ = false;
+
+  void free_targets();
+  void ensure_targets(int render_w, int render_h, int display_w, int display_h, int quality_mode);
 
  public:
   UpscaleModule(Instance &inst);

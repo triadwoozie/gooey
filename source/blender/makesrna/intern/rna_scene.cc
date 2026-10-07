@@ -7945,7 +7945,59 @@ static void rna_def_scene_render_data(BlenderRNA *brna)
                            "renders if the nodes' quality option is set to Follow Scene");
   RNA_def_property_update(prop, NC_NODE | ND_DISPLAY, "rna_Scene_compositor_update");
 
-  /* AMD FSR 3.1.5 Temporal Upscaling */
+  /* AMD FSR 3.1.5 Temporal Upscaling - Decoupled Viewport Controls */
+  prop = RNA_def_property(srna, "fsr_viewport_enable", PROP_BOOLEAN, PROP_NONE);
+  RNA_def_property_boolean_sdna(prop, nullptr, "fsr_viewport_enable", 1);
+  RNA_def_property_ui_text(prop,
+                           "Enable Viewport FSR 3.1.5",
+                           "Enable AMD FidelityFX Super Resolution 3.1.5 temporal upscaling in viewport");
+  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "rna_Scene_render_update");
+
+  prop = RNA_def_property(srna, "fsr_viewport_sharpness", PROP_FLOAT, PROP_FACTOR);
+  RNA_def_property_float_sdna(prop, nullptr, "fsr_viewport_sharpness");
+  RNA_def_property_range(prop, 0.0f, 1.0f);
+  RNA_def_property_ui_range(prop, 0.0f, 1.0f, 0.05f, 2);
+  RNA_def_property_ui_text(prop,
+                           "Viewport FSR Sharpness",
+                           "Contrast adaptive sharpening factor for viewport temporal reconstruction");
+  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "rna_Scene_render_update");
+
+  prop = RNA_def_property(srna, "fsr_viewport_quality", PROP_ENUM, PROP_NONE);
+  RNA_def_property_enum_sdna(prop, nullptr, "fsr_viewport_quality");
+  RNA_def_property_enum_items(prop, fsr3_quality_items);
+  RNA_def_property_enum_default(prop, SCE_FSR3_AUTO);
+  RNA_def_property_ui_text(prop,
+                           "Viewport FSR Quality Mode",
+                           "Quality preset determining internal render scale and reconstruct ratio in viewport");
+  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "rna_Scene_render_update");
+
+  /* AMD FSR 3.1.5 Temporal Upscaling - Decoupled Render Output Controls */
+  prop = RNA_def_property(srna, "fsr_render_enable", PROP_BOOLEAN, PROP_NONE);
+  RNA_def_property_boolean_sdna(prop, nullptr, "fsr_render_enable", 1);
+  RNA_def_property_ui_text(prop,
+                           "Enable Render FSR 3.1.5",
+                           "Enable AMD FidelityFX Super Resolution 3.1.5 temporal upscaling for final render output");
+  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "rna_Scene_render_update");
+
+  prop = RNA_def_property(srna, "fsr_render_sharpness", PROP_FLOAT, PROP_FACTOR);
+  RNA_def_property_float_sdna(prop, nullptr, "fsr_render_sharpness");
+  RNA_def_property_range(prop, 0.0f, 1.0f);
+  RNA_def_property_ui_range(prop, 0.0f, 1.0f, 0.05f, 2);
+  RNA_def_property_ui_text(prop,
+                           "Render FSR Sharpness",
+                           "Contrast adaptive sharpening factor for final render temporal reconstruction");
+  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "rna_Scene_render_update");
+
+  prop = RNA_def_property(srna, "fsr_render_quality", PROP_ENUM, PROP_NONE);
+  RNA_def_property_enum_sdna(prop, nullptr, "fsr_render_quality");
+  RNA_def_property_enum_items(prop, fsr3_quality_items);
+  RNA_def_property_enum_default(prop, SCE_FSR3_QUALITY);
+  RNA_def_property_ui_text(prop,
+                           "Render FSR Quality Mode",
+                           "Quality preset determining internal render scale and reconstruct ratio for final render");
+  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "rna_Scene_render_update");
+
+  /* Backward Compatibility Aliases */
   prop = RNA_def_property(srna, "use_fsr3", PROP_BOOLEAN, PROP_NONE);
   RNA_def_property_boolean_sdna(prop, nullptr, "use_fsr3", 1);
   RNA_def_property_ui_text(prop,
