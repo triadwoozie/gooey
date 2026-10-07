@@ -38,6 +38,7 @@ void VKExtensions::log() const
             " - [%c] shader output viewport index\n"
             " - [%c] shader output layer\n"
             " - [%c] fragment shader barycentric\n"
+            " - [%c] multi draw indirect\n"
             "Device extensions\n"
             " - [%c] descriptor buffer\n"
             " - [%c] dynamic rendering\n"
@@ -50,6 +51,7 @@ void VKExtensions::log() const
             shader_output_viewport_index ? 'X' : ' ',
             shader_output_layer ? 'X' : ' ',
             fragment_shader_barycentric ? 'X' : ' ',
+            multi_draw_indirect ? 'X' : ' ',
             descriptor_buffer ? 'X' : ' ',
             dynamic_rendering ? 'X' : ' ',
             dynamic_rendering_local_read ? 'X' : ' ',

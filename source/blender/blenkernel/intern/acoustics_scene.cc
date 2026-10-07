@@ -62,9 +62,65 @@ void BKE_acoustics_scene_free()
   phonon_device_shutdown();
 }
 
+static bool acoustics_geometry_is_dirty(const Depsgraph *depsgraph, const Scene *scene)
+{
+  /* If no meshes have been committed yet, initial synchronization is required */
+  if (phonon_scene_get_mesh_count() == 0) {
+    return true;
+  }
+
+  /* If depsgraph does not report changes to objects or mesh data, skip mesh rebuild */
+  if (depsgraph) {
+    if (!DEG_id_type_updated(depsgraph, ID_OB) && !DEG_id_type_updated(depsgraph, ID_ME)) {
+      return false;
+    }
+  }
+
+  const bool all_meshes_mode = (scene->flag_audio & SCENE_AUDIO_STEAM_ALL_MESHES) != 0;
+  bool dirty = false;
+
+  DEGObjectIterSettings deg_iter_settings = {nullptr};
+  deg_iter_settings.depsgraph = const_cast<Depsgraph *>(depsgraph);
+  deg_iter_settings.flags = DEG_ITER_OBJECT_FLAG_LINKED_DIRECTLY |
+                            DEG_ITER_OBJECT_FLAG_LINKED_INDIRECTLY |
+                            DEG_ITER_OBJECT_FLAG_LINKED_VIA_SET;
+
+  DEG_OBJECT_ITER_BEGIN (&deg_iter_settings, ob_eval) {
+    if (ob_eval->type != OB_MESH) {
+      continue;
+    }
+
+    const Object *ob_orig = DEG_get_original(ob_eval);
+    if (!object_use_steam_audio(ob_orig, all_meshes_mode) &&
+        !object_use_steam_audio(ob_eval, all_meshes_mode)) {
+      continue;
+    }
+
+    if ((ob_eval->id.recalc & (ID_RECALC_GEOMETRY | ID_RECALC_TRANSFORM)) ||
+        (ob_orig && (ob_orig->id.recalc & (ID_RECALC_GEOMETRY | ID_RECALC_TRANSFORM)))) {
+      dirty = true;
+      break;
+    }
+
+    const Mesh *mesh_eval = BKE_object_get_evaluated_mesh(ob_eval);
+    if (mesh_eval && (mesh_eval->id.recalc & (ID_RECALC_GEOMETRY | ID_RECALC_TRANSFORM))) {
+      dirty = true;
+      break;
+    }
+  }
+  DEG_OBJECT_ITER_END;
+
+  return dirty;
+}
+
 void BKE_acoustics_scene_sync(Depsgraph *depsgraph, Scene *scene)
 {
   if (!depsgraph || !scene) {
+    return;
+  }
+
+  /* Guard: Only rebuild or triangulate static meshes if geometry or transforms actually changed */
+  if (!acoustics_geometry_is_dirty(depsgraph, scene)) {
     return;
   }
 
@@ -167,6 +223,7 @@ void BKE_acoustics_scene_update_audio(Depsgraph *depsgraph, Scene *scene)
   }
 
   BKE_acoustics_scene_init();
+  BKE_acoustics_scene_sync(depsgraph, scene);
   phonon_simulator_init();
 
   /* 1. Update Listener Transform from Active Camera */
@@ -184,16 +241,9 @@ void BKE_acoustics_scene_update_audio(Depsgraph *depsgraph, Scene *scene)
 
     phonon_simulator_set_listener(sa_pos, sa_ahead, sa_up);
 
-    static float last_pos[3] = {-9999.0f, -9999.0f, -9999.0f};
     static int last_mesh_count = -1;
     int current_meshes = phonon_scene_get_mesh_count();
-    if (fabsf(sa_pos[0] - last_pos[0]) > 0.01f ||
-        fabsf(sa_pos[1] - last_pos[1]) > 0.01f ||
-        fabsf(sa_pos[2] - last_pos[2]) > 0.01f ||
-        current_meshes != last_mesh_count) {
-      last_pos[0] = sa_pos[0];
-      last_pos[1] = sa_pos[1];
-      last_pos[2] = sa_pos[2];
+    if (current_meshes != last_mesh_count) {
       last_mesh_count = current_meshes;
       printf("[Steam Audio] Active: Listener at (%.2f, %.2f, %.2f) | %d tagged meshes\n",
              sa_pos[0], sa_pos[1], sa_pos[2], current_meshes);

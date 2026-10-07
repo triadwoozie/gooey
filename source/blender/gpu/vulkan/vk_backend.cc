@@ -151,9 +151,6 @@ static Vector<StringRefNull> missing_capabilities_get(VkPhysicalDevice vk_physic
   if (features.features.imageCubeArray == VK_FALSE) {
     missing_capabilities.append("image cube array");
   }
-  if (features.features.multiDrawIndirect == VK_FALSE) {
-    missing_capabilities.append("multi draw indirect");
-  }
   if (features.features.multiViewport == VK_FALSE) {
     missing_capabilities.append("multi viewport");
   }
@@ -443,6 +440,8 @@ void VKBackend::detect_workarounds(VKDevice &device)
   extensions.dynamic_rendering_unused_attachments = device.supports_extension(
       VK_EXT_DYNAMIC_RENDERING_UNUSED_ATTACHMENTS_EXTENSION_NAME);
   extensions.logic_ops = device.physical_device_features_get().logicOp;
+  extensions.multi_draw_indirect = device.physical_device_features_get().multiDrawIndirect ==
+                                   VK_TRUE;
   /* For stability reasons descriptor buffers have been disabled. */
 #if 0
   extensions.descriptor_buffer = device.supports_extension(
