@@ -2358,6 +2358,23 @@ static void rna_Scene_use_steam_audio_set(PointerRNA *ptr, bool value)
   }
 }
 
+static bool rna_Scene_steam_audio_all_meshes_get(PointerRNA *ptr)
+{
+  Scene *scene = (Scene *)ptr->data;
+  return (scene->flag_audio & SCENE_AUDIO_STEAM_ALL_MESHES) != 0;
+}
+
+static void rna_Scene_steam_audio_all_meshes_set(PointerRNA *ptr, bool value)
+{
+  Scene *scene = (Scene *)ptr->data;
+  if (value) {
+    scene->flag_audio |= SCENE_AUDIO_STEAM_ALL_MESHES;
+  }
+  else {
+    scene->flag_audio &= ~SCENE_AUDIO_STEAM_ALL_MESHES;
+  }
+}
+
 static void rna_Scene_steam_audio_update(Main * /*bmain*/, Scene * /*scene*/, PointerRNA *ptr)
 {
   DEG_id_tag_update(ptr->owner_id, ID_RECALC_AUDIO);
@@ -9483,6 +9500,16 @@ void RNA_def_scene(BlenderRNA *brna)
   RNA_def_property_boolean_default(prop, true);
   RNA_def_property_ui_text(
       prop, "Steam Audio", "Enable Steam Audio binaural spatialization and ray-traced acoustics");
+  RNA_def_property_update(prop, NC_SCENE, "rna_Scene_steam_audio_update");
+
+  prop = RNA_def_property(srna, "steam_audio_all_meshes", PROP_BOOLEAN, PROP_NONE);
+  RNA_def_property_boolean_funcs(
+      prop, "rna_Scene_steam_audio_all_meshes_get", "rna_Scene_steam_audio_all_meshes_set");
+  RNA_def_property_boolean_default(prop, true);
+  RNA_def_property_ui_text(
+      prop,
+      "Simulate All Meshes",
+      "Include all scene mesh objects in Steam Audio acoustic raytracing geometry");
   RNA_def_property_update(prop, NC_SCENE, "rna_Scene_steam_audio_update");
 
   func = RNA_def_function(srna, "update_render_engine", "rna_Scene_update_render_engine");

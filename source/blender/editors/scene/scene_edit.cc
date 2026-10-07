@@ -25,6 +25,7 @@
 
 #ifdef WITH_STEAM_AUDIO
 #  include "BKE_acoustics_scene.hh"
+#  include "BKE_idprop.hh"
 #endif
 
 #include "DEG_depsgraph.hh"
@@ -453,6 +454,61 @@ static void SCENE_OT_steam_audio_sync_meshes(wmOperatorType *ot)
   ot->poll = ED_operator_scene_editable;
 }
 
+static wmOperatorStatus scene_steam_audio_transition_scene_exec(bContext *C, wmOperator *op)
+{
+  Scene *scene = CTX_data_scene(C);
+  Depsgraph *depsgraph = CTX_data_depsgraph_pointer(C);
+  Main *bmain = CTX_data_main(C);
+
+  if (!scene) {
+    return OPERATOR_CANCELLED;
+  }
+
+  /* 1. Ensure Steam Audio is enabled and all-meshes simulation is enabled */
+  scene->flag_audio |= (SCENE_AUDIO_USE_STEAM_AUDIO | SCENE_AUDIO_STEAM_ALL_MESHES);
+
+  /* 2. Tag all mesh objects in scene with acoustic properties */
+  int mesh_count = 0;
+  LISTBASE_FOREACH (Object *, ob, &bmain->objects) {
+    if (ob->type == OB_MESH) {
+      IDProperty *idgroup = IDP_EnsureProperties(&ob->id);
+      if (idgroup) {
+        IDPropertyTemplate val = {0};
+        val.i = 1;
+        IDProperty *prop = IDP_New(IDP_INT, &val, "use_steam_audio_mesh");
+        IDP_ReplaceInGroup(idgroup, prop);
+      }
+      mesh_count++;
+    }
+  }
+
+  /* 3. Rebuild acoustic geometry in Phonon */
+  if (depsgraph) {
+    BKE_acoustics_scene_sync(depsgraph, scene);
+  }
+
+  DEG_id_tag_update(&scene->id, ID_RECALC_AUDIO);
+  WM_event_add_notifier(C, NC_SCENE | ND_RENDER_OPTIONS, scene);
+
+  BKE_reportf(op->reports,
+              RPT_INFO,
+              "Steam Audio: Successfully transitioned scene (%d meshes configured for acoustics)",
+              mesh_count);
+
+  return OPERATOR_FINISHED;
+}
+
+static void SCENE_OT_steam_audio_transition_scene(wmOperatorType *ot)
+{
+  ot->name = "Transition Entire Scene to Steam Audio";
+  ot->description =
+      "Enable Steam Audio, configure all scene meshes for acoustic simulation, and build acoustic geometry";
+  ot->idname = "SCENE_OT_steam_audio_transition_scene";
+
+  ot->exec = scene_steam_audio_transition_scene_exec;
+  ot->poll = ED_operator_scene_editable;
+}
+
 /** \} */
 #endif
 
@@ -467,6 +523,7 @@ void ED_operatortypes_scene()
   WM_operatortype_append(SCENE_OT_new_sequencer);
 #ifdef WITH_STEAM_AUDIO
   WM_operatortype_append(SCENE_OT_steam_audio_sync_meshes);
+  WM_operatortype_append(SCENE_OT_steam_audio_transition_scene);
 #endif
 }
 
