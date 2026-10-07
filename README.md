@@ -1,18 +1,11 @@
 # Gooey (Blender)
 
-**Gooey** is a modern, high-performance port of the **Goo Engine NPR** pipeline and advanced graphics toolkit to **Blender 4.5.14 LTS**. Goo Engine was meant for NPR artists, but has been stuck on 4.4 for a WHILE since the team has been absorbed into Blender, and native features will roll out, in the meantime Gooey exists to bridge the gap between upstream and Goo Engine. Please note that Generative AI was used in the merging of 4.5.x and current goo engine as I, as a single dev couldn't have managed to achieve this. 
+**Gooey** is a modern, high-performance port of the **Goo Engine NPR** pipeline and advanced graphics toolkit to **Blender 4.5.14 LTS**. Goo Engine was meant for NPR artists, but has been stuck on 4.4 for a WHILE since the team has been absorbed into Blender, and native features will roll out, in the meantime Gooey exists to bridge the gap between upstream and Goo Engine. Please note that Generative AI was used in the merging of 4.5.x and current goo engine as I, as a single dev couldn't have managed to achieve this. **Also note that this project is highly unstable rn and has not been tested on anything other than fedora gnome**.
 
 ---
 
-## Key Features
-
-### 1. Goo Engine NPR Toolset
-- **Shader Nodes**: Curvature, SDF Noise, Water Ripples, Hexagon Grid, Shader Info.
-- **Light Groups**: Bitmask-based light linking and group isolation in real time.
-- **Color Gradients**: Native OKLab color interpolation support in Color Ramps for perceptually uniform NPR gradients.
-- **Signed Frames**: Unconstrained negative timeline frame support for pre-roll animations.
-
-### 2. Advanced Graphics Pipeline & Post-FX Nodes
+## Key Features (other than what goo engine and Blender offer ofc)
+### 1. Upscaling because my pc is bad
 - **FSR 1 Spatial Upscaling (`CMP_NODE_FSR1`)**:
   - Dual-pass GLSL compute execution featuring **EASU** (Edge-Adaptive Spatial Upsampling) and **RCAS** (Robust Contrast-Adaptive Sharpening).
   - Pass isolation options: `Full (EASU -> RCAS)`, `EASU Only`, `RCAS Only`.
@@ -30,9 +23,8 @@
 - **Native Viewport FSR 3.1 Temporal Pipeline**:
   - Temporal integration leveraging Viewport/Render Depth and Motion Vector passes via Vulkan/ffx_api_vk bridge for interactive 3D Viewport playback and final animation rendering.
 
-### 3. Native System Cursors & UI Refinement
-- **Native System Cursors**: Window manager cursor calls map directly to standard host desktop environment / OS system cursors (Wayland, X11, Win32, macOS) without software bitmap blitting.
-- **Darkened & Tokyo Themes**: Polished interface themes featuring flat inactive workspace tabs, soft rounded active pills, and seamless header integration.
+### 2. Cool looking UI
+- **Theme Overhaul (idk, looked cool)**: Polished interface themes featuring flat inactive workspace tabs, soft rounded active pills, and seamless header integration.
 
 ---
 
