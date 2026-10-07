@@ -76,12 +76,14 @@ struct ContextPathItem {
   /* #BIFIconID */
   int icon;
   int icon_indicator_number;
+  int parent_tree_index = -1;
 };
 
 void context_path_add_generic(Vector<ContextPathItem> &path,
                               StructRNA &rna_type,
                               void *ptr,
-                              const BIFIconID icon_override = ICON_NONE);
+                              const BIFIconID icon_override = ICON_NONE,
+                              int parent_tree_index = -1);
 
 void template_breadcrumbs(uiLayout &layout, Span<ContextPathItem> context_path);
 

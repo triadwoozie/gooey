@@ -52,8 +52,15 @@ static void context_path_add_node_tree_and_node_groups(const SpaceNode &snode,
                                                        Vector<ui::ContextPathItem> &path,
                                                        const bool skip_base = false)
 {
-  LISTBASE_FOREACH (const bNodeTreePath *, path_item, &snode.treepath) {
-    if (!(skip_base && path_item == snode.treepath.first)) {
+  int i = 0;
+  LISTBASE_FOREACH_INDEX (const bNodeTreePath *, path_item, &snode.treepath, i) {
+    if (skip_base && path_item == snode.treepath.first) {
+      continue;
+    }
+    if (path_item != snode.treepath.last) {
+      ui::context_path_add_generic(path, RNA_NodeTree, path_item->nodetree, ICON_NODETREE, i);
+    }
+    else {
       ui::context_path_add_generic(path, RNA_NodeTree, path_item->nodetree, ICON_NODETREE);
     }
   }

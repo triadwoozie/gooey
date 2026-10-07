@@ -6959,145 +6959,464 @@ def unregister():
     for km, kmi in addon_keymaps.values():
         km.keymap_items.remove(kmi)
     addon_keymaps.clear()
-    del bpy.types.Scene.sna_is_recording
-    del bpy.types.Scene.sna_rbw_info
-    del bpy.types.Scene.sna_rbc_chase_camera
-    del bpy.types.Scene.sna_rbc_follow_camera
-    del bpy.types.Scene.sna_rename_rig
-    del bpy.types.Scene.sna_animation_menu
-    del bpy.types.Scene.sna_quick_rig_instructions
-    del bpy.types.Scene.sna_auto_select_rig
-    del bpy.types.Scene.sna_rbc_control_menu
-    del bpy.types.Scene.sna_animation_panel_enum
-    del bpy.types.Object.sna_rotdata
-    del bpy.types.Scene.sna_locdata
-    del bpy.types.Scene.sna_overlap_bool
-    del bpy.types.Scene.sna_rbc_ground_plane
-    del bpy.types.Scene.sna_active_rig
-    del bpy.types.Object.sna_rig_control_drivers
-    del bpy.types.Scene.sna_rig_tuning_menu
-    del bpy.types.Scene.sna_rig_tuning_enum
-    del bpy.types.Scene.sna_rig_control_panel
-    del bpy.types.Scene.sna_custom_vehicle_set
-    del bpy.types.Scene.sna_set_up_preview
-    del bpy.types.Object.sna_control_rig_car_bodies
-    del bpy.types.Object.sna_body_axles
-    del bpy.types.Scene.sna_rbc_rig_panel_icon
-    del bpy.types.Scene.sna_rbc_rig_panel
-    del bpy.types.Scene.sna_rbc_set_up_advanced
-    del bpy.types.Scene.sna_rbc_rig_type_menu
-    del bpy.types.Scene.sna_rbc_collection_list
-    del bpy.types.Scene.sna_rbc_rig_collection
-    bpy.utils.unregister_class(SNA_GROUP_sna_rbc_axle_group)
-    bpy.utils.unregister_class(SNA_GROUP_sna_rbc_rig_group)
-    bpy.utils.unregister_class(SNA_GROUP_sna_animation_menu_group)
-    bpy.utils.unregister_class(SNA_GROUP_sna_rig_tuning_all_group)
-    bpy.utils.unregister_class(SNA_GROUP_sna_rbc_control_menu_group)
-    bpy.utils.unregister_class(SNA_GROUP_sna_rig_tuning_menu_group)
-    bpy.utils.unregister_class(SNA_GROUP_sna_rig_tuning_group)
-    bpy.utils.unregister_class(SNA_GROUP_sna_rig_drivers_group)
-    bpy.utils.unregister_class(SNA_GROUP_sna_custom_vehicle_properties)
-    bpy.utils.unregister_class(SNA_GROUP_sna_vehicle_preview_propeties)
-    bpy.utils.unregister_class(SNA_GROUP_sna_set_up_preview_group)
-    bpy.utils.unregister_class(SNA_GROUP_sna_rbc_body_group)
-    bpy.utils.unregister_class(SNA_GROUP_sna_rbc_wheel_group)
-    bpy.utils.unregister_class(SNA_GROUP_sna_rbc_objs)
-    bpy.utils.unregister_class(SNA_GROUP_sna_rbc_setup_advanced_group)
-    bpy.utils.unregister_class(SNA_OT_Operator_46C07)
-    bpy.utils.unregister_class(SNA_OT_Add_Monster_Truck_E78A9)
-    bpy.utils.unregister_class(SNA_PT_NEW_PANEL_98F32)
-    bpy.utils.unregister_class(SNA_OT_Modal_Operator_042F6)
-    bpy.app.handlers.frame_change_pre.remove(frame_change_pre_handler_6212D)
-    bpy.utils.unregister_class(SNA_OT_Unlink_All_Objs_From_Rbc_Model_D3335)
-    bpy.utils.unregister_class(SNA_OT_Relink_Collsions_Objs_4C5Ed)
-    bpy.utils.unregister_class(SNA_OT_Link_Selected_Objs_To_Rbc_Collisions_Df18F)
-    bpy.utils.unregister_class(SNA_OT_Link_All_Objs_To_Rbc_Model_0D37C)
-    bpy.utils.unregister_class(SNA_OT_Unlink_Selected_Objs_From_Rbc_Collisions_58C07)
-    bpy.utils.unregister_class(SNA_PT_NEW_PANEL_5B98C)
-    bpy.utils.unregister_class(SNA_OT_Link_Selected_Objs_Op_C8847)
-    bpy.utils.unregister_class(SNA_OT_Operator_B8743)
-    bpy.utils.unregister_class(SNA_OT_Unlink_All_Objs_From_Rbc_Collisions_20F73)
-    bpy.utils.unregister_class(SNA_OT_Add_Rig_Type_B03D7)
-    bpy.utils.unregister_class(SNA_PT_RBC_ADD_RIG_C3194)
-    bpy.utils.unregister_class(SNA_OT_Quick_Rig_Set__Aa043)
-    bpy.utils.unregister_class(SNA_OT_Quick_Rig_631Dc)
-    bpy.utils.unregister_class(SNA_OT_Modal_Operator_6B7B0)
-    bpy.app.handlers.frame_change_pre.remove(frame_change_pre_handler_220F8)
-    bpy.app.handlers.frame_change_pre.remove(frame_change_pre_handler_BD3FF)
-    bpy.utils.unregister_class(SNA_OT_Rig_To_Cache_4Fb23)
-    bpy.utils.unregister_class(SNA_OT_Rig_To_Animation_91E3F)
-    bpy.utils.unregister_class(SNA_OT_Clear_Baked_Keys_94763)
-    bpy.utils.unregister_class(SNA_OT_Bake_To_Keys_3A4F6)
-    bpy.app.handlers.frame_change_pre.remove(frame_change_pre_handler_7EB4E)
-    bpy.app.handlers.frame_change_pre.remove(frame_change_pre_handler_61194)
-    bpy.utils.unregister_class(SNA_OT_Add_Animation_Objs_5Ca5B)
-    bpy.utils.unregister_class(SNA_OT_Delete_Animation_Objs_5E23A)
-    bpy.utils.unregister_class(SNA_OT_Bake_Ani_Obj_Action_E2073)
-    bpy.utils.unregister_class(SNA_PT_NEW_PANEL_C93F4)
-    bpy.app.handlers.frame_change_post.remove(frame_change_post_handler_0BC89)
-    bpy.app.handlers.frame_change_post.remove(frame_change_post_handler_30ABA)
-    bpy.app.handlers.frame_change_post.remove(frame_change_post_handler_E5047)
-    bpy.app.handlers.frame_change_post.remove(frame_change_post_handler_BC81A)
-    bpy.utils.unregister_class(SNA_OT_Delete_Baked_Keyframes_03E9D)
-    bpy.utils.unregister_class(SNA_OT_Bake_Keyframes_7F7D6)
-    bpy.utils.unregister_class(SNA_OT_Delete_Keyframes_B761F)
-    bpy.utils.unregister_class(SNA_OT_Modal_Operator_87D5C)
-    bpy.utils.unregister_class(SNA_OT_Insert_Keyframes_6F941)
-    bpy.utils.unregister_class(SNA_OT_Keyframegroup_Ae234)
-    bpy.utils.unregister_class(SNA_OT_Disable_Keyframes_5Fc18)
-    bpy.utils.unregister_class(SNA_OT_Delete_Recorded_Keyframes_F1Cca)
-    bpy.utils.unregister_class(SNA_OT_Show_Keyframes_0C226)
-    bpy.utils.unregister_class(SNA_OT_Delete_Current_Cache_83F83)
-    bpy.utils.unregister_class(SNA_OT_Playrest_Simulation_0C324)
-    bpy.utils.unregister_class(SNA_OT_Record__Current_Simulation_D1460)
-    bpy.utils.unregister_class(SNA_OT_Record_Simulation_22D2D)
-    bpy.app.handlers.frame_change_post.remove(frame_change_post_handler_DD6BD)
-    bpy.utils.unregister_class(SNA_PT_RBC_ANIMATION_95568)
-    bpy.utils.unregister_class(SNA_OT_Clear_Collision_Ops_1F7F2)
-    bpy.utils.unregister_class(SNA_OT_Make_Collision_Passive_Op_8C0C0)
-    bpy.utils.unregister_class(SNA_OT_Make_Collision_Active_Op_38F01)
-    bpy.utils.unregister_class(SNA_PT_RIGID_BODY_WORLD_ACFEC)
-    bpy.utils.unregister_class(SNA_OT_Show_Convex_Hull_Aab03)
+    for owner, prop in [
+        (bpy.types.Scene, "sna_is_recording"),
+        (bpy.types.Scene, "sna_rbw_info"),
+        (bpy.types.Scene, "sna_rbc_chase_camera"),
+        (bpy.types.Scene, "sna_rbc_follow_camera"),
+        (bpy.types.Scene, "sna_rename_rig"),
+        (bpy.types.Scene, "sna_animation_menu"),
+        (bpy.types.Scene, "sna_quick_rig_instructions"),
+        (bpy.types.Scene, "sna_auto_select_rig"),
+        (bpy.types.Scene, "sna_rbc_control_menu"),
+        (bpy.types.Scene, "sna_animation_panel_enum"),
+        (bpy.types.Object, "sna_rotdata"),
+        (bpy.types.Scene, "sna_locdata"),
+        (bpy.types.Scene, "sna_overlap_bool"),
+        (bpy.types.Scene, "sna_rbc_ground_plane"),
+        (bpy.types.Scene, "sna_active_rig"),
+        (bpy.types.Object, "sna_rig_control_drivers"),
+        (bpy.types.Scene, "sna_rig_tuning_menu"),
+        (bpy.types.Scene, "sna_rig_tuning_enum"),
+        (bpy.types.Scene, "sna_rig_control_panel"),
+        (bpy.types.Scene, "sna_custom_vehicle_set"),
+        (bpy.types.Scene, "sna_set_up_preview"),
+        (bpy.types.Object, "sna_control_rig_car_bodies"),
+        (bpy.types.Object, "sna_body_axles"),
+        (bpy.types.Scene, "sna_rbc_rig_panel_icon"),
+        (bpy.types.Scene, "sna_rbc_rig_panel"),
+        (bpy.types.Scene, "sna_rbc_set_up_advanced"),
+        (bpy.types.Scene, "sna_rbc_rig_type_menu"),
+        (bpy.types.Scene, "sna_rbc_collection_list"),
+        (bpy.types.Scene, "sna_rbc_rig_collection"),
+    ]:
+        if hasattr(owner, prop):
+            delattr(owner, prop)
+    try:
+        bpy.utils.unregister_class(SNA_GROUP_sna_rbc_axle_group)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_GROUP_sna_rbc_rig_group)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_GROUP_sna_animation_menu_group)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_GROUP_sna_rig_tuning_all_group)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_GROUP_sna_rbc_control_menu_group)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_GROUP_sna_rig_tuning_menu_group)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_GROUP_sna_rig_tuning_group)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_GROUP_sna_rig_drivers_group)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_GROUP_sna_custom_vehicle_properties)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_GROUP_sna_vehicle_preview_propeties)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_GROUP_sna_set_up_preview_group)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_GROUP_sna_rbc_body_group)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_GROUP_sna_rbc_wheel_group)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_GROUP_sna_rbc_objs)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_GROUP_sna_rbc_setup_advanced_group)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_OT_Operator_46C07)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_OT_Add_Monster_Truck_E78A9)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_PT_NEW_PANEL_98F32)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_OT_Modal_Operator_042F6)
+    except Exception:
+        pass
+    try:
+        bpy.app.handlers.frame_change_pre.remove(frame_change_pre_handler_6212D)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_OT_Unlink_All_Objs_From_Rbc_Model_D3335)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_OT_Relink_Collsions_Objs_4C5Ed)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_OT_Link_Selected_Objs_To_Rbc_Collisions_Df18F)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_OT_Link_All_Objs_To_Rbc_Model_0D37C)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_OT_Unlink_Selected_Objs_From_Rbc_Collisions_58C07)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_PT_NEW_PANEL_5B98C)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_OT_Link_Selected_Objs_Op_C8847)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_OT_Operator_B8743)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_OT_Unlink_All_Objs_From_Rbc_Collisions_20F73)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_OT_Add_Rig_Type_B03D7)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_PT_RBC_ADD_RIG_C3194)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_OT_Quick_Rig_Set__Aa043)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_OT_Quick_Rig_631Dc)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_OT_Modal_Operator_6B7B0)
+    except Exception:
+        pass
+    try:
+        bpy.app.handlers.frame_change_pre.remove(frame_change_pre_handler_220F8)
+    except Exception:
+        pass
+    try:
+        bpy.app.handlers.frame_change_pre.remove(frame_change_pre_handler_BD3FF)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_OT_Rig_To_Cache_4Fb23)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_OT_Rig_To_Animation_91E3F)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_OT_Clear_Baked_Keys_94763)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_OT_Bake_To_Keys_3A4F6)
+    except Exception:
+        pass
+    try:
+        bpy.app.handlers.frame_change_pre.remove(frame_change_pre_handler_7EB4E)
+    except Exception:
+        pass
+    try:
+        bpy.app.handlers.frame_change_pre.remove(frame_change_pre_handler_61194)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_OT_Add_Animation_Objs_5Ca5B)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_OT_Delete_Animation_Objs_5E23A)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_OT_Bake_Ani_Obj_Action_E2073)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_PT_NEW_PANEL_C93F4)
+    except Exception:
+        pass
+    try:
+        bpy.app.handlers.frame_change_post.remove(frame_change_post_handler_0BC89)
+    except Exception:
+        pass
+    try:
+        bpy.app.handlers.frame_change_post.remove(frame_change_post_handler_30ABA)
+    except Exception:
+        pass
+    try:
+        bpy.app.handlers.frame_change_post.remove(frame_change_post_handler_E5047)
+    except Exception:
+        pass
+    try:
+        bpy.app.handlers.frame_change_post.remove(frame_change_post_handler_BC81A)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_OT_Delete_Baked_Keyframes_03E9D)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_OT_Bake_Keyframes_7F7D6)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_OT_Delete_Keyframes_B761F)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_OT_Modal_Operator_87D5C)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_OT_Insert_Keyframes_6F941)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_OT_Keyframegroup_Ae234)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_OT_Disable_Keyframes_5Fc18)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_OT_Delete_Recorded_Keyframes_F1Cca)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_OT_Show_Keyframes_0C226)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_OT_Delete_Current_Cache_83F83)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_OT_Playrest_Simulation_0C324)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_OT_Record__Current_Simulation_D1460)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_OT_Record_Simulation_22D2D)
+    except Exception:
+        pass
+    try:
+        bpy.app.handlers.frame_change_post.remove(frame_change_post_handler_DD6BD)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_PT_RBC_ANIMATION_95568)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_OT_Clear_Collision_Ops_1F7F2)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_OT_Make_Collision_Passive_Op_8C0C0)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_OT_Make_Collision_Active_Op_38F01)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_PT_RIGID_BODY_WORLD_ACFEC)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_OT_Show_Convex_Hull_Aab03)
+    except Exception:
+        pass
     if hasattr(bpy.types, 'PHYSICS_PT_rigid_body_collisions'):
         try:
             bpy.types.PHYSICS_PT_rigid_body_collisions.remove(sna_add_to_physics_pt_rigid_body_collisions_B28F1)
         except Exception:
             pass
-    bpy.utils.unregister_class(SNA_PT_RBC_COLLISIONS_5744D)
-    bpy.utils.unregister_class(SNA_PT_RBC_COLLECTION_91441)
-    bpy.app.handlers.load_pre.remove(load_pre_handler_1F36E)
-    bpy.utils.unregister_class(SNA_OT_Delete_Rbc_Rig__0De67)
-    bpy.utils.unregister_class(SNA_OT_Wasd_Modal_E6557)
-    bpy.utils.unregister_class(SNA_OT_Import_Xinput_A1516)
-    bpy.utils.unregister_class(SNA_OT_Controller_Operator_Fe555)
-    bpy.utils.unregister_class(SNA_OT_Drive_Reset_D354C)
-    bpy.utils.unregister_class(SNA_OT_Steering_Reset_Ae4F6)
-    bpy.utils.unregister_class(SNA_OT_Reset_All_Tweaks_Ac446)
-    bpy.utils.unregister_class(SNA_OT_Reset_Suspension_Limits_E12Bd)
-    bpy.utils.unregister_class(SNA_OT_Reset_Spring_Stiffness_F75A8)
-    bpy.utils.unregister_class(SNA_OT_Reset_Spring_Damping_Ce584)
-    bpy.utils.unregister_class(SNA_OT_Reset_Weight_Position_2Fbd2)
-    bpy.utils.unregister_class(SNA_OT_Reset_Motor_Torque_D3852)
-    bpy.utils.unregister_class(SNA_OT_Reset_Weight_3D40F)
-    bpy.utils.unregister_class(SNA_OT_Reset_Tire_Friction_A0520)
-    bpy.utils.unregister_class(SNA_OT_Reset_Frontback_Friction_138E2)
-    bpy.utils.unregister_class(SNA_OT_Reset_Pivot_Points_8F3E7)
-    bpy.utils.unregister_class(SNA_OT_Reset_Turn_Radius_B505E)
-    bpy.utils.unregister_class(SNA_OT_Reset_Caster_Angle_Bbefb)
-    bpy.utils.unregister_class(SNA_OT_Reset_Roll_Constraint_Eb720)
-    bpy.app.handlers.frame_change_post.remove(frame_change_post_handler_EE4B7)
-    bpy.app.handlers.frame_change_pre.remove(frame_change_pre_handler_B5700)
-    bpy.app.handlers.frame_change_post.remove(frame_change_post_handler_12DAC)
-    bpy.app.handlers.frame_change_pre.remove(frame_change_pre_handler_5F226)
-    bpy.app.handlers.frame_change_post.remove(frame_change_post_handler_1ED8B)
-    bpy.app.handlers.frame_change_post.remove(frame_change_post_handler_ACD60)
-    bpy.app.handlers.frame_change_post.remove(frame_change_post_handler_C5D97)
-    bpy.utils.unregister_class(SNA_PT_RBC_RIG_5285F)
-    bpy.utils.unregister_class(SNA_OT_Add_Ground_28971)
-    bpy.app.handlers.frame_change_pre.remove(frame_change_pre_handler_FA47C)
-    bpy.utils.unregister_class(SNA_OT_Remove_Constraints_Bc322)
-    bpy.utils.unregister_class(SNA_PT_NEW_PANEL_14901)
-    bpy.utils.unregister_class(SNA_OT_Switch_Objects_8B723)
+    try:
+        bpy.utils.unregister_class(SNA_PT_RBC_COLLISIONS_5744D)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_PT_RBC_COLLECTION_91441)
+    except Exception:
+        pass
+    try:
+        bpy.app.handlers.load_pre.remove(load_pre_handler_1F36E)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_OT_Delete_Rbc_Rig__0De67)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_OT_Wasd_Modal_E6557)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_OT_Import_Xinput_A1516)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_OT_Controller_Operator_Fe555)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_OT_Drive_Reset_D354C)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_OT_Steering_Reset_Ae4F6)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_OT_Reset_All_Tweaks_Ac446)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_OT_Reset_Suspension_Limits_E12Bd)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_OT_Reset_Spring_Stiffness_F75A8)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_OT_Reset_Spring_Damping_Ce584)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_OT_Reset_Weight_Position_2Fbd2)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_OT_Reset_Motor_Torque_D3852)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_OT_Reset_Weight_3D40F)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_OT_Reset_Tire_Friction_A0520)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_OT_Reset_Frontback_Friction_138E2)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_OT_Reset_Pivot_Points_8F3E7)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_OT_Reset_Turn_Radius_B505E)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_OT_Reset_Caster_Angle_Bbefb)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_OT_Reset_Roll_Constraint_Eb720)
+    except Exception:
+        pass
+    try:
+        bpy.app.handlers.frame_change_post.remove(frame_change_post_handler_EE4B7)
+    except Exception:
+        pass
+    try:
+        bpy.app.handlers.frame_change_pre.remove(frame_change_pre_handler_B5700)
+    except Exception:
+        pass
+    try:
+        bpy.app.handlers.frame_change_post.remove(frame_change_post_handler_12DAC)
+    except Exception:
+        pass
+    try:
+        bpy.app.handlers.frame_change_pre.remove(frame_change_pre_handler_5F226)
+    except Exception:
+        pass
+    try:
+        bpy.app.handlers.frame_change_post.remove(frame_change_post_handler_1ED8B)
+    except Exception:
+        pass
+    try:
+        bpy.app.handlers.frame_change_post.remove(frame_change_post_handler_ACD60)
+    except Exception:
+        pass
+    try:
+        bpy.app.handlers.frame_change_post.remove(frame_change_post_handler_C5D97)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_PT_RBC_RIG_5285F)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_OT_Add_Ground_28971)
+    except Exception:
+        pass
+    try:
+        bpy.app.handlers.frame_change_pre.remove(frame_change_pre_handler_FA47C)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_OT_Remove_Constraints_Bc322)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_PT_NEW_PANEL_14901)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_OT_Switch_Objects_8B723)
+    except Exception:
+        pass
     if hasattr(bpy.types, 'PHYSICS_PT_rigid_body_constraint_objects'):
         try:
             bpy.types.PHYSICS_PT_rigid_body_constraint_objects.remove(sna_add_to_physics_pt_rigid_body_constraint_objects_3E17A)
@@ -7108,20 +7427,65 @@ def unregister():
             bpy.types.PHYSICS_PT_add.remove(sna_add_to_physics_pt_add_B0813)
         except Exception:
             pass
-    bpy.utils.unregister_class(SNA_OT_Operator_9629A)
-    bpy.utils.unregister_class(SNA_OT_Clear_Rig_Control_Constraints_2322E)
-    bpy.utils.unregister_class(SNA_OT_Reset_Rb_Obj_Buttons_2603E)
-    bpy.utils.unregister_class(SNA_OT_Reset_Rb_Obj_Location_D2903)
-    bpy.utils.unregister_class(SNA_OT_Snap_To_Ground_F6C01)
-    bpy.utils.unregister_class(SNA_OT_Parent_Modelcollection_28104)
-    bpy.utils.unregister_class(SNA_OT_Clear_Rig_4Ed9B)
-    bpy.utils.unregister_class(SNA_OT_Clear_Model_Constraints_43579)
-    bpy.utils.unregister_class(SNA_OT_Rig_Tune_Up_Be9A4)
-    bpy.utils.unregister_class(SNA_OT_Generate_Rig_6C502)
-    bpy.utils.unregister_class(SNA_OT_Is_Empty_46D86)
-    bpy.utils.unregister_class(SNA_OT_Create_Convex_Hull_78B8A)
-    bpy.app.handlers.frame_change_pre.remove(frame_change_pre_handler_53988)
-    bpy.utils.unregister_class(SNA_PT_RIGID_BODY_SETTINGS_520F5)
-    bpy.utils.unregister_class(SNA_PT_ZCONTROLS_BA8EA)
+    try:
+        bpy.utils.unregister_class(SNA_OT_Operator_9629A)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_OT_Clear_Rig_Control_Constraints_2322E)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_OT_Reset_Rb_Obj_Buttons_2603E)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_OT_Reset_Rb_Obj_Location_D2903)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_OT_Snap_To_Ground_F6C01)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_OT_Parent_Modelcollection_28104)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_OT_Clear_Rig_4Ed9B)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_OT_Clear_Model_Constraints_43579)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_OT_Rig_Tune_Up_Be9A4)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_OT_Generate_Rig_6C502)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_OT_Is_Empty_46D86)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_OT_Create_Convex_Hull_78B8A)
+    except Exception:
+        pass
+    try:
+        bpy.app.handlers.frame_change_pre.remove(frame_change_pre_handler_53988)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_PT_RIGID_BODY_SETTINGS_520F5)
+    except Exception:
+        pass
+    try:
+        bpy.utils.unregister_class(SNA_PT_ZCONTROLS_BA8EA)
+    except Exception:
+        pass
 
 classes = ()

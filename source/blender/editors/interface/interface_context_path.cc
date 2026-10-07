@@ -15,12 +15,15 @@
 
 #include "RNA_prototypes.hh"
 
+#include "interface_intern.hh"
+
 namespace blender::ui {
 
 void context_path_add_generic(Vector<ContextPathItem> &path,
                               StructRNA &rna_type,
                               void *ptr,
-                              const BIFIconID icon_override)
+                              const BIFIconID icon_override,
+                              const int parent_tree_index)
 {
   /* Add the null check here to make calling functions less verbose. */
   if (!ptr) {
@@ -37,10 +40,10 @@ void context_path_add_generic(Vector<ContextPathItem> &path,
 
   if (&rna_type == &RNA_NodeTree) {
     ID *id = (ID *)ptr;
-    path.append({name, icon, ID_REAL_USERS(id)});
+    path.append({name, icon, ID_REAL_USERS(id), parent_tree_index});
   }
   else {
-    path.append({name, icon, 1});
+    path.append({name, icon, 1, parent_tree_index});
   }
   if (name != name_buf) {
     MEM_freeN(name);
@@ -63,9 +66,26 @@ void template_breadcrumbs(uiLayout &layout, Span<ContextPathItem> context_path)
     if (i > 0) {
       sub_row->label("", ICON_RIGHTARROW_THIN);
     }
-    uiBut *but = uiItemL_ex(
-        sub_row, context_path[i].name.c_str(), context_path[i].icon, false, false);
-    UI_but_icon_indicator_number_set(but, context_path[i].icon_indicator_number);
+
+    uiBut *but = nullptr;
+    if (context_path[i].parent_tree_index >= 0) {
+      PointerRNA op_ptr = sub_row->op("NODE_OT_tree_path_parent",
+                                      context_path[i].name.c_str(),
+                                      context_path[i].icon);
+      RNA_int_set(&op_ptr, "parent_tree_index", context_path[i].parent_tree_index);
+      if (uiBlock *block = uiLayoutGetBlock(sub_row)) {
+        if (!block->buttons.is_empty()) {
+          but = block->buttons.last().get();
+        }
+      }
+    }
+    else {
+      but = uiItemL_ex(
+          sub_row, context_path[i].name.c_str(), context_path[i].icon, false, false);
+    }
+    if (but) {
+      UI_but_icon_indicator_number_set(but, context_path[i].icon_indicator_number);
+    }
   }
 }
 

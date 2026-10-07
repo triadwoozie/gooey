@@ -374,6 +374,11 @@ uiBut *ui_but_find_mouse_over(const ARegion *region, const wmEvent *event)
       region, event->xy, event->modifier & KM_CTRL, false, nullptr, nullptr);
 }
 
+uiBut *UI_but_find_mouse_over(const ARegion *region, const wmEvent *event)
+{
+  return ui_but_find_mouse_over(region, event);
+}
+
 uiBut *ui_but_find_rect_over(const ARegion *region, const rcti *rect_px)
 {
   if (!ui_region_contains_rect_px(region, rect_px)) {

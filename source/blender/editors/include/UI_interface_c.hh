@@ -726,6 +726,8 @@ void UI_popup_menu_end(bContext *C, uiPopupMenu *pup);
 bool UI_popup_menu_end_or_cancel(bContext *C, uiPopupMenu *pup);
 uiLayout *UI_popup_menu_layout(uiPopupMenu *pup);
 
+uiBut *UI_but_find_mouse_over(const ARegion *region, const wmEvent *event);
+
 void UI_popup_menu_reports(bContext *C, ReportList *reports) ATTR_NONNULL();
 wmOperatorStatus UI_popup_menu_invoke(bContext *C, const char *idname, ReportList *reports)
     ATTR_NONNULL(1, 2);
