@@ -26,6 +26,7 @@
 ### 2. Cool looking UI
 - **Theme Overhaul (idk, looked cool)**: Polished interface themes featuring flat inactive workspace tabs, soft rounded active pills, and seamless header integration.
 
+### 3. Audio overhaul because audio features are buns rn (using steam audio) - STAGED
 ---
 
 ## Credits & Attribution
