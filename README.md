@@ -12,7 +12,7 @@
   - NPR detail preservation with an input `Mask` socket modulating sharpening attenuation along cel outlines.
 - **LFGA - Linear Film Grain Applicator (`CMP_NODE_LFGA`)**:
   - Linear scene-space procedural film grain evaluated prior to view/display transforms.
-  - Perceptual luminance weighting concentrated in midtones ($4.0 \cdot Y \cdot (1.0 - Y)$), keeping pure blacks and peak highlights clean.
+  - Perceptual luminance weighting concentrated in midtones, keeping pure blacks and peak highlights clean.
 - **TEPD - Temporal Energy Preserving Dither (`CMP_NODE_TEPD`)**:
   - High-precision anti-banding quantization dither using low-discrepancy Weyl sequence temporal phase shifts ($\phi \approx 0.6180339887 \cdot \text{frame\_idx}$).
   - Triangular probability distribution function (TPDF) kernel ensuring zero integrated DC energy drift.
