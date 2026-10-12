@@ -9,6 +9,7 @@
 #include "BKE_context.hh"
 #include "BKE_editmesh.hh"
 #include "BKE_layer.hh"
+#include "BKE_report.hh"
 
 #include "DNA_mesh_types.h"
 #include "DNA_object_types.h"
@@ -38,11 +39,10 @@ static const EnumPropertyItem prop_interpolation_items[] = {
 
 static wmOperatorStatus edbm_relax_edge_loops_exec(bContext *C, wmOperator *op)
 {
-  const Main *bmain = CTX_data_main(C);
   const Scene *scene = CTX_data_scene(C);
   ViewLayer *view_layer = CTX_data_view_layer(C);
   const Vector<Object *> objects = BKE_view_layer_array_from_objects_in_edit_mode_unique_data(
-      *bmain, scene, view_layer, CTX_wm_view3d(C));
+      scene, view_layer, CTX_wm_view3d(C));
 
   const int interpolation = RNA_enum_get(op->ptr, "interpolation");
   const int iterations = RNA_int_get(op->ptr, "iterations");
@@ -81,7 +81,7 @@ static wmOperatorStatus edbm_relax_edge_loops_exec(bContext *C, wmOperator *op)
     EDBMUpdate_Params params{};
     params.calc_looptris = true;
     params.calc_normals = true;
-    EDBM_update(id_cast<Mesh *>(obedit->data), &params);
+    EDBM_update(static_cast<Mesh *>(obedit->data), &params);
   }
 
   if (!changed_multi) {
