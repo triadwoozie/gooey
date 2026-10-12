@@ -5,6 +5,7 @@
 #ifdef WITH_STEAM_AUDIO
 
 #include "BKE_acoustics_scene.hh"
+#include "BKE_acoustics_inference.hh"
 
 #include "DNA_material_types.h"
 #include "DNA_mesh_types.h"
@@ -290,6 +291,9 @@ void BKE_acoustics_scene_update_audio(Depsgraph *depsgraph, Scene *scene)
     phonon_speaker_dsp_update(ob_eval, occlusion, transmission, distance_atten, rel_direction);
   }
   DEG_OBJECT_ITER_END;
+
+  /* 3. Evaluate dynamic physics contact impacts and physical acoustics synthesis */
+  BKE_acoustics_process_rigidbody_contacts(depsgraph, scene);
 }
 
 #endif /* WITH_STEAM_AUDIO */

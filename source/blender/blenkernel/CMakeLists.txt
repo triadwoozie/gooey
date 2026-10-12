@@ -642,6 +642,8 @@ if(WITH_STEAM_AUDIO)
   list(APPEND SRC
     intern/acoustics_scene.cc
     BKE_acoustics_scene.hh
+    intern/acoustics_inference.cc
+    BKE_acoustics_inference.hh
   )
   list(APPEND LIB
     bf_intern_audaspace

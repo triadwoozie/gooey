@@ -80,6 +80,8 @@ if(WITH_STEAM_AUDIO)
     plugins/phonon/phonon_simulator.h
     plugins/phonon/phonon_reader.cc
     plugins/phonon/phonon_reader.h
+    plugins/phonon/phonon_modal_synth.cc
+    plugins/phonon/phonon_modal_synth.h
   )
   if(TARGETDIR_LIB)
     install(FILES ${STEAM_AUDIO_LIBRARY} DESTINATION ${TARGETDIR_LIB})

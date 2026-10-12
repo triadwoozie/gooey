@@ -359,6 +359,21 @@ void RB_constraint_set_solver_iterations(rbConstraint *con, int num_solver_itera
 /* Set breaking impulse threshold, if constraint shouldn't break it can be set to FLT_MAX */
 void RB_constraint_set_breaking_threshold(rbConstraint *con, float threshold);
 
+/* User Data ------------------------ */
+void RB_body_set_user_data(rbRigidBody *object, void *user_data);
+void *RB_body_get_user_data(rbRigidBody *object);
+
+/* Contact Queries ------------------ */
+typedef void (*RBContactCallback)(void *user_data,
+                                  void *body0_userdata,
+                                  void *body1_userdata,
+                                  const float pos[3],
+                                  const float normal[3],
+                                  float applied_impulse,
+                                  float distance);
+
+void RB_dworld_get_contacts(rbDynamicsWorld *world, RBContactCallback callback, void *user_data);
+
 /* ********************************** */
 
 #ifdef __cplusplus

@@ -738,6 +738,8 @@ static void rigidbody_validate_sim_object(RigidBodyWorld *rbw, Object *ob, bool 
     rbo->shared->physics_object = RB_body_new(
         static_cast<rbCollisionShape *>(rbo->shared->physics_shape), loc, rot);
 
+    RB_body_set_user_data(static_cast<rbRigidBody *>(rbo->shared->physics_object), ob);
+
     RB_body_set_friction(static_cast<rbRigidBody *>(rbo->shared->physics_object), rbo->friction);
     RB_body_set_restitution(static_cast<rbRigidBody *>(rbo->shared->physics_object),
                             rbo->restitution);
