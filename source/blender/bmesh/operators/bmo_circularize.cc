@@ -372,7 +372,7 @@ static void calculate_target_locations(MutableSpan<CircleVert> verts,
   float start_angle = 0.0f;
 
   if (is_regular) {
-    float total_angle = 2.0f * std::numbers::pi_v<float>;
+    float total_angle = 2.0f * float(M_PI);
     int divisions = verts.size();
 
     /* For open chains, we calculate the total angle obtained by traversing
@@ -395,7 +395,7 @@ static void calculate_target_locations(MutableSpan<CircleVert> verts,
         vec_prev = vec_curr;
       }
       /* In case the angle exceeds a full revolution, clamp it to the max angle. */
-      const float max_angle = 2.0f * std::numbers::pi_v<float>;
+      const float max_angle = 2.0f * float(M_PI);
       total_angle = std::clamp(total_angle, -max_angle, max_angle);
     }
 
@@ -476,7 +476,7 @@ static void project_on_mesh(BVHTree *bvh_tree,
   }
   const float angle = angle_normalized_v3v3(vec, normal);
   if (std::abs(angle) < CIRCULARIZE_EPSILON ||
-      std::abs(std::numbers::pi_v<float> - angle) < CIRCULARIZE_EPSILON)
+      std::abs(float(M_PI) - angle) < CIRCULARIZE_EPSILON)
   {
     r_pos = float3(v->co);
     return;
