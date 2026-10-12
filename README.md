@@ -77,12 +77,19 @@
   - *Persistent Asset Menu*: Header menu in the Asset Browser for catalog operations.
   - *Duplicate Shape Keys*: Dedicated operator to duplicate all selected shape keys simultaneously.
   - *Pose Marker Rename*: Clarified naming for Convert to Pose Marker operator.
+- **Tier 4 (Geometry Nodes & Procedural Workflows)**:
+  - *Repeat Zone Iterations Search* (`ea28033ce48`, by Brady Johnston): Drag-to-search directly exposes the `Iterations` input socket for empty Repeat zones.
+  - *Index Switch Drag-to-Search* (`2e3d66d91b9`, by Brady Johnston): Link-drag-search connects compatible data types directly into the `Index Switch` value sockets.
+- **Tier 5 (Compositor, Rigging & Asset UI)**:
+  - *Compositor Anisotropic Kuwahara Speedup* (`e260a7e6071`, by Aras Pranckevicius): 25-30% faster CPU, 2x faster NVIDIA GPU, and 10x faster Apple GPU execution with polynomial radial falloff approximation and unrolled sector loops.
+  - *Rigify B-Bone Segment Count* (`f6d875a717a`, by Antônio Froz): Exposed B-Bone segment count for spine and head rig types.
+  - *Asset Browser Persistent "Asset" Menu* (`324f1a32d10`, by Nika Kutsniashvili): Always-accessible Asset menu in the header.
+  - *Convert Pose Marker Clarification* (`caa9272d9e0`, by RedMser): Clear naming for pose marker conversion operator.
 - **Tier 6 (Modeling)**:
-  - *Relax Edge Loops* (`mesh.relax_edge_loops`): Native C++ operator backported from LoopTools into edit-mesh transform menus.
-- **Tier 7 (UI Polish, Outliner & Nodes)**:
-  - *Compositor Group Output Shortcut*: `Alt + LMB` instantly connects active node to Group Output.
-  - *Outliner Pack Images*: Direct `ICON_PACKAGE` indicator and operators to pack images from the Outliner.
-  - *Outliner Hide Unselected*: `Shift + H` hides unselected tree elements in the Outliner.
+  - *Relax Edge Loops* (`mesh.relax_edge_loops`, `eb18863b4c3`, by Tariq-Sulley, adapted to 4.5): High-performance native C++ edge loop smoother backported from LoopTools into edit-mesh transform menus.
+- **Tier 7 (UI Polish, Outliner & Compositor)**:
+  - *Compositor Group Output Shortcut* (`a5273e0710b`, by Habib Gahbiche): `Alt + LMB` instantly connects active node to Group Output.
+  - *Outliner Hide Unselected* (`9a717cccc74`, by Pratik Borhade): `Shift + H` hides unselected tree elements in the Outliner.
   - *Node Editor Cut/Reconnect*: `Ctrl + X` cuts nodes to clipboard while reconnecting links; `Shift + X` dissolves nodes with link reconnection.
 
 ---
