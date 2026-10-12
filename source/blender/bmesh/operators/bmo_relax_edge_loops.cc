@@ -9,16 +9,17 @@
  */
 
 #include "BLI_math_vector.hh"
-#include "BLI_math_vector_c.hh"
+#include "BLI_math_vector.h"
 
 #include "BLI_array_utils.hh"
 #include "BLI_length_parameterize.hh"
-#include "BLI_listbase.hh"
-#include "BLI_math_solvers.hh"
+#include "BLI_listbase.h"
+#include "BLI_math_solvers.h"
 #include "BLI_vector.hh"
 #include <array>
 
 #include "bmesh.hh"
+#include "intern/bmesh_edgeloop.hh"
 #include "intern/bmesh_operators_private.hh" /* own include */
 
 namespace blender {
@@ -215,17 +216,15 @@ static bool bm_edge_relax_test_cb(BMEdge *e, void * /*user_data*/)
 
 static void get_relax_input_chains(BMesh *bm, Vector<RelaxChainData> &r_chains)
 {
-  ListBaseT<BMEdgeLoopStore> eloops = {nullptr};
-  const BMEdgeLoopFind_Params params = {
-      .use_vert_junction = true,
-  };
-  BM_mesh_edgeloops_find(bm, &eloops, bm_edge_relax_test_cb, nullptr, &params);
+  ListBase eloops = {nullptr, nullptr};
+  BM_mesh_edgeloops_find(bm, &eloops, bm_edge_relax_test_cb, nullptr);
 
-  for (BMEdgeLoopStore &el_store : eloops) {
+  LISTBASE_FOREACH (BMEdgeLoopStore *, el_store, &eloops) {
     RelaxChainData chain;
-    chain.is_closed = BM_edgeloop_is_closed(&el_store);
-    for (LinkData &node : *BM_edgeloop_verts_get(&el_store)) {
-      chain.verts.append(static_cast<BMVert *>(node.data));
+    chain.is_closed = BM_edgeloop_is_closed(el_store);
+    ListBase *verts_list = BM_edgeloop_verts_get(el_store);
+    LISTBASE_FOREACH (LinkData *, node, verts_list) {
+      chain.verts.append(static_cast<BMVert *>(node->data));
     }
     if (chain.verts.size() >= 3) {
       r_chains.append(std::move(chain));
@@ -363,8 +362,11 @@ static void execute_relax_phase(
   }
 }
 
+}  // namespace blender
+
 void bmo_relax_edge_loops_exec(BMesh *bm, BMOperator *op)
 {
+  using namespace blender;
   const int iterations = BMO_slot_int_get(op->slots_in, "iterations");
   const int interpolation = BMO_slot_int_get(op->slots_in, "interpolation");
   const bool even_spacing = BMO_slot_bool_get(op->slots_in, "even_spacing");
@@ -389,5 +391,3 @@ void bmo_relax_edge_loops_exec(BMesh *bm, BMOperator *op)
     }
   }
 }
-
-}  // namespace blender
