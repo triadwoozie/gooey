@@ -575,8 +575,11 @@ static void project_on_mesh(BVHTree *bvh_tree,
   r_pos = center_pos;
 }
 
+}  // namespace blender
+
 void bmo_circularize_exec(BMesh *bm, BMOperator *op)
 {
+  using namespace blender;
   const float factor = BMO_slot_float_get(op->slots_in, "factor");
   const float custom_radius = BMO_slot_float_get(op->slots_in, "custom_radius");
   const float angle = BMO_slot_float_get(op->slots_in, "angle");
@@ -743,5 +746,3 @@ void bmo_circularize_exec(BMesh *bm, BMOperator *op)
     BLI_bvhtree_free(bvh_tree);
   }
 }
-
-}  // namespace blender

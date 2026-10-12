@@ -51,8 +51,11 @@ static Vector<BMVert *> collect_verts_from_faces(Span<BMFace *> faces)
   return verts.extract_vector();
 }
 
+}  // namespace blender
+
 void bmo_flatten_exec(BMesh *bm, BMOperator *op)
 {
+  using namespace blender;
   const float factor = BMO_slot_float_get(op->slots_in, "factor");
   const FlattenMethod method = static_cast<FlattenMethod>(
       BMO_slot_int_get(op->slots_in, "method"));
@@ -124,5 +127,3 @@ void bmo_flatten_exec(BMesh *bm, BMOperator *op)
   }
   MEM_freeN(group_index);
 }
-
-}  // namespace blender
