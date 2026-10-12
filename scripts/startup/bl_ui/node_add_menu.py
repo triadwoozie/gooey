@@ -11,6 +11,19 @@ from bpy.app.translations import (
 )
 
 
+class NodeMenu(Menu):
+    draw_assets = True
+    use_transform = True
+
+
+class AddNodeMenu(NodeMenu):
+    pass
+
+
+class SwapNodeMenu(NodeMenu):
+    pass
+
+
 def add_node_type(layout, node_type, *, label=None, poll=None, search_weight=0.0, translate=True):
     """Add a node type to a menu."""
     bl_rna = bpy.types.Node.bl_rna_get_subclass(node_type)
