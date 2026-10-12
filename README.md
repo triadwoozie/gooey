@@ -41,9 +41,49 @@
 - **Dynamic Scene Synchronization & Performance**:
   - Rebuilds are guarded by `acoustics_geometry_is_dirty(depsgraph, scene)`.
   - During playback, static meshes skip expensive vertex extraction and BVH commits, updating only listener (camera) and speaker poses at real-time frame rates with 0 MB memory leak.
-- **Audio Analysis & Time-Scale Modification (Planned / In Progress)**:
-  - **aubio Integration**: Used for real-time onset/attack detection, instantaneous pitch tracking (via YIN algorithm), and beat/tempo tracking to drive dynamic animation drivers (F-Curves, shape keys, camera shake).
-  - **libtsm Integration**: High-fidelity time-scale modification via WSOLA and phase vocoder for artifact-free pitch shifting and slow-motion audio stretching without metallic flanging.
+### 3. Audio Analysis, Animation Automation & Geometry Nodes Rigging
+- **Aubio Integration (`extern/aubio`)**:
+  - **Feature Extraction**: Real-time onset / attack transient detection, instantaneous pitch tracking via YIN / Fast YIN, and tempo / beat tracking.
+  - **Action & F-Curve Automation**: Maps live or imported audio streams directly to MIDI events, custom driver properties, and keyframe curves in the Graph Editor and Action Editor.
+  - **Speech Visemes & Transients**: Directly synchronizes mouth deformation, prop impacts, and camera shake with musical beats and speech formants.
+- **libtsm Integration (`extern/libtsm`)**:
+  - **Time-Scale Modification (TSM)**: High-fidelity WSOLA (Waveform Similarity Overlap-Add) and phase vocoder algorithms.
+  - **Pitch & Formant Automation**: Independent manipulation of playback speed, pitch shifting, and formant correction without metallic flanging or phase artifacts, allowing animators to automate audio pitch during bullet-time and slow-motion scenes.
+- **Camera Shakify Geometry Nodes Rig (`GeometryNodeCameraShake`)**:
+  - Procedural camera wobble and camera shake directly usable on regular controller objects with a dropdown camera selector (honoring EatTheFuture / Ian Hubert's Camera Shakify).
+  - 15 production-tested motion profiles (`Handheld`, `Bike`, `Car`, `Explosion`, `Earthquake`, `Running`, `Walking`, `Helicopter`, `Drone`, etc.).
+  - Fully exposed `NodeTreeInterface` input sockets: `Camera` dropdown, `Profile`, `Frequency`, `Intensity`, `Audio Trigger`, `Seed`.
+  - Transform outputs: `Offset Location`, `Offset Rotation`, `Transform Matrix`, `Final Location`, `Final Rotation`.
+  - Interactive UI panels in 3D Viewport sidebar (`N -> Camera Shake`) and Camera Object Data properties panel.
+- **Speech Viseme Deformer (`GeometryNodeMouthShapes`)**:
+  - Deforms character mouth geometry automatically driven by Aubio speech visemes (Open 'A', Wide 'E', Round 'O').
+  - Inputs: `Speaker`, `Mouth Center`, `Influence Radius`, `Jaw Open Scale`, `Lip Wide Scale`, `Lip Round Scale`, `Sensitivity`, `Smoothing`.
+  - Outputs: `Offset` vector (plugs directly into *Set Position* `Offset`), `Jaw Open`, `Lip Wide`, `Lip Round`, `Viseme Vector`.
+- **Surface Resonance (`GeometryNodePropVibration`)**:
+  - Physical modal vibration deformer driven by material BSDF, thickness, and collision impulses or audio transients.
+  - Inputs: `Sample Object`, `Trigger / Impulse`, `Frequency`, `Damping`, `Amplitude Scale`, `Vibration Axis`.
+  - Outputs: `Offset` vector, `Displacement` vector, `Amplitude`, `Resonant Freq (f0)`, `Damping (Q)`.
+- **Full Geometry Node Searchability & Audio Menu**:
+  - Dedicated `Shift+A -> Audio & Dynamics` menu in the Geometry Node Editor.
+  - Full keyword aliases indexed for instant search (`Shakify`, `Camera Shake`, `Aubio`, `libtsm`, `TSM`, `Viseme`, `Mouth Shapes`, `Vibration`, `Resonance`).
+  - Native Link-Drag Search integration for all sockets.
+
+### 4. Backported Blender 5.3 Features
+- **Tier 4 (Geometry Nodes)**:
+  - *Geometry Materials* node (`GeometryNodeGeometryMaterials`): Query all materials assigned across geometry components in procedural node trees.
+- **Tier 5 (Animation & Asset Pipeline)**:
+  - *Rigify B-Bone Segment Count*: Exposed segment count for spine and head rig types.
+  - *Asset Shelf Empty Info Label*: Informative placeholder in asset shelves when no assets match filters.
+  - *Persistent Asset Menu*: Header menu in the Asset Browser for catalog operations.
+  - *Duplicate Shape Keys*: Dedicated operator to duplicate all selected shape keys simultaneously.
+  - *Pose Marker Rename*: Clarified naming for Convert to Pose Marker operator.
+- **Tier 6 (Modeling)**:
+  - *Relax Edge Loops* (`mesh.relax_edge_loops`): Native C++ operator backported from LoopTools into edit-mesh transform menus.
+- **Tier 7 (UI Polish, Outliner & Nodes)**:
+  - *Compositor Group Output Shortcut*: `Alt + LMB` instantly connects active node to Group Output.
+  - *Outliner Pack Images*: Direct `ICON_PACKAGE` indicator and operators to pack images from the Outliner.
+  - *Outliner Hide Unselected*: `Shift + H` hides unselected tree elements in the Outliner.
+  - *Node Editor Cut/Reconnect*: `Ctrl + X` cuts nodes to clipboard while reconnecting links; `Shift + X` dissolves nodes with link reconnection.
 
 ---
 
