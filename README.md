@@ -53,6 +53,7 @@
 - **Base Engine**: Blender 4.5.14 LTS
 - **Stylized Shading**: Goo Engine NPR Project
 - **Spatial Audio & Ray Tracing**: Valve Software ([Steam Audio / Phonon](https://github.com/ValveSoftware/steam-audio))
+- **Camera Shake & Motion Profiles**: Nathan Vegdahl & Ian Hubert ([Camera Shakify](https://github.com/EatTheFuture/camera_shakify))
 - **Audio Analysis & Pitch Tracking**: Paul Brossier & contributors ([aubio](https://github.com/aubio/aubio))
 - **Time-Scale Modification**: Meinard Müller, Jonathan Driedger & contributors ([libtsm](https://github.com/groupmm/libtsm))
 - **Local ML Inference**: Microsoft ([ONNX Runtime](https://github.com/microsoft/onnxruntime)) & Google Research ([Flan-T5](https://github.com/google-research/t5x))

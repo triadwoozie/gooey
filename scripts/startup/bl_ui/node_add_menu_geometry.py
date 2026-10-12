@@ -350,6 +350,9 @@ class NODE_MT_geometry_node_GEO_INPUT_SCENE(Menu):
                                                   "Focus Distance",
                                                   "Is Orthographic",
                                                   "Orthographic Scale"])
+        node_add_menu.add_node_type(layout, "GeometryNodeCameraShake")
+        node_add_menu.add_node_type(layout, "GeometryNodeAudioAnalysis")
+        node_add_menu.add_node_type(layout, "GeometryNodeAudioTSM")
         node_add_menu.add_node_type(layout, "GeometryNodeCollectionInfo")
         node_add_menu.add_node_type(layout, "GeometryNodeImageInfo")
         node_add_menu.add_node_type(layout, "GeometryNodeIsViewport")

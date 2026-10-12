@@ -14571,10 +14571,13 @@ static void rna_def_nodes(BlenderRNA *brna)
   define("GeometryNode", "GeometryNodeAccumulateField");
   define("GeometryNode", "GeometryNodeAttributeDomainSize");
   define("GeometryNode", "GeometryNodeAttributeStatistic");
+  define("GeometryNode", "GeometryNodeAudioAnalysis");
+  define("GeometryNode", "GeometryNodeAudioTSM");
   define("GeometryNode", "GeometryNodeBake", rna_def_geo_bake);
   define("GeometryNode", "GeometryNodeBlurAttribute");
   define("GeometryNode", "GeometryNodeBoundBox");
   define("GeometryNode", "GeometryNodeCameraInfo");
+  define("GeometryNode", "GeometryNodeCameraShake");
   define("GeometryNode", "GeometryNodeCaptureAttribute", rna_def_geo_capture_attribute);
   define("GeometryNode", "GeometryNodeClosureInput", def_geo_closure_input);
   define("GeometryNode", "GeometryNodeClosureOutput", def_geo_closure_output);

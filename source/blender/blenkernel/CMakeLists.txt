@@ -652,6 +652,17 @@ if(WITH_STEAM_AUDIO)
   add_definitions(-DWITH_STEAM_AUDIO)
 endif()
 
+list(APPEND INC
+  ../../../extern/aubio/src
+)
+list(APPEND SRC
+  intern/audio_analysis.cc
+  BKE_audio_analysis.hh
+)
+list(APPEND LIB
+  extern_aubio
+)
+
 if(WITH_BULLET)
   list(APPEND INC_SYS
     ${BULLET_INCLUDE_DIRS}

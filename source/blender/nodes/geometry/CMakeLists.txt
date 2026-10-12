@@ -27,11 +27,14 @@ set(SRC
   nodes/node_geo_attribute_capture.cc
   nodes/node_geo_attribute_domain_size.cc
   nodes/node_geo_attribute_statistic.cc
+  nodes/node_geo_audio_analysis.cc
+  nodes/node_geo_audio_tsm.cc
   nodes/node_geo_bake.cc
   nodes/node_geo_blur_attribute.cc
   nodes/node_geo_boolean.cc
   nodes/node_geo_bounding_box.cc
   nodes/node_geo_camera_info.cc
+  nodes/node_geo_camera_shake.cc
   nodes/node_geo_closure.cc
   nodes/node_geo_collection_info.cc
   nodes/node_geo_combine_bundle.cc
