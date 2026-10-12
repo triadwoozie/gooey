@@ -275,15 +275,12 @@ class TOPBAR_MT_file(Menu):
 
         layout.separator()
 
-        layout.menu("TOPBAR_MT_file_project", icon='FILE_FOLDER')
-
-        layout.separator()
-
-        layout.menu("TOPBAR_MT_file_import", icon='IMPORT')
-        layout.menu("TOPBAR_MT_file_export", icon='EXPORT')
+        layout.menu("TOPBAR_MT_file_import")
+        layout.menu("TOPBAR_MT_file_export")
         row = layout.row()
         row.operator("wm.collection_export_all")
-        row.enabled = context.view_layer.has_export_collections
+        view_layer = getattr(context, "view_layer", None)
+        row.enabled = getattr(view_layer, "has_export_collections", False) if view_layer else False
 
         layout.separator()
 
@@ -497,7 +494,15 @@ class TOPBAR_MT_file_export(Menu):
     bl_label = "Export"
     bl_owner_use_filter = False
 
-    def draw(self, _context):
+    def draw(self, context):
+        view_layer = getattr(context, "view_layer", None)
+        has_export = getattr(view_layer, "has_export_collections", False) if view_layer else False
+        row = self.layout.row()
+        row.operator("wm.collection_export_all", text="Export All Collections")
+        row.enabled = has_export
+
+        self.layout.separator()
+
         if bpy.app.build_options.alembic:
             self.layout.operator("wm.alembic_export", text="Alembic (.abc)")
         if bpy.app.build_options.usd:
@@ -761,7 +766,7 @@ class TOPBAR_MT_help(Menu):
 class TOPBAR_MT_file_context_menu(Menu):
     bl_label = "File"
 
-    def draw(self, _context):
+    def draw(self, context):
         layout = self.layout
 
         layout.operator_context = 'INVOKE_AREA'
@@ -776,12 +781,26 @@ class TOPBAR_MT_file_context_menu(Menu):
 
         layout.separator()
 
-        layout.menu("TOPBAR_MT_file_import", icon='IMPORT')
-        layout.menu("TOPBAR_MT_file_export", icon='EXPORT')
+        layout.menu("TOPBAR_MT_file_import")
+        layout.menu("TOPBAR_MT_file_export")
+        row = layout.row()
+        row.operator("wm.collection_export_all")
+        view_layer = getattr(context, "view_layer", None)
+        row.enabled = getattr(view_layer, "has_export_collections", False) if view_layer else False
+
+        layout.separator()
+
+        layout.menu("TOPBAR_MT_file_external_data")
+        layout.menu("TOPBAR_MT_file_cleanup")
+
+        layout.separator()
+
+        layout.menu("TOPBAR_MT_file_defaults")
 
         layout.separator()
 
         layout.operator("screen.userpref_show", text="Preferences...", icon='PREFERENCES')
+        layout.operator("wm.quit_blender", text="Quit", icon='QUIT')
 
 
 class TOPBAR_MT_workspace_menu(Menu):
