@@ -233,15 +233,15 @@ static void node_gather_link_searches(GatherLinkSearchOpParams &params)
   }
   if (other_socket.in_out == SOCK_OUT) {
     params.add_item_full_name(IFACE_("Repeat -> Iterations"), [](LinkSearchOpParams &params) {
-      bNode &input_node = params.add_node("GeometryNodeRepeatInput"_ustr);
-      bNode &output_node = params.add_node("GeometryNodeRepeatOutput"_ustr);
+      bNode &input_node = params.add_node("GeometryNodeRepeatInput");
+      bNode &output_node = params.add_node("GeometryNodeRepeatOutput");
       output_node.location[0] = 300;
 
       auto &input_storage = *static_cast<NodeGeometryRepeatInput *>(input_node.storage);
       input_storage.output_node_id = output_node.identifier;
       socket_items::clear<RepeatItemsAccessor>(output_node);
 
-      params.update_and_connect_available_socket(input_node, "Iterations"_ustr);
+      params.update_and_connect_available_socket(input_node, "Iterations");
     });
   }
   params.add_item_full_name(IFACE_("Repeat"), [](LinkSearchOpParams &params) {
