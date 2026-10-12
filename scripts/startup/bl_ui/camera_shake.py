@@ -229,6 +229,229 @@ class CameraShakeBindCamera(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class CameraShakeLinkAudio(bpy.types.Operator):
+    """Link Aubio Audio Analysis node to drive Camera Shake triggers and kicks"""
+    bl_idname = "object.camera_shake_link_audio"
+    bl_label = "Link Audio Source (Aubio)"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    speaker: bpy.props.StringProperty(
+        name="Speaker Object",
+        description="Speaker containing audio source",
+        default=""
+    )
+
+    def draw(self, context):
+        layout = self.layout
+        layout.prop_search(self, "speaker", context.scene, "objects", text="Speaker")
+
+    def execute(self, context):
+        rig_obj = context.active_object
+        shake_node = get_camera_shake_node(rig_obj)
+        if not shake_node or not rig_obj:
+            self.report({'ERROR'}, "Active object is not a Camera Shake rig!")
+            return {'CANCELLED'}
+
+        mod = None
+        for m in rig_obj.modifiers:
+            if m.type == 'NODES' and m.node_group:
+                if shake_node in m.node_group.nodes.values():
+                    mod = m
+                    break
+        if not mod:
+            self.report({'ERROR'}, "Modifier not found!")
+            return {'CANCELLED'}
+
+        ntree = mod.node_group
+        # Find or create Audio Analysis node
+        audio_node = None
+        for n in ntree.nodes:
+            if n.bl_idname == 'GeometryNodeAudioAnalysis':
+                audio_node = n
+                break
+        if not audio_node:
+            audio_node = ntree.nodes.new(type='GeometryNodeAudioAnalysis')
+            audio_node.location = (shake_node.location.x - 300, shake_node.location.y - 150)
+
+        # Wire time and onset/volume to Audio Trigger
+        time_node = None
+        for n in ntree.nodes:
+            if n.bl_idname == 'GeometryNodeInputSceneTime':
+                time_node = n
+                break
+        if time_node:
+            ntree.links.new(time_node.outputs['Seconds'], audio_node.inputs['Time'])
+
+        ntree.links.new(audio_node.outputs['Onset'], shake_node.inputs['Audio Trigger'])
+
+        if self.speaker and self.speaker in bpy.data.objects:
+            audio_node.inputs['Speaker'].default_value = bpy.data.objects[self.speaker]
+
+        self.report({'INFO'}, "Successfully linked Aubio Audio Analysis to Camera Shake!")
+        return {'FINISHED'}
+
+
+class AudioMouthShapesAddModifier(bpy.types.Operator):
+    """Add an Aubio-driven Mouth Shapes (Visemes) Geometry Nodes modifier to the active mesh"""
+    bl_idname = "object.audio_mouth_shapes_add"
+    bl_label = "Add Audio Mouth Shapes (Visemes)"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        obj = context.active_object
+        if not obj or obj.type != 'MESH':
+            self.report({'ERROR'}, "Select a mesh object to apply Mouth Shapes!")
+            return {'CANCELLED'}
+
+        mod = obj.modifiers.new(name="Audio_Mouth_Shapes", type='NODES')
+        ntree = bpy.data.node_groups.new(name=f"{obj.name}_MouthShapes", type='GeometryNodeTree')
+        mod.node_group = ntree
+
+        in_node = ntree.nodes.new(type='NodeGroupInput')
+        in_node.location = (-300, 0)
+        out_node = ntree.nodes.new(type='NodeGroupOutput')
+        out_node.location = (300, 0)
+        ntree.interface.new_socket(name='Geometry', in_out='INPUT', socket_type='NodeSocketGeometry')
+        ntree.interface.new_socket(name='Geometry', in_out='OUTPUT', socket_type='NodeSocketGeometry')
+
+        mouth_node = ntree.nodes.new(type='GeometryNodeMouthShapes')
+        mouth_node.location = (0, 0)
+
+        time_node = ntree.nodes.new(type='GeometryNodeInputSceneTime')
+        time_node.location = (-300, -120)
+
+        ntree.links.new(in_node.outputs['Geometry'], mouth_node.inputs['Geometry'])
+        ntree.links.new(mouth_node.outputs['Geometry'], out_node.inputs['Geometry'])
+        ntree.links.new(time_node.outputs['Seconds'], mouth_node.inputs['Time'])
+
+        self.report({'INFO'}, f"Added Audio Mouth Shapes modifier to '{obj.name}'.")
+        return {'FINISHED'}
+
+
+class AcousticPropVibrationAddModifier(bpy.types.Operator):
+    """Add a physically inferred Acoustic Prop Vibration Geometry Nodes modifier to the active object"""
+    bl_idname = "object.acoustic_prop_vibration_add"
+    bl_label = "Add Acoustic Prop Vibration"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        obj = context.active_object
+        if not obj:
+            self.report({'ERROR'}, "Select an object to apply Prop Vibration!")
+            return {'CANCELLED'}
+
+        mod = obj.modifiers.new(name="Acoustic_Prop_Vibration", type='NODES')
+        ntree = bpy.data.node_groups.new(name=f"{obj.name}_PropVibration", type='GeometryNodeTree')
+        mod.node_group = ntree
+
+        in_node = ntree.nodes.new(type='NodeGroupInput')
+        in_node.location = (-300, 0)
+        out_node = ntree.nodes.new(type='NodeGroupOutput')
+        out_node.location = (300, 0)
+        ntree.interface.new_socket(name='Geometry', in_out='INPUT', socket_type='NodeSocketGeometry')
+        ntree.interface.new_socket(name='Geometry', in_out='OUTPUT', socket_type='NodeSocketGeometry')
+
+        vib_node = ntree.nodes.new(type='GeometryNodePropVibration')
+        vib_node.location = (0, 0)
+        vib_node.inputs['Object'].default_value = obj
+
+        time_node = ntree.nodes.new(type='GeometryNodeInputSceneTime')
+        time_node.location = (-300, -120)
+
+        ntree.links.new(in_node.outputs['Geometry'], vib_node.inputs['Geometry'])
+        ntree.links.new(vib_node.outputs['Geometry'], out_node.inputs['Geometry'])
+        ntree.links.new(time_node.outputs['Seconds'], vib_node.inputs['Time'])
+
+        self.report({'INFO'}, f"Added Acoustic Prop Vibration modifier to '{obj.name}'.")
+        return {'FINISHED'}
+
+
+def get_mouth_shapes_node(obj):
+    if not obj or obj.type != 'MESH':
+        return None
+    for mod in obj.modifiers:
+        if mod.type == 'NODES' and mod.node_group:
+            for node in mod.node_group.nodes:
+                if node.bl_idname == 'GeometryNodeMouthShapes':
+                    return node
+    return None
+
+
+def get_prop_vibration_node(obj):
+    if not obj:
+        return None
+    for mod in obj.modifiers:
+        if mod.type == 'NODES' and mod.node_group:
+            for node in mod.node_group.nodes:
+                if node.bl_idname == 'GeometryNodePropVibration':
+                    return node
+    return None
+
+
+class OBJECT_PT_mouth_shapes_geonodes(bpy.types.Panel):
+    """Audio Mouth Shapes Panel in Object Properties"""
+    bl_label = "Mouth Shapes (Audio Visemes)"
+    bl_idname = "OBJECT_PT_mouth_shapes_geonodes"
+    bl_space_type = 'PROPERTIES'
+    bl_region_type = 'WINDOW'
+    bl_context = "object"
+
+    @classmethod
+    def poll(cls, context):
+        return context.active_object and context.active_object.type == 'MESH'
+
+    def draw(self, context):
+        layout = self.layout
+        obj = context.active_object
+        mouth_node = get_mouth_shapes_node(obj)
+
+        if mouth_node:
+            box = layout.box()
+            box.label(text="Active Aubio Lipsync Deformer", icon='CHECKMARK')
+            box.prop(mouth_node.inputs['Speaker'], "default_value", text="Speaker Source")
+            col = box.column(align=True)
+            col.prop(mouth_node.inputs['Mouth Center'], "default_value", text="Mouth Center")
+            col.prop(mouth_node.inputs['Influence Radius'], "default_value", text="Radius")
+            col.prop(mouth_node.inputs['Jaw Open Scale'], "default_value", text="Jaw Open Scale ('A')")
+            col.prop(mouth_node.inputs['Lip Wide Scale'], "default_value", text="Lip Wide Scale ('E')")
+            col.prop(mouth_node.inputs['Lip Round Scale'], "default_value", text="Lip Round Scale ('O')")
+            col.prop(mouth_node.inputs['Sensitivity'], "default_value", text="Sensitivity")
+            col.prop(mouth_node.inputs['Smoothing'], "default_value", text="Smoothing")
+        else:
+            layout.operator("object.audio_mouth_shapes_add", text="Add Audio Mouth Shapes", icon='SPEAKER')
+
+
+class OBJECT_PT_prop_vibration_geonodes(bpy.types.Panel):
+    """Acoustic Prop Vibration Panel in Object Properties"""
+    bl_label = "Prop Vibration (Physical Acoustics)"
+    bl_idname = "OBJECT_PT_prop_vibration_geonodes"
+    bl_space_type = 'PROPERTIES'
+    bl_region_type = 'WINDOW'
+    bl_context = "object"
+
+    @classmethod
+    def poll(cls, context):
+        return context.active_object is not None
+
+    def draw(self, context):
+        layout = self.layout
+        obj = context.active_object
+        vib_node = get_prop_vibration_node(obj)
+
+        if vib_node:
+            box = layout.box()
+            box.label(text="Active Acoustic Prop Resonance", icon='CHECKMARK')
+            box.prop(vib_node.inputs['Object'], "default_value", text="Sample Object")
+            col = box.column(align=True)
+            col.prop(vib_node.inputs['Trigger / Impulse'], "default_value", text="Impact Impulse / Trigger")
+            col.prop(vib_node.inputs['Frequency'], "default_value", text="Resonant Freq f0 (-1 Auto)")
+            col.prop(vib_node.inputs['Damping'], "default_value", text="Damping Decay (-1 Auto)")
+            col.prop(vib_node.inputs['Amplitude Scale'], "default_value", text="Amplitude Scale")
+            col.prop(vib_node.inputs['Vibration Axis'], "default_value", text="Vibration Axis")
+        else:
+            layout.operator("object.acoustic_prop_vibration_add", text="Add Acoustic Prop Vibration", icon='FORCE_VORTEX')
+
+
 class CameraShakeObjectPanel(bpy.types.Panel):
     """Camera Shake Geometry Nodes panel for regular objects in Object Properties"""
     bl_label = "Camera Shake (Geometry Nodes)"
@@ -261,6 +484,7 @@ class CameraShakeObjectPanel(bpy.types.Panel):
             col.prop(shake_node.inputs['Seed'], "default_value", text="Random Seed")
 
             row = box.row()
+            row.operator("object.camera_shake_link_audio", text="Link Audio (Aubio)", icon='SPEAKER')
             row.operator("object.camera_shake_bind_camera", text="Re-Bind Target Camera", icon='CONSTRAINT')
         else:
             layout.operator("object.camera_shake_add_geonodes_rig", text="Setup as Camera Shake Rig", icon='NODETREE')
@@ -303,6 +527,8 @@ class CAMERA_PT_camera_shake_rig(bpy.types.Panel):
                 col.prop(shake_node.inputs['Intensity'], "default_value", text="Intensity")
                 col.prop(shake_node.inputs['Audio Trigger'], "default_value", text="Audio Trigger")
                 col.prop(shake_node.inputs['Seed'], "default_value", text="Random Seed")
+                row = box.row()
+                row.operator("object.camera_shake_link_audio", text="Link Audio (Aubio)", icon='SPEAKER')
         else:
             box = layout.box()
             box.label(text="Procedural Camera Shake", icon='NODETREE')
@@ -314,7 +540,12 @@ class CAMERA_PT_camera_shake_rig(bpy.types.Panel):
 classes = (
     CameraShakeAddGeoNodesRig,
     CameraShakeBindCamera,
+    CameraShakeLinkAudio,
+    AudioMouthShapesAddModifier,
+    AcousticPropVibrationAddModifier,
     CameraShakeObjectPanel,
+    OBJECT_PT_mouth_shapes_geonodes,
+    OBJECT_PT_prop_vibration_geonodes,
     CAMERA_PT_camera_shake_rig,
 )
 

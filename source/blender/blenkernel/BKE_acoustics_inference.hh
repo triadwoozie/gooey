@@ -7,8 +7,8 @@
 #ifdef WITH_STEAM_AUDIO
 
 #include "BLI_sys_types.h"
-#include "plugins/phonon/phonon_modal_synth.h"
 
+struct PhononModalParams;
 struct Depsgraph;
 struct Object;
 struct Scene;

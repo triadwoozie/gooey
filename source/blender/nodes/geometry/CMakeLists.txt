@@ -173,6 +173,7 @@ set(SRC
   nodes/node_geo_mesh_topology_offset_corner_in_face.cc
   nodes/node_geo_mesh_topology_vertex_of_corner.cc
   nodes/node_geo_mouse_position.cc
+  nodes/node_geo_mouth_shapes.cc
   nodes/node_geo_object_info.cc
   nodes/node_geo_offset_point_in_curve.cc
   nodes/node_geo_points.cc
@@ -180,6 +181,7 @@ set(SRC
   nodes/node_geo_points_to_sdf_grid.cc
   nodes/node_geo_points_to_vertices.cc
   nodes/node_geo_points_to_volume.cc
+  nodes/node_geo_prop_vibration.cc
   nodes/node_geo_proximity.cc
   nodes/node_geo_raycast.cc
   nodes/node_geo_realize_instances.cc

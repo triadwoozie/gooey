@@ -14705,6 +14705,7 @@ static void rna_def_nodes(BlenderRNA *brna)
   define("GeometryNode", "GeometryNodeMeshToSDFGrid");
   define("GeometryNode", "GeometryNodeMeshToVolume");
   define("GeometryNode", "GeometryNodeMeshUVSphere");
+  define("GeometryNode", "GeometryNodeMouthShapes");
   define("GeometryNode", "GeometryNodeObjectInfo");
   define("GeometryNode", "GeometryNodeOffsetCornerInFace");
   define("GeometryNode", "GeometryNodeOffsetPointInCurve");
@@ -14714,6 +14715,7 @@ static void rna_def_nodes(BlenderRNA *brna)
   define("GeometryNode", "GeometryNodePointsToSDFGrid");
   define("GeometryNode", "GeometryNodePointsToVertices");
   define("GeometryNode", "GeometryNodePointsToVolume");
+  define("GeometryNode", "GeometryNodePropVibration");
   define("GeometryNode", "GeometryNodeProximity");
   define("GeometryNode", "GeometryNodeRaycast");
   define("GeometryNode", "GeometryNodeRealizeInstances");
