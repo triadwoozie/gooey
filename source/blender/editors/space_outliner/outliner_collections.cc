@@ -1111,7 +1111,7 @@ static wmOperatorStatus collection_isolate_exec(bContext *C, wmOperator *op)
   outliner_tree_traverse(space_outliner,
                          &space_outliner->tree,
                          0,
-                         TSE_SELECTED,
+                         extend ? TSE_SELECTED : TSE_ACTIVE,
                          layer_collection_collect_data_to_edit,
                          &data);
 
