@@ -16,6 +16,7 @@ _modules = [
     "assets",
     "bone_selection_sets",
     "clip",
+    "compatibility",
     "connect_to_output",
     "console",
     "constraint",

@@ -237,6 +237,10 @@ class TOPBAR_MT_file_cleanup(Menu):
         layout.operator("outliner.orphans_purge", text="Purge Unused Data...")
         layout.operator("outliner.orphans_manage", text="Manage Unused Data...")
 
+        layout.separator()
+
+        layout.operator("wm.compatibility_audit", text="Check Upstream Compatibility...", icon='HELP')
+
 
 class TOPBAR_MT_file(Menu):
     bl_label = "File"
@@ -559,6 +563,10 @@ class TOPBAR_MT_file_external_data(Menu):
         layout.operator("file.report_missing_files")
         layout.operator("file.find_missing_files", text="Find Missing Files...")
 
+        layout.separator()
+
+        layout.operator("wm.compatibility_audit", text="Check Upstream Compatibility...", icon='HELP')
+
 
 class TOPBAR_MT_file_previews(Menu):
     bl_label = "Data Previews"
@@ -761,6 +769,7 @@ class TOPBAR_MT_help(Menu):
 
         layout.operator("wm.url_open_preset", text="Report a Bug", icon='URL').type = 'BUG'
         layout.operator("wm.sysinfo")
+        layout.operator("wm.compatibility_audit", text="Check Upstream Compatibility (5.x)...", icon='HELP')
 
 
 class TOPBAR_MT_file_context_menu(Menu):

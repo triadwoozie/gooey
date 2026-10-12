@@ -437,7 +437,7 @@ static wmOperatorStatus scene_steam_audio_sync_meshes_exec(bContext *C, wmOperat
   Scene *scene = CTX_data_scene(C);
   Depsgraph *depsgraph = CTX_data_depsgraph_pointer(C);
   if (depsgraph && scene) {
-    BKE_acoustics_scene_sync(depsgraph, scene);
+    BKE_acoustics_scene_sync_ex(depsgraph, scene, true);
     BKE_report(op->reports, RPT_INFO, "Steam Audio: Rebuilt acoustic mesh scene");
     return OPERATOR_FINISHED;
   }
@@ -484,7 +484,7 @@ static wmOperatorStatus scene_steam_audio_transition_scene_exec(bContext *C, wmO
 
   /* 3. Rebuild acoustic geometry in Phonon */
   if (depsgraph) {
-    BKE_acoustics_scene_sync(depsgraph, scene);
+    BKE_acoustics_scene_sync_ex(depsgraph, scene, true);
   }
 
   DEG_id_tag_update(&scene->id, ID_RECALC_AUDIO);

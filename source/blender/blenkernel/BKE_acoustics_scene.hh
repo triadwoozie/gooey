@@ -32,6 +32,7 @@ void BKE_acoustics_scene_free();
  * maps Principled BSDF / materials to IPLMaterial acoustic properties, and builds the acoustic scene.
  */
 void BKE_acoustics_scene_sync(struct Depsgraph *depsgraph, struct Scene *scene);
+void BKE_acoustics_scene_sync_ex(struct Depsgraph *depsgraph, struct Scene *scene, bool force_sync);
 
 /**
  * Dynamically synchronize listener transform (camera/viewport) and active speaker objects,
