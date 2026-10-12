@@ -36,6 +36,8 @@ static void node_declare(NodeDeclarationBuilder &b)
       .description("Physically vibrating geometry with modal resonance displacement");
 
   /* Transform & Vibration Outputs */
+  b.add_output<decl::Vector>("Offset")
+      .description("Instantaneous physical resonance offset vector (connect to Set Position Offset)");
   b.add_output<decl::Vector>("Displacement")
       .description("Instantaneous vector displacement offset");
   b.add_output<decl::Float>("Amplitude")
@@ -158,6 +160,7 @@ static void node_geo_exec(GeoNodeExecParams params)
   }
 
   params.set_output("Geometry", std::move(geometry_set));
+  params.set_output("Offset", disp_vec);
   params.set_output("Displacement", disp_vec);
   params.set_output("Amplitude", envelope * amp_scale);
   params.set_output("Resonant Freq (f0)", f0);
@@ -169,7 +172,7 @@ static void node_register()
   static blender::bke::bNodeType ntype;
 
   geo_node_type_base(&ntype, "GeometryNodePropVibration");
-  ntype.ui_name = "Prop Vibration (Acoustic)";
+  ntype.ui_name = "Surface Resonance";
   ntype.ui_description =
       "Synthesize physical damped modal vibrations driven by material BSDF, geometry thickness, "
       "and collision impact impulses or audio transients";

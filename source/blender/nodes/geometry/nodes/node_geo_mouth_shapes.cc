@@ -163,7 +163,7 @@ static void node_register()
   static blender::bke::bNodeType ntype;
 
   geo_node_type_base(&ntype, "GeometryNodeMouthShapes");
-  ntype.ui_name = "Mouth Shapes (Audio Visemes)";
+  ntype.ui_name = "Speech Viseme Deformer";
   ntype.ui_description =
       "Deform character mouth geometry automatically driven by Aubio acoustic speech visemes "
       "(Open 'A', Wide 'E', Round 'O')";
