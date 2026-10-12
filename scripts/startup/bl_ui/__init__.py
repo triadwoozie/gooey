@@ -13,6 +13,7 @@ if "bpy" in locals():
 _modules = [
     "anim",
     "asset_shelf",
+    "camera_shake",
     "node_add_menu",
     "node_add_menu_compositor",
     "node_add_menu_geometry",
@@ -123,6 +124,8 @@ def register():
     space_filebrowser.register_props()
     if hasattr(space_view3d_vehicle, "register"):
         space_view3d_vehicle.register()
+    if hasattr(camera_shake, "register_props"):
+        camera_shake.register_props()
 
     from bpy.props import (
         EnumProperty,
@@ -195,6 +198,8 @@ def unregister():
 
     if hasattr(space_view3d_vehicle, "unregister"):
         space_view3d_vehicle.unregister()
+    if hasattr(camera_shake, "unregister_props"):
+        camera_shake.unregister_props()
 
     try:
         bpy.app.handlers.translation_update_post.remove(translation_update)

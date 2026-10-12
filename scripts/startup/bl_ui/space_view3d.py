@@ -2594,6 +2594,7 @@ class VIEW3D_MT_camera_add(Menu):
         layout = self.layout
         layout.operator_context = 'EXEC_REGION_WIN'
         layout.operator("object.camera_add", text="Camera", icon='OUTLINER_OB_CAMERA')
+        layout.operator("object.camera_shake_add_geonodes_rig", text="Camera Shake Rig (Geometry Nodes)", icon='NODETREE')
 
 
 class VIEW3D_MT_volume_add(Menu):
@@ -2697,10 +2698,7 @@ class VIEW3D_MT_add(Menu):
 
         layout.separator()
 
-        if VIEW3D_MT_camera_add.is_extended():
-            layout.menu("VIEW3D_MT_camera_add", icon='OUTLINER_OB_CAMERA')
-        else:
-            VIEW3D_MT_camera_add.draw(self, context)
+        layout.menu("VIEW3D_MT_camera_add", icon='OUTLINER_OB_CAMERA')
 
         layout.separator()
 
