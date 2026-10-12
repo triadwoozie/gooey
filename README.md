@@ -68,29 +68,32 @@
   - Full keyword aliases indexed for instant search (`Shakify`, `Camera Shake`, `Aubio`, `libtsm`, `TSM`, `Viseme`, `Mouth Shapes`, `Vibration`, `Resonance`).
   - Native Link-Drag Search integration for all sockets.
 
-### 4. Backported Blender 5.3 Features
-- **Tier 4 (Geometry Nodes)**:
-  - *Geometry Materials* node (`GeometryNodeGeometryMaterials`): Query all materials assigned across geometry components in procedural node trees.
-- **Tier 5 (Animation & Asset Pipeline)**:
-  - *Rigify B-Bone Segment Count*: Exposed segment count for spine and head rig types.
-  - *Asset Shelf Empty Info Label*: Informative placeholder in asset shelves when no assets match filters.
-  - *Persistent Asset Menu*: Header menu in the Asset Browser for catalog operations.
-  - *Duplicate Shape Keys*: Dedicated operator to duplicate all selected shape keys simultaneously.
-  - *Pose Marker Rename*: Clarified naming for Convert to Pose Marker operator.
+### 4. Backported Blender 5.3 Features & Upstream Additions
 - **Tier 4 (Geometry Nodes & Procedural Workflows)**:
+  - *Camera Info Object Validation* (`dc936fdbf98`, by quackarooni): Context warning if input object is not a Camera.
   - *Repeat Zone Iterations Search* (`ea28033ce48`, by Brady Johnston): Drag-to-search directly exposes the `Iterations` input socket for empty Repeat zones.
   - *Index Switch Drag-to-Search* (`2e3d66d91b9`, by Brady Johnston): Link-drag-search connects compatible data types directly into the `Index Switch` value sockets.
-- **Tier 5 (Compositor, Rigging & Asset UI)**:
-  - *Compositor Anisotropic Kuwahara Speedup* (`e260a7e6071`, by Aras Pranckevicius): 25-30% faster CPU, 2x faster NVIDIA GPU, and 10x faster Apple GPU execution with polynomial radial falloff approximation and unrolled sector loops.
-  - *Rigify B-Bone Segment Count* (`f6d875a717a`, by Antônio Froz): Exposed B-Bone segment count for spine and head rig types.
+  - *Geometry Materials* node (`GeometryNodeGeometryMaterials`): Query all materials assigned across geometry components in procedural node trees.
+- **Tier 5 (Animation, Addons & Asset Pipeline)**:
+  - *glTF 2.0 Gaussian Splatting & Materials* (`5c33429dca0`, by Julien Duroure): Full 5.3 update adding `KHR_gaussian_splatting` (3D Gaussian Splats import), `KHR_materials_dispersion`, `KHR_materials_iridescence`, Meshopt compression, and Animation Pointer.
+  - *Node Wrangler 5.3 Modular Architecture* (`e9af5bdcb94`, by quackarooni): Modernized modular layout, cross-tree `Change Factor` improvements, and `Geometry to Instance` in Merge Nodes.
+  - *Rigify B-Bone Segment Count* (`b6085cc8a13`, by Antônio Froz): Exposed B-Bone segment count for spine and head rig types.
   - *Asset Browser Persistent "Asset" Menu* (`324f1a32d10`, by Nika Kutsniashvili): Always-accessible Asset menu in the header.
   - *Convert Pose Marker Clarification* (`caa9272d9e0`, by RedMser): Clear naming for pose marker conversion operator.
-- **Tier 6 (Modeling)**:
-  - *Relax Edge Loops* (`mesh.relax_edge_loops`, `eb18863b4c3`, by Tariq-Sulley, adapted to 4.5): High-performance native C++ edge loop smoother backported from LoopTools into edit-mesh transform menus.
-- **Tier 7 (UI Polish, Outliner & Compositor)**:
-  - *Compositor Group Output Shortcut* (`a5273e0710b`, by Habib Gahbiche): `Alt + LMB` instantly connects active node to Group Output.
+  - *Compositor Anisotropic Kuwahara Speedup* (`e260a7e6071`, by Aras Pranckevicius): 25-30% faster CPU, 2x faster NVIDIA GPU, and 10x faster Apple GPU execution with polynomial radial falloff approximation.
+- **Tier 6 (Native LoopTools Modeling Operators)**:
+  - *To Circle / Circularize* (`mesh.circularize`, `32c797d606d` & `2502d96ade4`, by Tariq-Sulley & Bastien Montagne): High-performance native BMesh circularization with best-fit plane, custom radius, regular/custom spacing, and axis constraints.
+  - *Flatten* (`mesh.flatten`, `6d6d97afe9d`, by Tariq-Sulley): Native BMesh planar flattening with best-fit normal, view, and custom plane projections.
+  - *Space Edge Loops Evenly* (`mesh.space_edge_loops_evenly`, `a38568b4e64`, by Tariq-Sulley): Native loop spacing with linear and cubic interpolation.
+  - *Curve Edge Loops Between Selected* (`mesh.curve_edge_loops_between_selected`, `827566f0d3b`, by Tariq-Sulley & Campbell Barton): Interpolate edge loops along cubic spline trajectories between boundary loops.
+  - *Relax Edge Loops* (`mesh.relax_edge_loops`, `eb18863b4c3`, by Tariq-Sulley): Native Laplacian edge loop smoothing directly accessible in Edit Mesh menus and hotkeys.
+- **Tier 7 (UI Polish, Outliner & Tools)**:
+  - *Outliner Show Users Column* (`3de313d5c98`, by 1P2D & Pratik Borhade): New data-block user count column in View Layer and Scenes modes with full DNA sync.
   - *Outliner Hide Unselected* (`9a717cccc74`, by Pratik Borhade): `Shift + H` hides unselected tree elements in the Outliner.
+  - *Compositor Group Output Shortcut* (`a5273e0710b`, by Habib Gahbiche): `Alt + LMB` instantly connects active node to Group Output.
   - *Node Editor Cut/Reconnect*: `Ctrl + X` cuts nodes to clipboard while reconnecting links; `Shift + X` dissolves nodes with link reconnection.
+  - *Upstream Compatibility Audit* (`wm.compatibility_audit`): Built-in diagnostic tool analyzing .blend files for features unsupported in upstream or newer versions of Blender, accessible from File ▸ External Data, Clean Up, and Help menus.
+  - *Steam Audio Viewport Acceleration*: Dynamic stride triangle subsampling (max 2,048 tris per mesh), navigation debouncing (`G.moving`), and 250ms BVH rate-limiting to prevent viewport lag during heavy playback.
 
 ---
 
@@ -107,6 +110,15 @@
 - **Real-Time Upscaling & Super Resolution**: AMD ([FidelityFX FSR](https://github.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK))
 - **Tokyo Dark / Tokyo Night Theme**: Inspired by Tiago Ventura ([tokyodark.nvim](https://github.com/tiagovla/tokyodark.nvim)) and enkia ([tokyo-night](https://github.com/enkia/tokyo-night-vscode-theme))
 - **Alien Pink Theme**: [Alumx/Alien-Pink-Blender-theme](https://github.com/Alumx/Alien-Pink-Blender-theme) hasnt been properly implemented on gooey yet :( gotta work on that
+- **Upstream Feature Contributors**:
+  - *Tariq-Sulley & Campbell Barton*: Native LoopTools modeling operators (`circularize`, `flatten`, `space_edge_loops_evenly`, `curve_edge_loops_between_selected`, `relax_edge_loops`).
+  - *Julien Duroure*: glTF 2.0 Gaussian Splatting (`KHR_gaussian_splatting`) & modern material extensions.
+  - *quackarooni*: Node Wrangler 5.3 architecture, Change Factor improvements, Camera Info validation.
+  - *Pratik Borhade & 1P2D*: Outliner users column and tree visibility operators.
+  - *Sybren A. Stüvel*: Animation tool & camera focal length operator improvements.
+  - *Brady Johnston*: Geometry Nodes search enhancements for repeat zones and index switches.
+  - *Aras Pranckevicius*: Anisotropic Kuwahara compositor speedups.
+  - *Antônio Froz*: Rigify B-Bone segment count exposure.
 
 ---
 
