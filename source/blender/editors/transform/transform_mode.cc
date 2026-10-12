@@ -1248,6 +1248,16 @@ void transform_mode_default_modal_orientation_set(TransInfo *t, int type)
   }
 }
 
+TransDataContainer *transform_mode_container_first_ok(TransInfo *t)
+{
+  FOREACH_TRANS_DATA_CONTAINER (t, tc) {
+    if (tc->custom.mode.data) {
+      return tc;
+    }
+  }
+  BLI_assert_msg(0, "Should never happen, at least one container must have valid data");
+  return nullptr;
+}
 /** \} */
 
 }  // namespace blender::ed::transform
