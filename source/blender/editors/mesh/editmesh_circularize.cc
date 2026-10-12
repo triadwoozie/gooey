@@ -96,7 +96,7 @@ static wmOperatorStatus edbm_circularize_exec(bContext *C, wmOperator *op)
     EDBMUpdate_Params params{};
     params.calc_looptris = true;
     params.calc_normals = true;
-    EDBM_update(id_cast<Mesh *>(obedit->data), &params);
+    EDBM_update(static_cast<Mesh *>(obedit->data), &params);
   }
 
   return changed ? OPERATOR_FINISHED : OPERATOR_CANCELLED;
@@ -104,28 +104,28 @@ static wmOperatorStatus edbm_circularize_exec(bContext *C, wmOperator *op)
 
 static void edbm_circularize_ui(bContext * /*C*/, wmOperator *op)
 {
-  ui::Layout &layout = *op->layout;
-  layout.use_property_split_set(true);
+  uiLayout *layout = op->layout;
+  uiLayoutSetPropSep(layout, true);
+  uiLayoutSetPropDecorate(layout, false);
 
-  layout.prop(op->ptr, "factor", UI_ITEM_NONE, std::nullopt, ICON_NONE);
-  layout.prop(op->ptr, "fit_method", UI_ITEM_NONE, std::nullopt, ICON_NONE);
-  layout.prop(op->ptr, "angle", UI_ITEM_NONE, std::nullopt, ICON_NONE);
+  layout->prop(op->ptr, "factor", UI_ITEM_NONE, std::nullopt, ICON_NONE);
+  layout->prop(op->ptr, "fit_method", UI_ITEM_NONE, std::nullopt, ICON_NONE);
+  layout->prop(op->ptr, "angle", UI_ITEM_NONE, std::nullopt, ICON_NONE);
 
-  ui::Layout &row = layout.row(true, IFACE_("Radius"));
-  row.prop(op->ptr, "use_custom_radius", UI_ITEM_NONE, "", ICON_NONE);
-  ui::Layout &sub = row.row(true);
-  sub.active_set(RNA_boolean_get(op->ptr, "use_custom_radius"));
-  sub.prop(op->ptr, "custom_radius", UI_ITEM_NONE, "", ICON_NONE);
+  uiLayout *row = &layout->row(true);
+  row->prop(op->ptr, "use_custom_radius", UI_ITEM_NONE, IFACE_("Radius"), ICON_NONE);
+  uiLayout *sub = &row->row(true);
+  uiLayoutSetActive(sub, RNA_boolean_get(op->ptr, "use_custom_radius"));
+  sub->prop(op->ptr, "custom_radius", UI_ITEM_NONE, "", ICON_NONE);
 
-  layout.prop(op->ptr, "regular", UI_ITEM_NONE, std::nullopt, ICON_NONE);
-  layout.prop(op->ptr, "flatten", UI_ITEM_NONE, std::nullopt, ICON_NONE);
+  layout->prop(op->ptr, "regular", UI_ITEM_NONE, std::nullopt, ICON_NONE);
+  layout->prop(op->ptr, "flatten", UI_ITEM_NONE, std::nullopt, ICON_NONE);
 
-  ui::Layout &lock_row = layout.row(true, IFACE_("Lock"));
-  PropertyRNA *lock_prop = RNA_struct_find_property(op->ptr, "lock");
-  lock_row.prop(op->ptr, lock_prop, 0, 0, ui::ITEM_R_TOGGLE, "X", ICON_NONE);
-  lock_row.prop(op->ptr, lock_prop, 1, 0, ui::ITEM_R_TOGGLE, "Y", ICON_NONE);
-  lock_row.prop(op->ptr, lock_prop, 2, 0, ui::ITEM_R_TOGGLE, "Z", ICON_NONE);
+  uiLayout *lock_row = &layout->row(true);
+  lock_row->prop(op->ptr, "lock", UI_ITEM_R_EXPAND, std::nullopt, ICON_NONE);
 }
+
+}  // namespace blender
 
 void MESH_OT_circularize(wmOperatorType *ot)
 {
@@ -136,30 +136,30 @@ void MESH_OT_circularize(wmOperatorType *ot)
   ot->idname = "MESH_OT_circularize";
 
   /* API callbacks */
-  ot->exec = edbm_circularize_exec;
+  ot->exec = blender::edbm_circularize_exec;
   ot->poll = ED_operator_editmesh;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
-  ot->ui = edbm_circularize_ui;
+  ot->ui = blender::edbm_circularize_ui;
 
   RNA_def_float_factor(
       ot->srna, "factor", 1.0f, 0.0f, 1.0f, "Factor", "Force of the tool", 0.0f, 1.0f);
   RNA_def_enum(ot->srna,
                "fit_method",
-               prop_fit_method_items,
+               blender::prop_fit_method_items,
                0,
                "Method",
                "Method used for fitting a circle to the vertices");
   prop = RNA_def_float(ot->srna,
                        "angle",
                        0.0f,
-                       -std::numbers::pi_v<float> * 2.0f,
-                       std::numbers::pi_v<float> * 2.0f,
+                       -float(M_PI) * 2.0f,
+                       float(M_PI) * 2.0f,
                        "Rotation",
                        "Rotate the circle",
-                       -std::numbers::pi_v<float> * 2.0f,
-                       std::numbers::pi_v<float> * 2.0f);
+                       -float(M_PI) * 2.0f,
+                       float(M_PI) * 2.0f);
   RNA_def_property_subtype(prop, PROP_ANGLE);
   RNA_def_boolean(
       ot->srna, "use_custom_radius", false, "Use Custom Radius", "Enable custom radius");
@@ -189,5 +189,3 @@ void MESH_OT_circularize(wmOperatorType *ot)
                        1.0f);
   RNA_def_boolean_array(ot->srna, "lock", 3, nullptr, "Lock", "Lock editing of the axis");
 }
-
-}  // namespace blender
