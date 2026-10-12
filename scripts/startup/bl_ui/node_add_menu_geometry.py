@@ -262,9 +262,11 @@ class NODE_MT_geometry_node_GEO_GEOMETRY_OPERATIONS(Menu):
         node_add_menu.add_node_type(layout, "GeometryNodeMergeByDistance")
         node_add_menu.add_node_type(layout, "GeometryNodeSortElements")
         node_add_menu.add_node_type(layout, "GeometryNodeTransform", search_weight=1.0)
-        node_add_menu.add_node_type(layout, "GeometryNodeCameraShake", search_weight=1.0)
-        node_add_menu.add_node_type(layout, "GeometryNodePropVibration", search_weight=1.0)
-        node_add_menu.add_node_type(layout, "GeometryNodeMouthShapes", search_weight=1.0)
+        node_add_menu.add_node_type(layout, "GeometryNodeCameraShake", search_weight=2.0)
+        node_add_menu.add_node_type(layout, "GeometryNodePropVibration", search_weight=2.0)
+        node_add_menu.add_node_type(layout, "GeometryNodeMouthShapes", search_weight=2.0)
+        node_add_menu.add_node_type(layout, "GeometryNodeAudioAnalysis", search_weight=2.0)
+        node_add_menu.add_node_type(layout, "GeometryNodeAudioTSM", search_weight=2.0)
         layout.separator()
         node_add_menu.add_node_type(layout, "GeometryNodeSeparateComponents")
         node_add_menu.add_node_type(layout, "GeometryNodeSeparateGeometry")
@@ -353,11 +355,18 @@ class NODE_MT_geometry_node_GEO_INPUT_SCENE(Menu):
                                                   "Focus Distance",
                                                   "Is Orthographic",
                                                   "Orthographic Scale"])
-        node_add_menu.add_node_type(layout, "GeometryNodeCameraShake")
-        node_add_menu.add_node_type(layout, "GeometryNodeAudioAnalysis")
-        node_add_menu.add_node_type(layout, "GeometryNodeAudioTSM")
-        node_add_menu.add_node_type(layout, "GeometryNodePropVibration")
-        node_add_menu.add_node_type(layout, "GeometryNodeMouthShapes")
+        node_add_menu.add_node_type(layout, "GeometryNodeCameraShake", search_weight=2.0)
+        node_add_menu.add_node_type(layout, "GeometryNodeAudioAnalysis", search_weight=2.0)
+        node_add_menu.add_node_type(layout, "GeometryNodeAudioTSM", search_weight=2.0)
+        node_add_menu.add_node_type(layout, "GeometryNodePropVibration", search_weight=2.0)
+        node_add_menu.add_node_type(layout, "GeometryNodeMouthShapes", search_weight=2.0)
+        if getattr(context, "is_menu_search", False):
+            node_add_menu.add_node_type(layout, "GeometryNodeCameraShake", label="Camera Shakify", search_weight=2.0)
+            node_add_menu.add_node_type(layout, "GeometryNodeCameraShake", label="Shakify Camera Rig", search_weight=1.8)
+            node_add_menu.add_node_type(layout, "GeometryNodeAudioAnalysis", label="Aubio Audio Analysis", search_weight=2.0)
+            node_add_menu.add_node_type(layout, "GeometryNodeAudioTSM", label="libtsm Audio TSM", search_weight=2.0)
+            node_add_menu.add_node_type(layout, "GeometryNodeMouthShapes", label="Mouth Shapes", search_weight=2.0)
+            node_add_menu.add_node_type(layout, "GeometryNodePropVibration", label="Prop Vibration", search_weight=2.0)
         node_add_menu.add_node_type(layout, "GeometryNodeCollectionInfo")
         node_add_menu.add_node_type(layout, "GeometryNodeImageInfo")
         node_add_menu.add_node_type(layout, "GeometryNodeIsViewport")
@@ -880,6 +889,34 @@ class NODE_MT_category_GEO_GROUP(Menu):
         node_add_menu.draw_assets_for_catalog(layout, self.bl_label)
 
 
+class NODE_MT_geometry_node_GEO_AUDIO(Menu):
+    bl_idname = "NODE_MT_geometry_node_GEO_AUDIO"
+    bl_label = "Audio & Dynamics"
+
+    def draw(self, context):
+        layout = self.layout
+        node_add_menu.add_node_type(layout, "GeometryNodeCameraShake", search_weight=2.0)
+        node_add_menu.add_node_type(layout, "GeometryNodeAudioAnalysis", search_weight=2.0)
+        node_add_menu.add_node_type(layout, "GeometryNodeAudioTSM", search_weight=2.0)
+        node_add_menu.add_node_type(layout, "GeometryNodeMouthShapes", search_weight=2.0)
+        node_add_menu.add_node_type(layout, "GeometryNodePropVibration", search_weight=2.0)
+
+        if getattr(context, "is_menu_search", False):
+            node_add_menu.add_node_type(layout, "GeometryNodeCameraShake", label="Camera Shakify", search_weight=2.0)
+            node_add_menu.add_node_type(layout, "GeometryNodeCameraShake", label="Shakify Camera Rig", search_weight=1.8)
+            node_add_menu.add_node_type(layout, "GeometryNodeCameraShake", label="Shake (Camera Wobble)", search_weight=1.8)
+            node_add_menu.add_node_type(layout, "GeometryNodeAudioAnalysis", label="Aubio Audio Analysis", search_weight=2.0)
+            node_add_menu.add_node_type(layout, "GeometryNodeAudioAnalysis", label="Beat & Pitch Tracker (Aubio)", search_weight=1.8)
+            node_add_menu.add_node_type(layout, "GeometryNodeAudioTSM", label="libtsm Audio TSM", search_weight=2.0)
+            node_add_menu.add_node_type(layout, "GeometryNodeAudioTSM", label="Time Scale Modification (libtsm)", search_weight=1.8)
+            node_add_menu.add_node_type(layout, "GeometryNodeMouthShapes", label="Mouth Shapes", search_weight=2.0)
+            node_add_menu.add_node_type(layout, "GeometryNodeMouthShapes", label="Speech Visemes (Lip Sync)", search_weight=1.8)
+            node_add_menu.add_node_type(layout, "GeometryNodePropVibration", label="Prop Vibration", search_weight=2.0)
+            node_add_menu.add_node_type(layout, "GeometryNodePropVibration", label="Impact Resonance (Vibration)", search_weight=1.8)
+
+        node_add_menu.draw_assets_for_catalog(layout, self.bl_label)
+
+
 class NODE_MT_geometry_node_add_all(Menu):
     bl_idname = "NODE_MT_geometry_node_add_all"
     bl_label = ""
@@ -901,6 +938,8 @@ class NODE_MT_geometry_node_add_all(Menu):
         layout.separator()
         layout.menu("NODE_MT_category_simulation")
         layout.separator()
+        layout.menu("NODE_MT_geometry_node_GEO_AUDIO")
+        layout.separator()
         layout.menu("NODE_MT_geometry_node_GEO_MATERIAL")
         layout.menu("NODE_MT_category_GEO_TEXTURE")
         layout.menu("NODE_MT_category_GEO_UTILITIES")
@@ -912,6 +951,7 @@ class NODE_MT_geometry_node_add_all(Menu):
 
 classes = (
     NODE_MT_geometry_node_add_all,
+    NODE_MT_geometry_node_GEO_AUDIO,
     NODE_MT_geometry_node_GEO_ATTRIBUTE,
     NODE_MT_geometry_node_GEO_INPUT,
     NODE_MT_geometry_node_GEO_INPUT_CONSTANT,

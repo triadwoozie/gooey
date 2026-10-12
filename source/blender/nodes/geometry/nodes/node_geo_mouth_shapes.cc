@@ -158,6 +158,29 @@ static void node_geo_exec(GeoNodeExecParams params)
   params.set_output("Viseme Vector", float3(jaw_open, lip_wide, lip_round));
 }
 
+static void node_gather_link_searches(GatherLinkSearchOpParams &params)
+{
+  search_link_ops_for_basic_node(params);
+
+  const bke::bNodeType &nt = params.node_type();
+  if (params.in_out() == SOCK_OUT) {
+    params.add_item_full_name(
+        "Mouth Shapes" UI_MENU_ARROW_SEP " Offset",
+        [&nt](LinkSearchOpParams &p) {
+          bNode &node = p.add_node(nt);
+          p.update_and_connect_available_socket(node, "Offset");
+        },
+        1);
+    params.add_item_full_name(
+        "Speech Visemes" UI_MENU_ARROW_SEP " Offset",
+        [&nt](LinkSearchOpParams &p) {
+          bNode &node = p.add_node(nt);
+          p.update_and_connect_available_socket(node, "Offset");
+        },
+        1);
+  }
+}
+
 static void node_register()
 {
   static blender::bke::bNodeType ntype;
@@ -170,6 +193,7 @@ static void node_register()
   ntype.nclass = NODE_CLASS_GEOMETRY;
   ntype.geometry_node_execute = node_geo_exec;
   ntype.declare = node_declare;
+  ntype.gather_link_search_ops = node_gather_link_searches;
   blender::bke::node_register_type(ntype);
 }
 NOD_REGISTER_NODE(node_register)
