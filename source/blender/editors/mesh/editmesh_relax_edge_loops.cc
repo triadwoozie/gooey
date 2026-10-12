@@ -99,13 +99,15 @@ static wmOperatorStatus edbm_relax_edge_loops_exec(bContext *C, wmOperator *op)
   return changed_multi ? OPERATOR_FINISHED : OPERATOR_CANCELLED;
 }
 
+}  // namespace blender
+
 void MESH_OT_relax_edge_loops(wmOperatorType *ot)
 {
   ot->name = "Relax Edge Loops";
   ot->description = "Relax the loop, so it is smoother";
   ot->idname = "MESH_OT_relax_edge_loops";
 
-  ot->exec = edbm_relax_edge_loops_exec;
+  ot->exec = blender::edbm_relax_edge_loops_exec;
   ot->poll = ED_operator_editmesh;
 
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
@@ -125,10 +127,8 @@ void MESH_OT_relax_edge_loops(wmOperatorType *ot)
                   "Distribute vertices at constant distances along the loop");
   RNA_def_enum(ot->srna,
                "interpolation",
-               prop_interpolation_items,
+               blender::prop_interpolation_items,
                0,
                "Interpolation",
                "Algorithm used for interpolation");
 }
-
-}  // namespace blender
