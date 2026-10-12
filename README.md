@@ -26,7 +26,25 @@
 ### 2. Cool looking UI
 - **Theme Overhaul (idk, looked cool)**: Polished interface themes featuring flat inactive workspace tabs, soft rounded active pills, and seamless header integration.
 
-### 3. Audio overhaul because audio features are buns rn (using steam audio) - STAGED
+### 3. Spatial Acoustics & Audio Pipeline (Steam Audio / Phonon Integration)
+- **SDK Integration & Architecture**:
+  - Direct integration into Blender's core scene update loop residing within `source/blender/blenkernel/intern/acoustics_scene.cc` and Audaspace phonon plugins (`intern/audaspace/plugins/phonon`).
+  - **Default-On Pipeline**: Spatial audio simulation is enabled by default via `Scene.flag_audio & SCENE_AUDIO_USE_STEAM_AUDIO`.
+  - **Scene Transition Operator (`SCENE_OT_steam_audio_transition_scene`)**: Tags scene meshes with acoustic properties (`use_steam_audio_mesh`) and triggers an acoustic BVH build for instant scene transition.
+- **BSDF-to-Acoustic Physical Mapping**:
+  - Evaluates material surface properties directly into `IPLMaterial`: `metallic`, `roughness`, `transmission`, and `ior` map to 3-band acoustic absorption (low/mid/high frequencies), scattering, and transmission coefficients.
+- **Zero-Node Physical Acoustics Inference & Modal Resonator Bank**:
+  - Sound synthesis is dynamically inferred at runtime from evaluated surface rendering data and geometric mesh bounds during physics events without manual sound assignment.
+  - **Material Parameter Extraction**: Derives internal acoustic damping, modal Q-factor ($Q \in [10, 1000]$), acoustic speed proxy ($c_m \approx 1750 - 5100\text{ m/s}$), and detects vitreous brittle materials (glass, quartz, ceramic).
+  - **Geometric Thickness & Resonant Frequency ($f_0$)**: Calculates effective thickness ($T$) and span dimensions from evaluated geometry bounds to estimate fundamental resonant mode ($f_0 \propto \frac{c_m \cdot T}{2 \cdot L^2}$).
+  - **C++ Modal Resonator Bank**: 4-to-8 pole resonant filter bank excited by kinetic impact impulse ($E_k = \frac{1}{2} m v_n^2$), vitreous high-frequency click transients, and continuous stochastic tangential friction noise ($v_t \times \text{roughness} \times \sqrt{F_N}$) extracted from Bullet physics contact manifolds.
+- **Dynamic Scene Synchronization & Performance**:
+  - Rebuilds are guarded by `acoustics_geometry_is_dirty(depsgraph, scene)`.
+  - During playback, static meshes skip expensive vertex extraction and BVH commits, updating only listener (camera) and speaker poses at real-time frame rates with 0 MB memory leak.
+- **Audio Analysis & Time-Scale Modification (Planned / In Progress)**:
+  - **aubio Integration**: Used for real-time onset/attack detection, instantaneous pitch tracking (via YIN algorithm), and beat/tempo tracking to drive dynamic animation drivers (F-Curves, shape keys, camera shake).
+  - **libtsm Integration**: High-fidelity time-scale modification via WSOLA and phase vocoder for artifact-free pitch shifting and slow-motion audio stretching without metallic flanging.
+
 ---
 
 ## Credits & Attribution
