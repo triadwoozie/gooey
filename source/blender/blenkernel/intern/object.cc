@@ -4855,9 +4855,9 @@ void BKE_object_get_mirror_axes(const Object *ob, bool r_axis[3])
 {
   r_axis[0] = r_axis[1] = r_axis[2] = false;
 
-  for (ModifierData &md : ob->modifiers) {
-    if (md.type == eModifierType_Mirror && (md.mode & eModifierMode_Realtime)) {
-      const MirrorModifierData *mmd = reinterpret_cast<MirrorModifierData *>(&md);
+  LISTBASE_FOREACH (const ModifierData *, md, &ob->modifiers) {
+    if (md->type == eModifierType_Mirror && (md->mode & eModifierMode_Realtime)) {
+      const MirrorModifierData *mmd = reinterpret_cast<const MirrorModifierData *>(md);
       if (mmd->mirror_ob) {
         /* Mirror objects may have an arbitrary transform, so the mirrored
          * geometry isn't guaranteed to be continuous with the original. */
