@@ -3293,7 +3293,7 @@ static void rna_def_userdef_theme_space_node(BlenderRNA *brna)
   RNA_def_struct_ui_text(srna, "Theme Node Editor", "Theme settings for the Node Editor");
 
   rna_def_userdef_theme_spaces_main(srna);
-  rna_def_userdef_theme_spaces_region_main(srna);
+  rna_def_userdef_theme_spaces_asset_shelf_main(srna);
   rna_def_userdef_theme_spaces_list_main(srna);
 
   prop = RNA_def_property(srna, "grid", PROP_FLOAT, PROP_COLOR_GAMMA);

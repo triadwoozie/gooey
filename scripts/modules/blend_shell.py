@@ -82,7 +82,8 @@ Standard commands mapped to bpy.data and system shell:
   grep <pattern> [type]     Search data-blocks by regex or substring ('grep prop', 'grep mat Gold')
   diff <file1> [file2]      Compare data-blocks between two .blend files (or current vs file)
   pip <args...>             Run pip in Blender's Python ('pip install scipy', 'pip list')
-  sh <cmd>  or  !<cmd>      Execute system shell command directly ('!uname -a', 'sh ls -la')
+  path [on|off|add <dir>]   Toggle/manage system $PATH linking for !command execution
+  sh <cmd>  or  !<cmd>      Execute system shell command directly ('!uname -a', '!ffmpeg', 'sh ls -la')
   save                      Save current .blend file (bpy.ops.wm.save_mainfile())
   help                      Show this help screen
 ======================================================
@@ -387,9 +388,60 @@ def cmd_pip(args, stdout, stderr):
             stderr.write(output + "\n")
 
 
+_USE_SYSTEM_PATH = True
+_CUSTOM_PATHS = []
+
+def toggle_path(enable=None):
+    global _USE_SYSTEM_PATH
+    if enable is None:
+        _USE_SYSTEM_PATH = not _USE_SYSTEM_PATH
+    else:
+        _USE_SYSTEM_PATH = bool(enable)
+    return _USE_SYSTEM_PATH
+
+def get_shell_env():
+    env = os.environ.copy()
+    if _USE_SYSTEM_PATH:
+        existing = env.get("PATH", "")
+        extra_paths = [os.path.expanduser("~/.local/bin"), "/usr/local/bin", "/usr/bin", "/bin", "/usr/local/sbin", "/usr/sbin"] + _CUSTOM_PATHS
+        for p in extra_paths:
+            if os.path.isdir(p) and p not in existing.split(os.pathsep):
+                existing = f"{p}{os.pathsep}{existing}"
+        env["PATH"] = existing
+    else:
+        env["PATH"] = "/bin:/usr/bin"
+    return env
+
+def cmd_path(args, stdout):
+    global _USE_SYSTEM_PATH, _CUSTOM_PATHS
+    if not args:
+        status = "ENABLED (Full system $PATH linked)" if _USE_SYSTEM_PATH else "DISABLED (Restricted sandbox)"
+        stdout.write(f"PATH Execution: {status}\n")
+        stdout.write(f"Active PATH: {get_shell_env().get('PATH', '')}\n")
+        stdout.write("Usage: path on | path off | path add <directory>\n")
+        return
+    sub = args[0].lower()
+    if sub in {"on", "enable", "1", "true"}:
+        _USE_SYSTEM_PATH = True
+        stdout.write("System $PATH execution ENABLED for !command and shell operators.\n")
+    elif sub in {"off", "disable", "0", "false"}:
+        _USE_SYSTEM_PATH = False
+        stdout.write("System $PATH execution DISABLED (Restricted sandbox mode).\n")
+    elif sub == "add" and len(args) > 1:
+        new_path = os.path.abspath(os.path.expanduser(args[1]))
+        if new_path not in _CUSTOM_PATHS:
+            _CUSTOM_PATHS.append(new_path)
+        stdout.write(f"Added '{new_path}' to shell execution PATH.\n")
+    else:
+        stdout.write(f"Unknown option '{sub}'. Usage: path on | path off | path add <dir>\n")
+
 def cmd_system(cmd_line, stdout, stderr):
     try:
-        res = subprocess.run(cmd_line, shell=True, capture_output=True, text=True)
+        env = get_shell_env()
+        shell_exe = os.environ.get("SHELL", "/bin/bash")
+        if not os.path.isfile(shell_exe):
+            shell_exe = "/bin/sh"
+        res = subprocess.run(cmd_line, shell=True, executable=shell_exe, env=env, capture_output=True, text=True)
         if res.stdout:
             stdout.write(res.stdout)
         if res.stderr:
@@ -401,8 +453,8 @@ def cmd_system(cmd_line, stdout, stderr):
 def blend_shell_banner():
     return (
         "BLEND SHELL ACTIVATED (Unix Database Terminal)",
-        "Type 'help' for available commands (cat, rm, cp, mv, du, grep, diff, ls, mkdir, pip).",
-        "Type '!cmd' or 'sh cmd' for system bash commands. Standard Python expressions work normally.",
+        "Type 'help' for available commands (cat, rm, cp, mv, du, grep, diff, ls, mkdir, pip, path).",
+        "Type '!cmd' or 'sh cmd' for system bash commands (PATH linked). Standard Python expressions work normally.",
         "",
     )
 
@@ -467,6 +519,9 @@ def handle_command(line_raw, context, stdout, stderr):
         return True
     elif cmd == "diff":
         cmd_diff(args, stdout, stderr)
+        return True
+    elif cmd == "path":
+        cmd_path(args, stdout)
         return True
     elif cmd == "pip":
         cmd_pip(args, stdout, stderr)
