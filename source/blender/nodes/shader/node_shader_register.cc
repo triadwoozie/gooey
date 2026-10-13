@@ -127,4 +127,11 @@ void register_shader_nodes()
   register_node_type_sh_tex_hexagon();
   register_node_type_sh_twirl();
   register_node_type_sh_water_ripples();
+
+  register_node_type_sh_light_accumulator();
+  register_node_type_sh_light_data();
+  register_node_type_sh_shadow();
+  register_node_type_sh_light_evaluation();
+  register_node_type_sh_filter_blur();
+  register_node_type_sh_filter_sharpen();
 }

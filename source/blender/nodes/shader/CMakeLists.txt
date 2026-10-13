@@ -56,6 +56,12 @@ set(SRC
   nodes/node_shader_tex_hexagon.cc
   nodes/node_shader_twirl.cc
   nodes/node_shader_water_ripples.cc
+  nodes/node_shader_light_accumulator.cc
+  nodes/node_shader_light_data.cc
+  nodes/node_shader_shadow.cc
+  nodes/node_shader_light_evaluation.cc
+  nodes/node_shader_filter_blur.cc
+  nodes/node_shader_filter_sharpen.cc
   nodes/node_shader_displacement.cc
   nodes/node_shader_eevee_specular.cc
   nodes/node_shader_emission.cc

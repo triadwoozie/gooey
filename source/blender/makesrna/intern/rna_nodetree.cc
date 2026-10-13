@@ -409,6 +409,27 @@ static const EnumPropertyItem rna_enum_node_water_ripples_mode_items[] = {
     {0, nullptr, 0, nullptr, nullptr},
 };
 
+static const EnumPropertyItem rna_enum_node_light_eval_light_mode_items[] = {
+    {0, "AREA", 0, "Area", "Use the physical shape of the light"},
+    {1, "POINT", 0, "Point", "Consider the light as infinitesimal small points"},
+    {0, nullptr, 0, nullptr, nullptr},
+};
+
+static const EnumPropertyItem rna_enum_node_light_eval_function_mode_items[] = {
+    {0, "COSINE_HEMISPHERE", 0, "Cosine Hemisphere", "Lambert"},
+    {1, "COSINE_SPHERE", 0, "Cosine Sphere", "Half-Lambert"},
+    {2, "UNIFORM_HEMISPHERE", 0, "Uniform Hemisphere", "Toon shader"},
+    {3, "UNIFORM_SPHERE", 0, "Uniform Sphere", "Smooth distance factor"},
+    {0, nullptr, 0, nullptr, nullptr},
+};
+
+static const EnumPropertyItem rna_enum_node_light_eval_param_mode_items[] = {
+    {0, "REFLECTION", 0, "Reflection", "Center LTC around reflection direction"},
+    {1, "REFRACTION", 0, "Refraction", "Center LTC around refraction direction"},
+    {2, "CUSTOM", 0, "Custom", "Expose Tangent, BiTangent and Size X & Y"},
+    {0, nullptr, 0, nullptr, nullptr},
+};
+
 const EnumPropertyItem rna_enum_node_sdf_vector_op_items[] = {
     {0, "", 0, N_("Vector Grid Ops"), ""},
     {SHD_SDF_VEC_OP_REFLECT,
@@ -5038,6 +5059,59 @@ static void rna_FrameNode_label_size_update(Main *bmain, Scene *scene, PointerRN
   rna_Node_update(bmain, scene, ptr);
 }
 
+static int rna_ShaderNodeLightEvaluation_light_mode_get(PointerRNA *ptr)
+{
+  bNode *node = ptr->data_as<bNode>();
+  return node->custom1 & 1;
+}
+
+static void rna_ShaderNodeLightEvaluation_light_mode_set(PointerRNA *ptr, int value)
+{
+  bNode *node = ptr->data_as<bNode>();
+  node->custom1 = (node->custom1 & ~1) | (value & 1);
+}
+
+static int rna_ShaderNodeLightEvaluation_function_mode_get(PointerRNA *ptr)
+{
+  bNode *node = ptr->data_as<bNode>();
+  return (node->custom1 >> 1) & 7;
+}
+
+static void rna_ShaderNodeLightEvaluation_function_mode_set(PointerRNA *ptr, int value)
+{
+  bNode *node = ptr->data_as<bNode>();
+  node->custom1 = (node->custom1 & ~(7 << 1)) | ((value & 7) << 1);
+}
+
+static int rna_ShaderNodeLightEvaluation_param_mode_get(PointerRNA *ptr)
+{
+  bNode *node = ptr->data_as<bNode>();
+  return (node->custom1 >> 4) & 7;
+}
+
+static void rna_ShaderNodeLightEvaluation_param_mode_set(PointerRNA *ptr, int value)
+{
+  bNode *node = ptr->data_as<bNode>();
+  node->custom1 = (node->custom1 & ~(7 << 4)) | ((value & 7) << 4);
+}
+
+static bool rna_ShaderNodeLightEvaluation_anisotropy_get(PointerRNA *ptr)
+{
+  bNode *node = ptr->data_as<bNode>();
+  return (node->custom1 & (1 << 7)) != 0;
+}
+
+static void rna_ShaderNodeLightEvaluation_anisotropy_set(PointerRNA *ptr, bool value)
+{
+  bNode *node = ptr->data_as<bNode>();
+  if (value) {
+    node->custom1 |= (1 << 7);
+  }
+  else {
+    node->custom1 &= ~(1 << 7);
+  }
+}
+
 static void rna_ShaderNodeTexIES_mode_set(PointerRNA *ptr, int value)
 {
   bNode *node = ptr->data_as<bNode>();
@@ -6903,6 +6977,70 @@ static void def_sh_light_info(BlenderRNA * /*brna*/, StructRNA *srna)
   RNA_def_property_ui_text(prop, "Light Object", "Light object to get information from");
   RNA_def_property_update(prop, NC_NODE | NA_EDITED, "rna_Node_update_relations");
 }
+
+static void def_sh_light_data(BlenderRNA * /*brna*/, StructRNA *srna)
+{
+  PropertyRNA *prop;
+
+  prop = RNA_def_property(srna, "light_object", PROP_POINTER, PROP_NONE);
+  RNA_def_property_pointer_sdna(prop, nullptr, "id");
+  RNA_def_property_struct_type(prop, "Object");
+  RNA_def_property_flag(prop, PROP_EDITABLE | PROP_ID_REFCOUNT);
+  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  RNA_def_property_ui_text(prop, "Light Object", "Target light to evaluate");
+  RNA_def_property_update(prop, NC_NODE | NA_EDITED, "rna_Node_update_relations");
+}
+
+static void def_sh_shadow(BlenderRNA * /*brna*/, StructRNA *srna)
+{
+  PropertyRNA *prop;
+
+  prop = RNA_def_property(srna, "ray_count", PROP_INT, PROP_UNSIGNED);
+  RNA_def_property_int_sdna(prop, nullptr, "custom1");
+  RNA_def_property_range(prop, 1, 128);
+  RNA_def_property_ui_text(prop, "Ray Count", "Number of shadow rays to trace");
+  RNA_def_property_update(prop, NC_NODE | NA_EDITED, "rna_Node_update");
+}
+
+static void def_sh_light_evaluation(BlenderRNA * /*brna*/, StructRNA *srna)
+{
+  PropertyRNA *prop;
+
+  prop = RNA_def_property(srna, "light_mode", PROP_ENUM, PROP_NONE);
+  RNA_def_property_enum_items(prop, rna_enum_node_light_eval_light_mode_items);
+  RNA_def_property_enum_funcs(prop,
+                              "rna_ShaderNodeLightEvaluation_light_mode_get",
+                              "rna_ShaderNodeLightEvaluation_light_mode_set",
+                              nullptr);
+  RNA_def_property_ui_text(prop, "Light Mode", "Physical light shape mode");
+  RNA_def_property_update(prop, NC_NODE | NA_EDITED, "rna_Node_update");
+
+  prop = RNA_def_property(srna, "function_mode", PROP_ENUM, PROP_NONE);
+  RNA_def_property_enum_items(prop, rna_enum_node_light_eval_function_mode_items);
+  RNA_def_property_enum_funcs(prop,
+                              "rna_ShaderNodeLightEvaluation_function_mode_get",
+                              "rna_ShaderNodeLightEvaluation_function_mode_set",
+                              nullptr);
+  RNA_def_property_ui_text(prop, "Function Mode", "Lighting response function");
+  RNA_def_property_update(prop, NC_NODE | NA_EDITED, "rna_Node_update");
+
+  prop = RNA_def_property(srna, "parameter_mode", PROP_ENUM, PROP_NONE);
+  RNA_def_property_enum_items(prop, rna_enum_node_light_eval_param_mode_items);
+  RNA_def_property_enum_funcs(prop,
+                              "rna_ShaderNodeLightEvaluation_param_mode_get",
+                              "rna_ShaderNodeLightEvaluation_param_mode_set",
+                              nullptr);
+  RNA_def_property_ui_text(prop, "Parameter Mode", "Direction parametrization mode");
+  RNA_def_property_update(prop, NC_NODE | NA_EDITED, "rna_Node_update");
+
+  prop = RNA_def_property(srna, "anisotropy", PROP_BOOLEAN, PROP_NONE);
+  RNA_def_property_boolean_funcs(prop,
+                                 "rna_ShaderNodeLightEvaluation_anisotropy_get",
+                                 "rna_ShaderNodeLightEvaluation_anisotropy_set");
+  RNA_def_property_ui_text(prop, "Anisotropy", "Enable anisotropic shape parameters");
+  RNA_def_property_update(prop, NC_NODE | NA_EDITED, "rna_Node_update");
+}
+
 
 static void def_sh_tex_magic(BlenderRNA *brna, StructRNA *srna)
 {
@@ -14377,6 +14515,12 @@ static void rna_def_nodes(BlenderRNA *brna)
   define("ShaderNode", "ShaderNodeTwirl", def_sh_twirl);
   define("ShaderNode", "ShaderNodeWaterRipples", def_sh_water_ripples);
   define("ShaderNode", "ShaderNodeOKLabColorRamp", def_oklab_colorramp);
+  define("ShaderNode", "ShaderNodeLightAccumulator");
+  define("ShaderNode", "ShaderNodeLightData", def_sh_light_data);
+  define("ShaderNode", "ShaderNodeShadow", def_sh_shadow);
+  define("ShaderNode", "ShaderNodeLightEvaluation", def_sh_light_evaluation);
+  define("ShaderNode", "ShaderNodeFilterBlur");
+  define("ShaderNode", "ShaderNodeFilterSharpen");
   
   define("CompositorNode", "CompositorNodeAlphaOver", def_cmp_alpha_over);
   define("CompositorNode", "CompositorNodeAntiAliasing", def_cmp_antialiasing);

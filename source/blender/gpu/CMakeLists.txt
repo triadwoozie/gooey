@@ -650,6 +650,12 @@ set(GLSL_SRC
   shaders/material/gpu_shader_material_tex_hexagon.glsl
   shaders/material/gpu_shader_material_twirl.glsl
   shaders/material/gpu_shader_material_water_ripples.glsl
+  shaders/material/gpu_shader_material_light_accumulator.glsl
+  shaders/material/gpu_shader_material_light_data.glsl
+  shaders/material/gpu_shader_material_shadow.glsl
+  shaders/material/gpu_shader_material_light_evaluation.glsl
+  shaders/material/gpu_shader_material_filter_blur.glsl
+  shaders/material/gpu_shader_material_filter_sharpen.glsl
 
   shaders/gpu_shader_gpencil_stroke_vert.glsl
   shaders/gpu_shader_gpencil_stroke_frag.glsl

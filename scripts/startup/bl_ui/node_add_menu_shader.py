@@ -385,6 +385,16 @@ class NODE_MT_category_goo_engine(Menu):
         node_add_menu.add_node_type(layout, "ShaderNodeSdfNoise")
         node_add_menu.add_node_type(layout, "ShaderNodeTwirl")
         node_add_menu.add_node_type(layout, "ShaderNodeWaterRipples")
+        layout.separator()
+        layout.label(text="Material Lighting (NPR)")
+        node_add_menu.add_node_type(layout, "ShaderNodeLightAccumulator")
+        node_add_menu.add_node_type(layout, "ShaderNodeLightData")
+        node_add_menu.add_node_type(layout, "ShaderNodeShadow")
+        node_add_menu.add_node_type(layout, "ShaderNodeLightEvaluation")
+        layout.separator()
+        layout.label(text="Texture Filters")
+        node_add_menu.add_node_type(layout, "ShaderNodeFilterBlur")
+        node_add_menu.add_node_type(layout, "ShaderNodeFilterSharpen")
 
 
 class NODE_MT_category_shader_script(Menu):
