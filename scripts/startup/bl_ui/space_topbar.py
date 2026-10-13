@@ -258,17 +258,27 @@ class TOPBAR_MT_file(Menu):
         layout.separator()
 
         layout.operator_context = 'EXEC_AREA' if context.blend_data.is_saved else 'INVOKE_AREA'
-        layout.operator("wm.save_mainfile", text="Save", icon='FILE_TICK')
+        save_mainfile = layout.operator("wm.save_mainfile", text="Save", icon='FILE_TICK')
+        if hasattr(save_mainfile, "show_save_modified_images_dialog"):
+            save_mainfile.show_save_modified_images_dialog = True
 
         layout.operator_context = 'INVOKE_AREA'
-        layout.operator("wm.save_as_mainfile", text="Save As...")
-        layout.operator_context = 'INVOKE_AREA'
-        layout.operator("wm.save_as_mainfile", text="Save Copy...").copy = True
+        save_as_mainfile = layout.operator("wm.save_as_mainfile", text="Save As...")
+        if hasattr(save_as_mainfile, "show_save_modified_images_dialog"):
+            save_as_mainfile.show_save_modified_images_dialog = True
+
+        save_copy = layout.operator("wm.save_as_mainfile", text="Save Copy...")
+        save_copy.copy = True
+        if hasattr(save_copy, "show_save_modified_images_dialog"):
+            save_copy.show_save_modified_images_dialog = True
 
         sub = layout.row()
         sub.enabled = context.blend_data.is_saved
         sub.operator_context = 'EXEC_AREA'
-        sub.operator("wm.save_mainfile", text="Save Incremental").incremental = True
+        save_incremental = sub.operator("wm.save_mainfile", text="Save Incremental")
+        save_incremental.incremental = True
+        if hasattr(save_incremental, "show_save_modified_images_dialog"):
+            save_incremental.show_save_modified_images_dialog = True
 
         layout.separator()
 
@@ -279,12 +289,12 @@ class TOPBAR_MT_file(Menu):
 
         layout.separator()
 
-        layout.menu("TOPBAR_MT_file_import")
-        layout.menu("TOPBAR_MT_file_export")
-        row = layout.row()
-        row.operator("wm.collection_export_all")
-        view_layer = getattr(context, "view_layer", None)
-        row.enabled = getattr(view_layer, "has_export_collections", False) if view_layer else False
+        if hasattr(bpy.types, "TOPBAR_MT_file_project"):
+            layout.menu("TOPBAR_MT_file_project", icon='PROJECT')
+            layout.separator()
+
+        layout.menu("TOPBAR_MT_file_import", icon='IMPORT')
+        layout.menu("TOPBAR_MT_file_export", icon='EXPORT')
 
         layout.separator()
 
@@ -307,7 +317,9 @@ class TOPBAR_MT_file_project(Menu):
     def draw(self, _context):
         layout = self.layout
 
-        if hasattr(bpy.ops, "project") and hasattr(bpy.ops.project, "new_project"):
+        if hasattr(bpy.ops.screen, "project_setup_show"):
+            layout.operator("screen.project_setup_show", text="Settings...", icon='PREFERENCES')
+        elif hasattr(bpy.ops, "project") and hasattr(bpy.ops.project, "new_project"):
             layout.operator("project.new_project", text="New Project...", icon='ADD')
         if hasattr(bpy.ops, "project") and hasattr(bpy.ops.project, "open_blend_in_project"):
             layout.operator("project.open_blend_in_project", icon='FILE_FOLDER')
@@ -775,7 +787,7 @@ class TOPBAR_MT_help(Menu):
 class TOPBAR_MT_file_context_menu(Menu):
     bl_label = "File"
 
-    def draw(self, context):
+    def draw(self, _context):
         layout = self.layout
 
         layout.operator_context = 'INVOKE_AREA'
@@ -790,26 +802,12 @@ class TOPBAR_MT_file_context_menu(Menu):
 
         layout.separator()
 
-        layout.menu("TOPBAR_MT_file_import")
-        layout.menu("TOPBAR_MT_file_export")
-        row = layout.row()
-        row.operator("wm.collection_export_all")
-        view_layer = getattr(context, "view_layer", None)
-        row.enabled = getattr(view_layer, "has_export_collections", False) if view_layer else False
-
-        layout.separator()
-
-        layout.menu("TOPBAR_MT_file_external_data")
-        layout.menu("TOPBAR_MT_file_cleanup")
-
-        layout.separator()
-
-        layout.menu("TOPBAR_MT_file_defaults")
+        layout.menu("TOPBAR_MT_file_import", icon='IMPORT')
+        layout.menu("TOPBAR_MT_file_export", icon='EXPORT')
 
         layout.separator()
 
         layout.operator("screen.userpref_show", text="Preferences...", icon='PREFERENCES')
-        layout.operator("wm.quit_blender", text="Quit", icon='QUIT')
 
 
 class TOPBAR_MT_workspace_menu(Menu):

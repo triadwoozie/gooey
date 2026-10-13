@@ -1,0 +1,493 @@
+# SPDX-FileCopyrightText: 2026 Blender Authors
+#
+# SPDX-License-Identifier: GPL-2.0-or-later
+
+"""
+Blend Shell (Terminal in Blender)
+Maps Unix shell operations (cat, rm, cp, mv, du, grep, diff, ls, mkdir, pip)
+directly to bpy.data data-block operations inside the running Blender session,
+with seamless fallback to system commands and python console.
+"""
+
+import os
+import sys
+import re
+import shlex
+import shutil
+import subprocess
+import importlib
+import site
+import bpy
+
+__all__ = (
+    "handle_command",
+    "pip_exec",
+    "blend_shell_banner",
+)
+
+def pip_exec(*args):
+    """Install, list, or uninstall Python packages using Blender's Python interpreter."""
+    cmd = [sys.executable, "-m", "pip"] + list(args)
+    try:
+        res = subprocess.run(cmd, capture_output=True, text=True)
+        out = res.stdout + ("\n" + res.stderr if res.stderr else "")
+        if res.returncode != 0 and "No module named pip" in out:
+            print("[pip] Bootstrapping pip via ensurepip...")
+            subprocess.run([sys.executable, "-m", "ensurepip"], check=True)
+            res = subprocess.run(cmd, capture_output=True, text=True)
+            out = res.stdout + ("\n" + res.stderr if res.stderr else "")
+        importlib.invalidate_caches()
+        return res.returncode, out.strip()
+    except Exception as e:
+        return 1, f"pip error: {e}"
+
+
+def _get_target_datablock(name):
+    """Find a datablock across common collections by name or category/name."""
+    if "/" in name:
+        cat, item = name.split("/", 1)
+        cat_attr = cat.lower()
+        if hasattr(bpy.data, cat_attr):
+            coll = getattr(bpy.data, cat_attr)
+            if item in coll:
+                return coll[item], cat_attr
+            return None, cat_attr
+
+    for cat in ["objects", "materials", "collections", "meshes", "texts", "images", "scenes"]:
+        coll = getattr(bpy.data, cat, None)
+        if coll and name in coll:
+            return coll[name], cat
+    return None, None
+
+
+def cmd_help(args, stdout):
+    stdout.write("""
+=== BLEND-SHELL: Unix Data-Block & System Terminal ===
+Standard commands mapped to bpy.data and system shell:
+
+  ls [type]                 List data-blocks (objects, materials, collections, texts, meshes) or files
+  cat <target>              Inspect properties:
+                              • Object: Transform (Loc, Rot, Scale), bounds, materials
+                              • Material: Shader nodes and BSDF parameters
+                              • Text/Script: Dump content of text data-block
+                              • File: Dump content of external file
+  rm [-rf] <target>         Delete data-block from bpy.data (e.g. 'rm Cube', 'rm UnusedMat')
+                            'rm -rf *' or 'rm --orphans' purges all orphan data-blocks!
+  cp <src> <dest>           Duplicate object/data-block internally ('cp Cube HeroCube')
+                            or append from external file ('cp path/to/lib.blend/Collection/Props .')
+  mv <src> <dest>           Rename data-block ('mv Cube OldCube')
+                            or move object into collection ('mv Cube Collection2')
+  mkdir <name>              Create a new Collection and link to active scene
+  du                        Disk & polygon usage: Object, vertex, polygon, and material counts
+  grep <pattern> [type]     Search data-blocks by regex or substring ('grep prop', 'grep mat Gold')
+  diff <file1> [file2]      Compare data-blocks between two .blend files (or current vs file)
+  pip <args...>             Run pip in Blender's Python ('pip install scipy', 'pip list')
+  sh <cmd>  or  !<cmd>      Execute system shell command directly ('!uname -a', 'sh ls -la')
+  save                      Save current .blend file (bpy.ops.wm.save_mainfile())
+  help                      Show this help screen
+======================================================
+""")
+
+
+def cmd_ls(args, stdout):
+    target = args[0] if args else ""
+    if target in {"-l", "-la", "-a"}:
+        target = args[1] if len(args) > 1 else ""
+
+    if target:
+        cat_attr = target.lower()
+        if hasattr(bpy.data, cat_attr):
+            coll = getattr(bpy.data, cat_attr)
+            stdout.write(f"[{cat_attr.upper()} ({len(coll)})]:\n")
+            names = [f"  {item.name}" for item in coll]
+            stdout.write("\n".join(names) + "\n" if names else "  (empty)\n")
+            return
+        elif os.path.exists(target):
+            entries = os.listdir(target)
+            stdout.write("\n".join(f"  {e}" for e in sorted(entries)) + "\n")
+            return
+
+    # Default overview
+    stdout.write(f"=== bpy.data Overview ===\n")
+    stdout.write(f"  Collections ({len(bpy.data.collections)}): " + ", ".join([c.name for c in bpy.data.collections[:6]]) + ("..." if len(bpy.data.collections) > 6 else "") + "\n")
+    stdout.write(f"  Objects     ({len(bpy.data.objects)}): " + ", ".join([o.name for o in bpy.data.objects[:6]]) + ("..." if len(bpy.data.objects) > 6 else "") + "\n")
+    stdout.write(f"  Meshes      ({len(bpy.data.meshes)}): " + ", ".join([m.name for m in bpy.data.meshes[:6]]) + ("..." if len(bpy.data.meshes) > 6 else "") + "\n")
+    stdout.write(f"  Materials   ({len(bpy.data.materials)}): " + ", ".join([m.name for m in bpy.data.materials[:6]]) + ("..." if len(bpy.data.materials) > 6 else "") + "\n")
+    stdout.write(f"  Texts       ({len(bpy.data.texts)}): " + ", ".join([t.name for t in bpy.data.texts[:6]]) + ("..." if len(bpy.data.texts) > 6 else "") + "\n")
+
+
+def cmd_cat(args, stdout, stderr):
+    if not args:
+        stderr.write("cat: missing operand (specify data-block name or text block)\n")
+        return
+
+    name = args[0]
+    # Check text data-blocks first
+    if name in bpy.data.texts:
+        stdout.write(bpy.data.texts[name].as_string() + "\n")
+        return
+
+    # Check external files
+    if os.path.isfile(name):
+        try:
+            with open(name, "r", encoding="utf-8", errors="replace") as f:
+                stdout.write(f.read() + "\n")
+            return
+        except Exception as e:
+            stderr.write(f"cat: {e}\n")
+            return
+
+    # Check objects
+    obj, cat = _get_target_datablock(name)
+    if obj is not None:
+        if isinstance(obj, bpy.types.Object):
+            stdout.write(f"Object: {obj.name} (type: {obj.type})\n")
+            stdout.write(f"  Location: ({obj.location.x:.3f}, {obj.location.y:.3f}, {obj.location.z:.3f})\n")
+            stdout.write(f"  Rotation: ({obj.rotation_euler.x:.3f}, {obj.rotation_euler.y:.3f}, {obj.rotation_euler.z:.3f})\n")
+            stdout.write(f"  Scale:    ({obj.scale.x:.3f}, {obj.scale.y:.3f}, {obj.scale.z:.3f})\n")
+            if obj.material_slots:
+                mats = [s.material.name for s in obj.material_slots if s.material]
+                stdout.write(f"  Materials: {', '.join(mats)}\n")
+            if obj.modifiers:
+                mods = [f"{m.name} ({m.type})" for m in obj.modifiers]
+                stdout.write(f"  Modifiers: {', '.join(mods)}\n")
+            return
+        elif isinstance(obj, bpy.types.Material):
+            stdout.write(f"Material: {obj.name} (use_nodes={obj.use_nodes})\n")
+            if obj.use_nodes and obj.node_tree:
+                stdout.write("  Shader Nodes:\n")
+                for node in obj.node_tree.nodes:
+                    stdout.write(f"    - {node.name} [{node.type}]\n")
+            return
+        elif isinstance(obj, bpy.types.Collection):
+            stdout.write(f"Collection: {obj.name}\n")
+            stdout.write(f"  Objects: {', '.join([o.name for o in obj.objects])}\n")
+            return
+
+    stderr.write(f"cat: {name}: No such text block, object, material, or file found.\n")
+
+
+def cmd_rm(args, stdout, stderr):
+    if not args:
+        stderr.write("rm: missing operand\n")
+        return
+
+    # rm -rf * or rm --orphans
+    if "-rf" in args or "--orphans" in args or "*" in args:
+        stdout.write("Purging orphaned data-blocks...\n")
+        bpy.ops.outliner.orphans_purge(do_local_ids=True, do_linked_ids=True, do_recursive=True)
+        if bpy.data.is_saved:
+            bpy.ops.wm.save_mainfile()
+        stdout.write("Orphan purge complete.\n")
+        return
+
+    target = args[-1]
+    obj, cat = _get_target_datablock(target)
+    if obj is None:
+        stderr.write(f"rm: cannot remove '{target}': No such data-block found.\n")
+        return
+
+    try:
+        coll = getattr(bpy.data, cat)
+        if cat == "objects":
+            coll.remove(obj, do_unlink=True)
+        else:
+            coll.remove(obj)
+        stdout.write(f"Removed {cat[:-1]} '{target}'.\n")
+        if bpy.data.is_saved:
+            bpy.ops.wm.save_mainfile()
+    except Exception as e:
+        stderr.write(f"rm error: {e}\n")
+
+
+def cmd_cp(args, stdout, stderr):
+    if len(args) < 2:
+        stderr.write("cp: missing destination operand ('cp src dest')\n")
+        return
+    src, dest = args[0], args[1]
+
+    # External blend append: cp file.blend/Collection/Props .
+    if ".blend" in src:
+        try:
+            parts = src.split(".blend", 1)
+            filepath = parts[0] + ".blend"
+            subpath = parts[1].strip("/")
+            if "/" in subpath:
+                id_type, id_name = subpath.split("/", 1)
+                directory = os.path.join(filepath, id_type) + "/"
+                bpy.ops.wm.append(filepath=filepath, directory=directory, filename=id_name)
+                stdout.write(f"Appended {id_name} from {filepath}.\n")
+                if bpy.data.is_saved:
+                    bpy.ops.wm.save_mainfile()
+                return
+        except Exception as e:
+            stderr.write(f"cp append error: {e}\n")
+            return
+
+    # Internal duplicate
+    obj, cat = _get_target_datablock(src)
+    if obj is None:
+        stderr.write(f"cp: cannot duplicate '{src}': Not found in bpy.data.\n")
+        return
+
+    try:
+        if isinstance(obj, bpy.types.Object):
+            dup = obj.copy()
+            if obj.data:
+                dup.data = obj.data.copy()
+            dup.name = dest
+            bpy.context.scene.collection.objects.link(dup)
+            stdout.write(f"Duplicated Object '{src}' -> '{dup.name}'.\n")
+        elif hasattr(obj, "copy"):
+            dup = obj.copy()
+            dup.name = dest
+            stdout.write(f"Duplicated {cat[:-1]} '{src}' -> '{dup.name}'.\n")
+        if bpy.data.is_saved:
+            bpy.ops.wm.save_mainfile()
+    except Exception as e:
+        stderr.write(f"cp error: {e}\n")
+
+
+def cmd_mv(args, stdout, stderr):
+    if len(args) < 2:
+        stderr.write("mv: missing destination operand ('mv src dest')\n")
+        return
+    src, dest = args[0], args[1]
+
+    obj, cat = _get_target_datablock(src)
+    if obj is None:
+        stderr.write(f"mv: cannot move '{src}': Not found.\n")
+        return
+
+    # If dest is an existing collection and obj is an Object -> Move object to collection
+    if isinstance(obj, bpy.types.Object) and dest in bpy.data.collections:
+        target_col = bpy.data.collections[dest]
+        # Unlink from other collections
+        for col in list(obj.users_collection):
+            col.objects.unlink(obj)
+        if obj.name in bpy.context.scene.collection.objects:
+            bpy.context.scene.collection.objects.unlink(obj)
+        target_col.objects.link(obj)
+        stdout.write(f"Moved Object '{src}' into Collection '{dest}'.\n")
+        if bpy.data.is_saved:
+            bpy.ops.wm.save_mainfile()
+        return
+
+    # Otherwise rename
+    old_name = obj.name
+    obj.name = dest
+    stdout.write(f"Renamed {cat[:-1]} '{old_name}' -> '{obj.name}'.\n")
+    if bpy.data.is_saved:
+        bpy.ops.wm.save_mainfile()
+
+
+def cmd_mkdir(args, stdout, stderr):
+    if not args:
+        stderr.write("mkdir: missing operand (specify collection name)\n")
+        return
+    name = args[0]
+    if name in bpy.data.collections:
+        stderr.write(f"mkdir: Collection '{name}' already exists.\n")
+        return
+    new_col = bpy.data.collections.new(name)
+    bpy.context.scene.collection.children.link(new_col)
+    stdout.write(f"Created Collection '{name}' and linked to Scene.\n")
+    if bpy.data.is_saved:
+        bpy.ops.wm.save_mainfile()
+
+
+def cmd_du(args, stdout):
+    verts = sum(len(m.vertices) for m in bpy.data.meshes)
+    faces = sum(len(m.polygons) for m in bpy.data.meshes)
+    stdout.write("=== Blend Database Statistics ===\n")
+    stdout.write(f"  Collections: {len(bpy.data.collections)}\n")
+    stdout.write(f"  Objects:     {len(bpy.data.objects)}\n")
+    stdout.write(f"  Meshes:      {len(bpy.data.meshes)}\n")
+    stdout.write(f"  Materials:   {len(bpy.data.materials)}\n")
+    stdout.write(f"  Images:      {len(bpy.data.images)}\n")
+    stdout.write(f"  Texts:       {len(bpy.data.texts)}\n")
+    stdout.write(f"  Total Verts: {verts:,}\n")
+    stdout.write(f"  Total Faces: {faces:,}\n")
+
+
+def cmd_grep(args, stdout, stderr):
+    if not args:
+        stderr.write("grep: missing search pattern\n")
+        return
+
+    # Check for mat search: grep mat <MaterialName>
+    if len(args) >= 2 and args[0] in {"mat", "material"}:
+        mat_target = args[1]
+        matches = [o.name for o in bpy.data.objects if any(m and mat_target.lower() in m.name.lower() for m in o.material_slots)]
+        stdout.write(f"Objects with material matching '{mat_target}':\n")
+        stdout.write("\n".join(f"  {m}" for m in matches) + "\n" if matches else "  None\n")
+        return
+
+    pattern = args[0]
+    regex = re.compile(pattern, re.IGNORECASE)
+    found = []
+    for cat in ["objects", "materials", "collections", "meshes", "texts"]:
+        coll = getattr(bpy.data, cat, None)
+        if coll:
+            for item in coll:
+                if regex.search(item.name):
+                    found.append(f"[{cat[:-1]}] {item.name}")
+    stdout.write(f"Matches for pattern '{pattern}':\n")
+    stdout.write("\n".join(f"  {m}" for m in found) + "\n" if found else "  No matches found\n")
+
+
+def cmd_diff(args, stdout, stderr):
+    if not args:
+        stderr.write("diff: missing file argument ('diff file1.blend [file2.blend]')\n")
+        return
+
+    if len(args) == 1:
+        file_b = args[0]
+        if not bpy.data.is_saved:
+            stderr.write("diff: Current blend file is not saved to disk yet.\n")
+            return
+        file_a = bpy.data.filepath
+    else:
+        file_a, file_b = args[0], args[1]
+
+    if not os.path.isfile(file_a) or not os.path.isfile(file_b):
+        stderr.write(f"diff: One or both files not found ({file_a}, {file_b})\n")
+        return
+
+    try:
+        with bpy.data.libraries.load(file_a) as (a, _), bpy.data.libraries.load(file_b) as (b, _):
+            stdout.write(f"=== Diff: {os.path.basename(file_a)} <-> {os.path.basename(file_b)} ===\n")
+            diff_found = False
+            for cat in ['objects', 'materials', 'collections']:
+                set_a = set(getattr(a, cat))
+                set_b = set(getattr(b, cat))
+                added = set_b - set_a
+                removed = set_a - set_b
+                if added or removed:
+                    diff_found = True
+                    stdout.write(f"[{cat.upper()}]:\n")
+                    if added:
+                        stdout.write(f"  + Added in {os.path.basename(file_b)}: {', '.join(sorted(added))}\n")
+                    if removed:
+                        stdout.write(f"  - Missing in {os.path.basename(file_b)}: {', '.join(sorted(removed))}\n")
+            if not diff_found:
+                stdout.write("Files have identical objects, materials, and collections.\n")
+    except Exception as e:
+        stderr.write(f"diff error: {e}\n")
+
+
+def cmd_pip(args, stdout, stderr):
+    if not args:
+        args = ["list"]
+    code, output = pip_exec(*args)
+    if output:
+        if code == 0:
+            stdout.write(output + "\n")
+        else:
+            stderr.write(output + "\n")
+
+
+def cmd_system(cmd_line, stdout, stderr):
+    try:
+        res = subprocess.run(cmd_line, shell=True, capture_output=True, text=True)
+        if res.stdout:
+            stdout.write(res.stdout)
+        if res.stderr:
+            stderr.write(res.stderr)
+    except Exception as e:
+        stderr.write(f"shell error: {e}\n")
+
+
+def blend_shell_banner():
+    return (
+        "BLEND SHELL ACTIVATED (Unix Database Terminal)",
+        "Type 'help' for available commands (cat, rm, cp, mv, du, grep, diff, ls, mkdir, pip).",
+        "Type '!cmd' or 'sh cmd' for system bash commands. Standard Python expressions work normally.",
+        "",
+    )
+
+
+def handle_command(line_raw, context, stdout, stderr):
+    """
+    Inspects user input line. If recognized as a Unix blend-shell command,
+    executes it and returns True. Otherwise returns False to allow standard Python evaluation.
+    """
+    line = line_raw.strip()
+    if not line:
+        return False
+
+    # Direct system terminal bypass: !cmd
+    if line.startswith("!"):
+        cmd_system(line[1:].strip(), stdout, stderr)
+        return True
+
+    # Shell bypass: sh <cmd>
+    if line.startswith("sh "):
+        cmd_system(line[3:].strip(), stdout, stderr)
+        return True
+
+    try:
+        parts = shlex.split(line)
+    except Exception:
+        parts = line.split()
+
+    if not parts:
+        return False
+
+    cmd = parts[0]
+    args = parts[1:]
+
+    # Check against Unix commands
+    if cmd == "help" and (not args or args[0] in {"ls", "cat", "rm", "cp", "mv", "mkdir", "du", "grep", "diff", "pip", "sh", "!"}):
+        cmd_help(args, stdout)
+        return True
+    elif cmd == "ls":
+        cmd_ls(args, stdout)
+        return True
+    elif cmd == "cat":
+        cmd_cat(args, stdout, stderr)
+        return True
+    elif cmd == "rm":
+        cmd_rm(args, stdout, stderr)
+        return True
+    elif cmd == "cp":
+        cmd_cp(args, stdout, stderr)
+        return True
+    elif cmd == "mv":
+        cmd_mv(args, stdout, stderr)
+        return True
+    elif cmd == "mkdir":
+        cmd_mkdir(args, stdout, stderr)
+        return True
+    elif cmd == "du":
+        cmd_du(args, stdout)
+        return True
+    elif cmd == "grep":
+        cmd_grep(args, stdout, stderr)
+        return True
+    elif cmd == "diff":
+        cmd_diff(args, stdout, stderr)
+        return True
+    elif cmd == "pip":
+        cmd_pip(args, stdout, stderr)
+        return True
+    elif cmd == "save":
+        if bpy.data.is_saved:
+            bpy.ops.wm.save_mainfile()
+            stdout.write(f"Saved: {bpy.data.filepath}\n")
+        else:
+            stderr.write("File not saved yet. Use Save As...\n")
+        return True
+    elif cmd == "pwd":
+        stdout.write(os.getcwd() + "\n")
+        return True
+    elif cmd == "cd":
+        target_dir = args[0] if args else os.path.expanduser("~")
+        try:
+            os.chdir(target_dir)
+            stdout.write(os.getcwd() + "\n")
+        except Exception as e:
+            stderr.write(f"cd: {e}\n")
+        return True
+
+    return False
