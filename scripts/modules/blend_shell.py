@@ -84,6 +84,7 @@ Standard commands mapped to bpy.data and system shell:
   pip <args...>             Run pip in Blender's Python ('pip install scipy', 'pip list')
   path [on|off|add <dir>]   Toggle/manage system $PATH linking for !command execution
   sh <cmd>  or  !<cmd>      Execute system shell command directly ('!uname -a', '!ffmpeg', 'sh ls -la')
+  term <cmd> or !term <cmd> Launch command in external live terminal window ('term agy', '!term htop')
   save                      Save current .blend file (bpy.ops.wm.save_mainfile())
   help                      Show this help screen
 ======================================================
@@ -435,7 +436,46 @@ def cmd_path(args, stdout):
     else:
         stdout.write(f"Unknown option '{sub}'. Usage: path on | path off | path add <dir>\n")
 
-def cmd_system(cmd_line, stdout, stderr):
+def find_terminal_emulator():
+    """Find a supported graphical terminal emulator on the system."""
+    for term in ["ptyxis", "gnome-terminal", "konsole", "xfce4-terminal", "alacritty", "kitty", "foot", "wezterm", "xterm"]:
+        path = shutil.which(term)
+        if path:
+            return term, path
+    return None, None
+
+
+def launch_in_terminal(cmd_line, env):
+    """Launch interactive CLI command in a floating/external terminal window."""
+    term_name, term_path = find_terminal_emulator()
+    if not term_path:
+        return False, "No graphical terminal emulator found (ptyxis/gnome-terminal/konsole/etc.)."
+
+    try:
+        if term_name == "ptyxis":
+            args = [term_path, "--new-window", "--", "bash", "-c", f"{cmd_line}; echo ''; read -n 1 -s -r -p 'Press any key to close...'"]
+        elif term_name in {"gnome-terminal", "xfce4-terminal"}:
+            args = [term_path, "--", "bash", "-c", f"{cmd_line}; echo ''; read -n 1 -s -r -p 'Press any key to close...'"]
+        elif term_name == "konsole":
+            args = [term_path, "-e", "bash", "-c", f"{cmd_line}; echo ''; read -n 1 -s -r -p 'Press any key to close...'"]
+        elif term_name in {"alacritty", "kitty", "foot", "wezterm", "xterm"}:
+            args = [term_path, "-e", "bash", "-c", f"{cmd_line}; echo ''; read -n 1 -s -r -p 'Press any key to close...'"]
+        else:
+            args = [term_path, "-e", cmd_line]
+
+        subprocess.Popen(args, env=env, close_fds=True)
+        return True, f"Launched '{cmd_line}' in external terminal ({term_name})."
+    except Exception as e:
+        return False, f"Failed to launch terminal: {e}"
+
+
+def strip_ansi_codes(text):
+    """Remove ANSI escape sequences and terminal control characters from output."""
+    ansi_regex = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+    return ansi_regex.sub('', text)
+
+
+def cmd_system(cmd_line, stdout, stderr, timeout=6.0):
     try:
         env = get_shell_env()
         if "TERM" not in env or not env["TERM"]:
@@ -445,18 +485,29 @@ def cmd_system(cmd_line, stdout, stderr):
         if not os.path.isfile(shell_exe):
             shell_exe = "/bin/sh"
 
-        # On POSIX systems, run inside a pseudo-terminal (PTY) so TTY-dependent commands (like BubbleTea/agy/git/fzf)
-        # have an allocated /dev/tty and don't fail with "error opening TTY: open /dev/tty: no such device or address".
+        # Check if user explicitly asked to run in external terminal (e.g. `!term agy` or `sh term agy`)
+        if cmd_line.startswith("term "):
+            target_cmd = cmd_line[5:].strip()
+            ok, msg = launch_in_terminal(target_cmd, env)
+            if ok:
+                stdout.write(f"[blend-shell] {msg}\n")
+            else:
+                stderr.write(f"[blend-shell] {msg}\n")
+            return
+
         use_pty = False
         try:
             import pty
             import select
+            import fcntl
+            import time
             use_pty = True
         except ImportError:
             use_pty = False
 
         if use_pty and os.name == 'posix':
             master_fd, slave_fd = pty.openpty()
+            proc = None
             try:
                 proc = subprocess.Popen(
                     cmd_line,
@@ -471,10 +522,21 @@ def cmd_system(cmd_line, stdout, stderr):
                 os.close(slave_fd)
                 slave_fd = -1
 
+                # Set master fd non-blocking to guarantee Blender's main loop NEVER hangs
+                flags = fcntl.fcntl(master_fd, fcntl.F_GETFL)
+                fcntl.fcntl(master_fd, fcntl.F_SETFL, flags | os.O_NONBLOCK)
+
                 raw_bytes = bytearray()
-                # Read until child process exits and output is drained
+                start_time = time.time()
+                timed_out = False
+
                 while True:
-                    r, _, _ = select.select([master_fd], [], [], 0.05)
+                    elapsed = time.time() - start_time
+                    if elapsed > timeout:
+                        timed_out = True
+                        break
+
+                    r, _, _ = select.select([master_fd], [], [], 0.04)
                     if r:
                         try:
                             chunk = os.read(master_fd, 4096)
@@ -484,24 +546,38 @@ def cmd_system(cmd_line, stdout, stderr):
                         except OSError:
                             break
                     elif proc.poll() is not None:
-                        # Process terminated; do one final non-blocking drain
-                        try:
-                            while True:
-                                r_drain, _, _ = select.select([master_fd], [], [], 0.02)
-                                if not r_drain:
-                                    break
+                        # Process terminated; brief non-blocking drain
+                        for _ in range(5):
+                            try:
                                 chunk = os.read(master_fd, 4096)
-                                if not chunk:
+                                if chunk:
+                                    raw_bytes.extend(chunk)
+                                else:
                                     break
-                                raw_bytes.extend(chunk)
-                        except OSError:
-                            pass
+                            except OSError:
+                                break
                         break
 
-                proc.wait()
-                text_out = raw_bytes.decode("utf-8", errors="replace")
-                if text_out:
-                    stdout.write(text_out)
+                if timed_out and proc.poll() is None:
+                    # Process is interactive (like TUI / interactive CLI), offer launch or terminate
+                    proc.terminate()
+                    try:
+                        proc.wait(timeout=0.5)
+                    except Exception:
+                        proc.kill()
+
+                    clean_out = strip_ansi_codes(raw_bytes.decode("utf-8", errors="replace")).strip()
+                    if clean_out:
+                        stdout.write(f"{clean_out}\n")
+                    stderr.write(
+                        f"\n[blend-shell] Command timed out after {timeout:.1f}s (running interactive TUI?).\n"
+                        f"Tip: Use '!term {cmd_line}' to open it in a live terminal window!\n"
+                    )
+                else:
+                    proc.wait()
+                    clean_out = strip_ansi_codes(raw_bytes.decode("utf-8", errors="replace"))
+                    if clean_out:
+                        stdout.write(clean_out)
             finally:
                 if slave_fd != -1:
                     try:
@@ -513,11 +589,13 @@ def cmd_system(cmd_line, stdout, stderr):
                 except OSError:
                     pass
         else:
-            res = subprocess.run(cmd_line, shell=True, executable=shell_exe, env=env, capture_output=True, text=True)
+            res = subprocess.run(cmd_line, shell=True, executable=shell_exe, env=env, capture_output=True, text=True, timeout=timeout)
             if res.stdout:
-                stdout.write(res.stdout)
+                stdout.write(strip_ansi_codes(res.stdout))
             if res.stderr:
-                stderr.write(res.stderr)
+                stderr.write(strip_ansi_codes(res.stderr))
+    except subprocess.TimeoutExpired:
+        stderr.write(f"\n[blend-shell] Command timed out. Use '!term {cmd_line}' to open in external terminal.\n")
     except Exception as e:
         stderr.write(f"shell error: {e}\n")
 
@@ -548,6 +626,11 @@ def handle_command(line_raw, context, stdout, stderr):
     # Shell bypass: sh <cmd>
     if line.startswith("sh "):
         cmd_system(line[3:].strip(), stdout, stderr)
+        return True
+
+    # Launch in external terminal window: term <cmd>
+    if line.startswith("term "):
+        cmd_system(line, stdout, stderr)
         return True
 
     try:
