@@ -438,14 +438,86 @@ def cmd_path(args, stdout):
 def cmd_system(cmd_line, stdout, stderr):
     try:
         env = get_shell_env()
+        if "TERM" not in env or not env["TERM"]:
+            env["TERM"] = "xterm-256color"
+
         shell_exe = os.environ.get("SHELL", "/bin/bash")
         if not os.path.isfile(shell_exe):
             shell_exe = "/bin/sh"
-        res = subprocess.run(cmd_line, shell=True, executable=shell_exe, env=env, capture_output=True, text=True)
-        if res.stdout:
-            stdout.write(res.stdout)
-        if res.stderr:
-            stderr.write(res.stderr)
+
+        # On POSIX systems, run inside a pseudo-terminal (PTY) so TTY-dependent commands (like BubbleTea/agy/git/fzf)
+        # have an allocated /dev/tty and don't fail with "error opening TTY: open /dev/tty: no such device or address".
+        use_pty = False
+        try:
+            import pty
+            import select
+            use_pty = True
+        except ImportError:
+            use_pty = False
+
+        if use_pty and os.name == 'posix':
+            master_fd, slave_fd = pty.openpty()
+            try:
+                proc = subprocess.Popen(
+                    cmd_line,
+                    shell=True,
+                    executable=shell_exe,
+                    stdin=slave_fd,
+                    stdout=slave_fd,
+                    stderr=slave_fd,
+                    env=env,
+                    close_fds=True,
+                )
+                os.close(slave_fd)
+                slave_fd = -1
+
+                raw_bytes = bytearray()
+                # Read until child process exits and output is drained
+                while True:
+                    r, _, _ = select.select([master_fd], [], [], 0.05)
+                    if r:
+                        try:
+                            chunk = os.read(master_fd, 4096)
+                            if not chunk:
+                                break
+                            raw_bytes.extend(chunk)
+                        except OSError:
+                            break
+                    elif proc.poll() is not None:
+                        # Process terminated; do one final non-blocking drain
+                        try:
+                            while True:
+                                r_drain, _, _ = select.select([master_fd], [], [], 0.02)
+                                if not r_drain:
+                                    break
+                                chunk = os.read(master_fd, 4096)
+                                if not chunk:
+                                    break
+                                raw_bytes.extend(chunk)
+                        except OSError:
+                            pass
+                        break
+
+                proc.wait()
+                text_out = raw_bytes.decode("utf-8", errors="replace")
+                if text_out:
+                    stdout.write(text_out)
+            finally:
+                if slave_fd != -1:
+                    try:
+                        os.close(slave_fd)
+                    except OSError:
+                        pass
+                try:
+                    os.close(master_fd)
+                except OSError:
+                    pass
+        else:
+            res = subprocess.run(cmd_line, shell=True, executable=shell_exe, env=env, capture_output=True, text=True)
+            if res.stdout:
+                stdout.write(res.stdout)
+            if res.stderr:
+                stderr.write(res.stderr)
     except Exception as e:
         stderr.write(f"shell error: {e}\n")
 

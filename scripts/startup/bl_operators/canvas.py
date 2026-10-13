@@ -3,6 +3,7 @@
 
 import math
 import bpy
+import bmesh
 from bpy.types import Operator, Panel, PropertyGroup
 from bpy.props import StringProperty, IntProperty, PointerProperty, BoolProperty
 
@@ -164,7 +165,46 @@ class CANVAS_OT_create(Operator):
 
         scene.camera = cam_obj
 
-        # 5. Isolate collections:
+        # 5. Setup White Background Plane in Canvas Collection
+        # Placed behind origin along ortho camera view axis (+Y from camera at Y=-10)
+        bg_obj_name = f"{name}_Background"
+        bg_mesh_name = f"{name}_Background_Mesh"
+        bg_mat_name = f"{name}_WhiteBackground"
+
+        bg_mat = bpy.data.materials.get(bg_mat_name)
+        if not bg_mat:
+            bg_mat = bpy.data.materials.new(name=bg_mat_name)
+            bg_mat.use_nodes = True
+            mat_nodes = bg_mat.node_tree.nodes
+            mat_nodes.clear()
+            node_emit = mat_nodes.new(type='ShaderNodeEmission')
+            node_emit.inputs['Color'].default_value = (1.0, 1.0, 1.0, 1.0)
+            node_emit.inputs['Strength'].default_value = 1.0
+            node_out = mat_nodes.new(type='ShaderNodeOutputMaterial')
+            bg_mat.node_tree.links.new(node_emit.outputs['Emission'], node_out.inputs['Surface'])
+
+        bg_obj = bpy.data.objects.get(bg_obj_name)
+        if not bg_obj:
+            bg_mesh = bpy.data.meshes.get(bg_mesh_name) or bpy.data.meshes.new(bg_mesh_name)
+            bm = bmesh.new()
+            bm.from_mesh(bg_mesh)
+            bmesh.ops.create_grid(bm, x_segments=1, y_segments=1, size=500.0)
+            bm.to_mesh(bg_mesh)
+            bm.free()
+
+            bg_obj = bpy.data.objects.new(name=bg_obj_name, object_data=bg_mesh)
+            bg_obj.location = (0.0, 50.0, 0.0)
+            bg_obj.rotation_euler = (math.radians(90.0), 0.0, 0.0)
+            canvas_col.objects.link(bg_obj)
+        elif bg_obj.name not in canvas_col.objects:
+            canvas_col.objects.link(bg_obj)
+
+        if not bg_obj.data.materials:
+            bg_obj.data.materials.append(bg_mat)
+        else:
+            bg_obj.data.materials[0] = bg_mat
+
+        # 6. Isolate collections:
         def find_layer_col(layer_col, target_col):
             if layer_col.collection == target_col:
                 return layer_col
@@ -181,10 +221,7 @@ class CANVAS_OT_create(Operator):
         if target_lc:
             view_layer.active_layer_collection = target_lc
 
-        # Transparent sky on canvas overlay
-        view_layer.use_sky = False
-
-        # 6. Create a Separate Render Target Image (customizable name every time)
+        # 7. Create a Separate Render Target Image (customizable name every time) with White Background
         img_name = f"{name}_Target"
         target_img = bpy.data.images.get(img_name)
         if not target_img:
@@ -195,12 +232,12 @@ class CANVAS_OT_create(Operator):
                 alpha=True,
                 float_buffer=False,
             )
-            target_img.generated_color = (0.0, 0.0, 0.0, 0.0)
+            target_img.generated_color = (1.0, 1.0, 1.0, 1.0)
         else:
             if target_img.size[0] != res_x or target_img.size[1] != res_y:
                 target_img.scale(res_x, res_y)
 
-        # 7. Setup Dedicated Compositor Graph
+        # 8. Setup Dedicated Compositor Graph with White Background Alpha Over
         scene.use_nodes = True
         tree = scene.node_tree
         if tree:
@@ -212,7 +249,7 @@ class CANVAS_OT_create(Operator):
             if not rl_node:
                 rl_node = tree.nodes.new(type='CompositorNodeRLayers')
                 rl_node.layer = view_layer.name
-                rl_node.location = (-300, 200)
+                rl_node.location = (-400, 200)
 
             comp_node = None
             viewer_node = None
@@ -224,20 +261,49 @@ class CANVAS_OT_create(Operator):
 
             if not comp_node:
                 comp_node = tree.nodes.new(type='CompositorNodeComposite')
-                comp_node.location = (200, 200)
+                comp_node.location = (400, 200)
 
             if not viewer_node:
                 viewer_node = tree.nodes.new(type='CompositorNodeViewer')
-                viewer_node.location = (200, -50)
+                viewer_node.location = (400, -50)
 
-            if rl_node and "Image" in rl_node.outputs:
-                img_out = rl_node.outputs["Image"]
-                if comp_node and "Image" in comp_node.inputs:
-                    tree.links.new(img_out, comp_node.inputs["Image"])
-                if viewer_node and "Image" in viewer_node.inputs:
-                    tree.links.new(img_out, viewer_node.inputs["Image"])
+            # Alpha Over node with white background
+            alpha_over_node = None
+            for node in tree.nodes:
+                if node.type == 'ALPHAOVER' and getattr(node, "name", "").startswith(f"{name}_AlphaOver"):
+                    alpha_over_node = node
+                    break
+            if not alpha_over_node:
+                alpha_over_node = tree.nodes.new(type='CompositorNodeAlphaOver')
+                alpha_over_node.name = f"{name}_AlphaOver"
+                alpha_over_node.label = "White Canvas Background"
+                alpha_over_node.location = (0, 200)
 
-        self.report({'INFO'}, f"Canvas '{name}' created with isolated collection, Ortho Camera and target image '{img_name}'.")
+            # Set background color to pure white (1.0, 1.0, 1.0, 1.0)
+            if len(alpha_over_node.inputs) > 1:
+                alpha_over_node.inputs[1].default_value = (1.0, 1.0, 1.0, 1.0)
+
+            if rl_node and "Image" in rl_node.outputs and len(alpha_over_node.inputs) > 2:
+                # Foreground image is socket index 2 (Image_001)
+                tree.links.new(rl_node.outputs["Image"], alpha_over_node.inputs[2])
+
+            if comp_node and "Image" in comp_node.inputs:
+                tree.links.new(alpha_over_node.outputs["Image"], comp_node.inputs["Image"])
+            if viewer_node and "Image" in viewer_node.inputs:
+                tree.links.new(alpha_over_node.outputs["Image"], viewer_node.inputs["Image"])
+
+        # Also set 3D viewport background color to white if in Viewport mode
+        for window in context.window_manager.windows:
+            screen = window.screen
+            if screen:
+                for area in screen.areas:
+                    if area.type == 'VIEW_3D':
+                        for space in area.spaces:
+                            if space.type == 'VIEW_3D' and hasattr(space, 'shading'):
+                                space.shading.background_type = 'VIEWPORT'
+                                space.shading.background_color = (1.0, 1.0, 1.0)
+
+        self.report({'INFO'}, f"Canvas '{name}' created with white background, isolated collection, Ortho Camera and target image '{img_name}'.")
         return {'FINISHED'}
 
 
