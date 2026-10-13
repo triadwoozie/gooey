@@ -4,6 +4,9 @@
 
 #include <optional>
 
+#include "BLI_string.h"
+#include "BLI_utildefines.h"
+
 #include "node_function_util.hh"
 #include "node_util.hh"
 
@@ -13,9 +16,9 @@ static bool fn_node_poll_default(const blender::bke::bNodeType * /*ntype*/,
                                  const bNodeTree *ntree,
                                  const char **r_disabled_hint)
 {
-  /* Function nodes are only supported in simulation node trees so far. */
-  if (!STREQ(ntree->idname, "GeometryNodeTree")) {
-    *r_disabled_hint = RPT_("Not a geometry node tree");
+  /* Function nodes are supported in geometry and compositor node trees. */
+  if (!STR_ELEM(ntree->idname, "GeometryNodeTree", "CompositorNodeTree")) {
+    *r_disabled_hint = RPT_("Not a geometry or compositor node tree");
     return false;
   }
   return true;

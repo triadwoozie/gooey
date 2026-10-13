@@ -78,6 +78,7 @@ static void node_register()
   static blender::bke::bNodeType ntype;
 
   geo_node_type_base(&ntype, "GeometryNodeCameraInfo");
+  ntype.poll = geo_node_poll_geometry_or_compositor;
   ntype.ui_name = "Camera Info";
   ntype.ui_description = "Retrieve information from a camera object";
   ntype.nclass = NODE_CLASS_INPUT;

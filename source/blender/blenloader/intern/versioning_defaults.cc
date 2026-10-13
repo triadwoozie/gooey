@@ -56,6 +56,7 @@
 #include "BKE_main_namemap.hh"
 #include "BKE_material.hh"
 #include "BKE_mesh.hh"
+#include "BKE_node.hh"
 #include "BKE_node_legacy_types.hh"
 #include "BKE_node_runtime.hh"
 #include "BKE_node_tree_update.hh"
@@ -355,12 +356,16 @@ static void blo_update_defaults_scene(Main *bmain, Scene *scene)
 
   scene->r.cfra = 1.0f;
 
-  /* Don't enable compositing nodes. */
+  /* Enable compositing nodes by default. */
+  scene->use_nodes = true;
   if (scene->nodetree) {
-    blender::bke::node_tree_free_embedded_tree(scene->nodetree);
-    MEM_freeN(scene->nodetree);
-    scene->nodetree = nullptr;
-    scene->use_nodes = false;
+    for (bNode *node : scene->nodetree->all_nodes()) {
+      blender::bke::node_set_selected(*node, false);
+      if (node->type_legacy == CMP_NODE_R_LAYERS) {
+        blender::bke::node_set_active(*scene->nodetree, *node);
+        blender::bke::node_set_selected(*node, true);
+      }
+    }
   }
 
   /* Rename render layers. */

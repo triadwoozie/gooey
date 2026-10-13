@@ -690,6 +690,12 @@ void ED_node_composit_default(const bContext *C, Scene *sce)
                               *viewer,
                               *(bNodeSocket *)viewer->inputs.first);
 
+  for (bNode *node : sce->nodetree->all_nodes()) {
+    blender::bke::node_set_selected(*node, false);
+  }
+  blender::bke::node_set_active(*sce->nodetree, *in);
+  blender::bke::node_set_selected(*in, true);
+
   BKE_ntree_update_after_single_tree_change(*CTX_data_main(C), *sce->nodetree);
 }
 

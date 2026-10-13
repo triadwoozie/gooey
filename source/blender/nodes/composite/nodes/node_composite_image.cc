@@ -676,7 +676,11 @@ static bool node_composit_poll_rlayers(const blender::bke::bNodeType * /*ntype*/
     return false;
   }
 
-  Scene *scene;
+  Scene *scene = nullptr;
+
+  if (G.main == nullptr) {
+    return true;
+  }
 
   /* XXX ugly: check if ntree is a local scene node tree.
    * Render layers node can only be used in local `scene->nodetree`,

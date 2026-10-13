@@ -35,6 +35,9 @@ void geo_node_type_base(blender::bke::bNodeType *ntype,
 bool geo_node_poll_default(const blender::bke::bNodeType *ntype,
                            const bNodeTree *ntree,
                            const char **r_disabled_hint);
+bool geo_node_poll_geometry_or_compositor(const blender::bke::bNodeType *ntype,
+                                          const bNodeTree *ntree,
+                                          const char **r_disabled_hint);
 
 namespace blender::nodes {
 

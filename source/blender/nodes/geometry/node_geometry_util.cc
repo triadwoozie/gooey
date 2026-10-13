@@ -10,6 +10,8 @@
 #include "DNA_space_types.h"
 #include "DNA_userdef_types.h"
 
+#include "BLI_string.h"
+
 #include "BKE_node.hh"
 
 #include "NOD_rna_define.hh"
@@ -116,6 +118,17 @@ bool geo_node_poll_default(const blender::bke::bNodeType * /*ntype*/,
 {
   if (!STREQ(ntree->idname, "GeometryNodeTree")) {
     *r_disabled_hint = RPT_("Not a geometry node tree");
+    return false;
+  }
+  return true;
+}
+
+bool geo_node_poll_geometry_or_compositor(const blender::bke::bNodeType * /*ntype*/,
+                                          const bNodeTree *ntree,
+                                          const char **r_disabled_hint)
+{
+  if (!STR_ELEM(ntree->idname, "GeometryNodeTree", "CompositorNodeTree")) {
+    *r_disabled_hint = RPT_("Not a geometry or compositor node tree");
     return false;
   }
   return true;

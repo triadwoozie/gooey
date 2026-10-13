@@ -188,6 +188,17 @@ bool blender::bke::node_group_poll(const bNodeTree *nodetree,
   }
 
   for (const bNode *node : grouptree->all_nodes()) {
+    if (nodetree->type == NTREE_COMPOSIT && grouptree->type == NTREE_COMPOSIT) {
+      /* In compositing node trees, all nodes already contained within a compositing node
+       * group are valid (including geometry switches/info and function nodes). Recursively
+       * check nested node groups. */
+      if (node->typeinfo->poll_instance == node_group_poll_instance) {
+        if (!node->typeinfo->poll_instance(node, nodetree, r_disabled_hint)) {
+          return false;
+        }
+      }
+      continue;
+    }
     if (node->typeinfo->poll_instance &&
         !node->typeinfo->poll_instance(node, nodetree, r_disabled_hint))
     {

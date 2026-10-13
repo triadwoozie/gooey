@@ -253,6 +253,8 @@ static void scene_init_data(ID *id)
 
   BKE_view_layer_add(scene, DATA_("ViewLayer"), nullptr, VIEWLAYER_ADD_NEW);
 
+  scene->use_nodes = true;
+
   scene->runtime = MEM_new<SceneRuntime>(__func__);
 }
 
