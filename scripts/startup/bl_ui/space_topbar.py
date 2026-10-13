@@ -289,12 +289,8 @@ class TOPBAR_MT_file(Menu):
 
         layout.separator()
 
-        if hasattr(bpy.types, "TOPBAR_MT_file_project"):
-            layout.menu("TOPBAR_MT_file_project", icon='PROJECT')
-            layout.separator()
-
-        layout.menu("TOPBAR_MT_file_import", icon='IMPORT')
-        layout.menu("TOPBAR_MT_file_export", icon='EXPORT')
+        layout.menu("TOPBAR_MT_file_import")
+        layout.menu("TOPBAR_MT_file_export")
 
         layout.separator()
 
@@ -375,10 +371,14 @@ class TOPBAR_MT_file_new(Menu):
 
         # Draw application templates.
         if not use_more:
+            props = layout.operator("wm.read_homefile", text="Gooey (Default)", icon='RESTRICT_COLOR_OFF')
+            props.app_template = "Gooey"
             props = layout.operator("wm.read_homefile", text="General", icon='FILE_NEW')
             props.app_template = ""
 
         for d in paths:
+            if d == "Gooey":
+                continue
             icon = 'FILE_NEW'
             # Set icon per template.
             if d == "2D_Animation":
@@ -651,6 +651,10 @@ class TOPBAR_MT_render(Menu):
 
         layout.separator()
 
+        layout.operator("canvas.create", text="Create Canvas...", icon='IMAGE_RGB_ALPHA')
+
+        layout.separator()
+
         layout.prop(rd, "use_lock_interface", text="Lock Interface")
 
 
@@ -810,12 +814,22 @@ class TOPBAR_MT_file_context_menu(Menu):
 
         layout.separator()
 
-        layout.menu("TOPBAR_MT_file_import", icon='IMPORT')
-        layout.menu("TOPBAR_MT_file_export", icon='EXPORT')
+        layout.menu("TOPBAR_MT_file_import")
+        layout.menu("TOPBAR_MT_file_export")
+
+        layout.separator()
+
+        layout.menu("TOPBAR_MT_file_external_data")
+        layout.menu("TOPBAR_MT_file_cleanup")
+
+        layout.separator()
+
+        layout.menu("TOPBAR_MT_file_defaults")
 
         layout.separator()
 
         layout.operator("screen.userpref_show", text="Preferences...", icon='PREFERENCES')
+        layout.operator("wm.quit_blender", text="Quit", icon='QUIT')
 
 
 class TOPBAR_MT_workspace_menu(Menu):

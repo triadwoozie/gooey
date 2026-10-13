@@ -143,10 +143,20 @@ classes = (
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
-    bpy.types.VIEW3D_HT_header.append(draw_canvas_header_button)
+    if hasattr(bpy.types, "VIEW3D_HT_header"):
+        bpy.types.VIEW3D_HT_header.append(draw_canvas_header_button)
+    if hasattr(bpy.types, "NODE_HT_header"):
+        bpy.types.NODE_HT_header.append(draw_canvas_header_button)
+    if hasattr(bpy.types, "IMAGE_HT_header"):
+        bpy.types.IMAGE_HT_header.append(draw_canvas_header_button)
 
 
 def unregister():
-    bpy.types.VIEW3D_HT_header.remove(draw_canvas_header_button)
+    if hasattr(bpy.types, "IMAGE_HT_header"):
+        bpy.types.IMAGE_HT_header.remove(draw_canvas_header_button)
+    if hasattr(bpy.types, "NODE_HT_header"):
+        bpy.types.NODE_HT_header.remove(draw_canvas_header_button)
+    if hasattr(bpy.types, "VIEW3D_HT_header"):
+        bpy.types.VIEW3D_HT_header.remove(draw_canvas_header_button)
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)

@@ -3556,7 +3556,12 @@ class WM_MT_splash_about(Menu):
             col.label(text=iface_("Windowing Environment: {:s}").format(_ghost_backend()), translate=False)
         del _ghost_backend, ghost_backend
 
-        col.separator(factor=2.0)
+        col.separator(factor=1.5)
+        col.label(text="Special Thanks & Integrations:")
+        col.label(text="• Camera Shakify (Ian Hubert & Nathan Vegdahl)")
+        col.label(text="• Rigid Body Car / RBC Physics Simulation")
+
+        col.separator(factor=1.5)
         col.label(text="Blender is free software")
         col.label(text="Licensed under the GNU General Public License")
 

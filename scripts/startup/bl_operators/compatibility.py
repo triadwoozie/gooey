@@ -17,7 +17,20 @@ def decode_blend_file_header(filepath: str) -> dict | None:
 
     try:
         with open(filepath, "rb") as f:
-            header_bytes = f.read(17)
+            magic = f.read(4)
+            if magic == b"\x28\xb5\x2f\xfd":
+                try:
+                    import zstandard as zstd
+                    f.seek(0)
+                    dctx = zstd.ZstdDecompressor()
+                    with dctx.stream_reader(f) as reader:
+                        header_bytes = reader.read(64)
+                except Exception:
+                    return None
+            else:
+                f.seek(0)
+                header_bytes = f.read(64)
+
             if len(header_bytes) < 12 or not header_bytes.startswith(b"BLENDER"):
                 return None
 
@@ -80,6 +93,13 @@ def run_full_compatibility_scan(filepath: str = "") -> dict:
         v_minor = header_info["version_minor"]
         v_str = header_info["version_string"]
         is_newer = header_info["is_newer"]
+    elif not active_path or not bpy.data.is_saved:
+        # A new / unsaved project created in Gooey
+        app_ver = getattr(bpy.app, "version", (4, 5, 14))
+        v_major = app_ver[0]
+        v_minor = app_ver[1]
+        v_str = f"{v_major}.{v_minor}"
+        is_newer = False
     else:
         # Fallback to bpy.data.version
         data_ver = getattr(bpy.data, "version", (4, 5, 0))
