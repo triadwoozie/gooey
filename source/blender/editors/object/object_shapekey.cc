@@ -379,6 +379,12 @@ void OBJECT_OT_shape_key_add(wmOperatorType *ot)
 /** \name Shape Key Duplicate Operator
  * \{ */
 
+static bool shape_key_is_selected(const Object &object, const KeyBlock &kb, const int keyblock_index)
+{
+  /* The active shape key is always considered selected. */
+  return (kb.flag & KEYBLOCK_SEL) || keyblock_index == object.shapenr - 1;
+}
+
 static wmOperatorStatus shape_key_copy_exec(bContext *C, wmOperator * /*op*/)
 {
   Object *ob = context_object(C);
@@ -386,19 +392,22 @@ static wmOperatorStatus shape_key_copy_exec(bContext *C, wmOperator * /*op*/)
 
   /* List selected shape keys. */
   blender::Vector<KeyBlock *> to_duplicate;
-  for (auto [index, keyblock] : key->block.enumerate()) {
-    const bool is_selected = shape_key_is_selected(*ob, keyblock, index);
+  int index = 0;
+  LISTBASE_FOREACH (KeyBlock *, keyblock, &key->block) {
+    const bool is_selected = shape_key_is_selected(*ob, *keyblock, index);
 
     /* Deselect all keys, so that only new ones are selected. */
-    keyblock.flag &= ~KEYBLOCK_SEL;
+    keyblock->flag &= ~KEYBLOCK_SEL;
 
     if (index == 0) {
       /* Never duplicate the base key, it's special. */
+      index++;
       continue;
     }
     if (is_selected) {
-      to_duplicate.append(&keyblock);
+      to_duplicate.append(keyblock);
     }
+    index++;
   }
 
   KeyBlock *kb_new = nullptr;
