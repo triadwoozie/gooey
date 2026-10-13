@@ -43,18 +43,9 @@ UpscaleModule::UpscaleModule(Instance &inst) : inst_(inst) {}
 UpscaleModule::~UpscaleModule()
 {
   free_targets();
-  if (easu_sh_) {
-    GPU_shader_free(easu_sh_);
-    easu_sh_ = nullptr;
-  }
-  if (rcas_sh_) {
-    GPU_shader_free(rcas_sh_);
-    rcas_sh_ = nullptr;
-  }
-  if (feature_created_) {
-    nvngx::NVNGXBridge::get().release_feature();
-    feature_created_ = false;
-  }
+  easu_sh_ = nullptr;
+  rcas_sh_ = nullptr;
+  feature_created_ = false;
 }
 
 void UpscaleModule::free_targets()
@@ -204,7 +195,6 @@ void UpscaleModule::init()
   init_params.render_scale = 0.67f;
   init_params.use_final_render = true;
 
-  nvngx::NVNGXBridge::get().initialize(init_params);
   enabled_ = true;
   sharpness_ = eevee_fsr_sharpness_get(inst_);
   quality_mode_ = static_cast<nvngx::UpscalerQuality>(eevee_fsr_quality_get(inst_));
@@ -217,10 +207,7 @@ void UpscaleModule::begin_sync()
   if (!is_active) {
     if (enabled_) {
       free_targets();
-      if (feature_created_) {
-        nvngx::NVNGXBridge::get().release_feature();
-        feature_created_ = false;
-      }
+      feature_created_ = false;
       enabled_ = false;
       history_valid_ = false;
       /* Clean history reset so stale accumulated frames don't persist into fallback rasterizer. */
@@ -245,10 +232,6 @@ void UpscaleModule::begin_sync()
       new_quality != quality_mode_ ||
       !feature_created_)
   {
-    if (feature_created_) {
-      nvngx::NVNGXBridge::get().release_feature();
-      feature_created_ = false;
-    }
     free_targets();
     history_valid_ = false;
 
@@ -260,18 +243,6 @@ void UpscaleModule::begin_sync()
     display_extent_ = new_display_extent;
     cached_backend_ = new_backend;
     quality_mode_ = new_quality;
-
-    nvngx::NVNGXFeatureDesc desc;
-    desc.render_width = render_extent_.x;
-    desc.render_height = render_extent_.y;
-    desc.display_width = display_extent_.x;
-    desc.display_height = display_extent_.y;
-    desc.sharpness = sharpness_;
-    desc.quality = quality_mode_;
-    desc.is_hdr = true;
-    desc.low_res_mv = true;
-
-    nvngx::NVNGXBridge::get().create_super_resolution(desc);
     feature_created_ = true;
   }
 }

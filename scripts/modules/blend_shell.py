@@ -452,16 +452,19 @@ def launch_in_terminal(cmd_line, env):
         return False, "No graphical terminal emulator found (ptyxis/gnome-terminal/konsole/etc.)."
 
     try:
+        path_str = env.get("PATH", "/usr/local/bin:/usr/bin:/bin")
+        script = f'export PATH="{path_str}"; {cmd_line}; echo ""; read -n 1 -s -r -p "Press any key to close..."'
+
         if term_name == "ptyxis":
-            args = [term_path, "--new-window", "--", "bash", "-c", f"{cmd_line}; echo ''; read -n 1 -s -r -p 'Press any key to close...'"]
+            args = [term_path, "--new-window", "--", "bash", "-l", "-c", script]
         elif term_name in {"gnome-terminal", "xfce4-terminal"}:
-            args = [term_path, "--", "bash", "-c", f"{cmd_line}; echo ''; read -n 1 -s -r -p 'Press any key to close...'"]
+            args = [term_path, "--", "bash", "-l", "-c", script]
         elif term_name == "konsole":
-            args = [term_path, "-e", "bash", "-c", f"{cmd_line}; echo ''; read -n 1 -s -r -p 'Press any key to close...'"]
+            args = [term_path, "-e", "bash", "-l", "-c", script]
         elif term_name in {"alacritty", "kitty", "foot", "wezterm", "xterm"}:
-            args = [term_path, "-e", "bash", "-c", f"{cmd_line}; echo ''; read -n 1 -s -r -p 'Press any key to close...'"]
+            args = [term_path, "-e", "bash", "-l", "-c", script]
         else:
-            args = [term_path, "-e", cmd_line]
+            args = [term_path, "-e", "bash", "-l", "-c", script]
 
         subprocess.Popen(args, env=env, close_fds=True)
         return True, f"Launched '{cmd_line}' in external terminal ({term_name})."
