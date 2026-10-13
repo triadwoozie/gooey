@@ -368,7 +368,7 @@ def banner(context):
         "Convenience Variables: C = bpy.context, D = bpy.data",
         "",
         "Blend-Shell Commands:  ls, cat, rm, cp, mv, mkdir, du, grep, diff, pip, save, help",
-        "System Shell Bypass:   !command  or  sh command",
+        "System Shell Bypass:   !<cmd>  or  sh <cmd>  (use 'term <cmd>' or '!term <cmd>' for live TUI apps)",
         "",
     )
 

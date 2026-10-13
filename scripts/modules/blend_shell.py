@@ -470,9 +470,17 @@ def launch_in_terminal(cmd_line, env):
 
 
 def strip_ansi_codes(text):
-    """Remove ANSI escape sequences and terminal control characters from output."""
-    ansi_regex = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
-    return ansi_regex.sub('', text)
+    """Remove ANSI escape sequences, OSC queries, and terminal control characters from output."""
+    # Remove OSC sequences (Operating System Command: ESC ] ... (BEL or ST))
+    text = re.sub(r'\x1b\][^\x07\x1b]*(?:\x07|\x1b\\\\)', '', text)
+    # Remove standard CSI escape sequences: ESC [ ...
+    text = re.sub(r'\x1b\[[0-?]*[ -/]*[@-~]', '', text)
+    # Remove other general 2-byte escape sequences
+    text = re.sub(r'\x1b[@-Z\\-_]', '', text)
+    # Remove bell (\x07) and lone OSC residue like "11;?" followed by BEL
+    text = re.sub(r'\d+;\?[^\r\n]*', '', text)
+    text = text.replace('\x07', '').replace('\r', '')
+    return text
 
 
 def cmd_system(cmd_line, stdout, stderr, timeout=6.0):
@@ -484,6 +492,10 @@ def cmd_system(cmd_line, stdout, stderr, timeout=6.0):
         shell_exe = os.environ.get("SHELL", "/bin/bash")
         if not os.path.isfile(shell_exe):
             shell_exe = "/bin/sh"
+
+        # Strip 'command ' prefix if user wrote '!command <name>' based on the banner format
+        if cmd_line.startswith("command "):
+            cmd_line = cmd_line[8:].strip()
 
         # Check if user explicitly asked to run in external terminal (e.g. `!term agy` or `sh term agy`)
         if cmd_line.startswith("term "):
@@ -570,8 +582,8 @@ def cmd_system(cmd_line, stdout, stderr, timeout=6.0):
                     if clean_out:
                         stdout.write(f"{clean_out}\n")
                     stderr.write(
-                        f"\n[blend-shell] Command timed out after {timeout:.1f}s (running interactive TUI?).\n"
-                        f"Tip: Use '!term {cmd_line}' to open it in a live terminal window!\n"
+                        f"\n[blend-shell] Command timed out after {timeout:.1f}s (interactive TUI waiting for input).\n"
+                        f"Tip: Use '!term {cmd_line}' to open it in a live terminal window (or pass non-interactive flags like 'agy -p \"...\"').\n"
                     )
                 else:
                     proc.wait()
