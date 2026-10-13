@@ -128,7 +128,7 @@ static wmOperatorStatus multires_subdivide_exec(bContext *C, wmOperator *op)
                                                                                            "mode");
   multiresModifier_subdivide(object, mmd, subdivide_mode);
 
-  Mesh *mesh = id_cast<Mesh *>(object->data);
+  Mesh *mesh = static_cast<Mesh *>(object->data);
   if (mesh->attributes().contains(".sculpt_mask") &&
       !CustomData_has_layer(&mesh->corner_data, CD_GRID_PAINT_MASK))
   {
