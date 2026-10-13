@@ -291,10 +291,33 @@ static void node_gather_link_searches(GatherLinkSearchOpParams &params)
   const bke::bNodeType &nt = params.node_type();
   if (params.in_out() == SOCK_OUT) {
     params.add_item_full_name(
+        "Camera Shakify" UI_MENU_ARROW_SEP " Geometry",
+        [&nt](LinkSearchOpParams &p) {
+          bNode &node = p.add_node(nt);
+          p.update_and_connect_available_socket(node, "Geometry");
+        },
+        2);
+    params.add_item_full_name(
+        "Camera Shakify" UI_MENU_ARROW_SEP " Camera",
+        [&nt](LinkSearchOpParams &p) {
+          bNode &node = p.add_node(nt);
+          p.update_and_connect_available_socket(node, "Camera");
+        },
+        1);
+  }
+  else if (params.in_out() == SOCK_IN) {
+    params.add_item_full_name(
         "Camera Shakify" UI_MENU_ARROW_SEP " Offset Location",
         [&nt](LinkSearchOpParams &p) {
           bNode &node = p.add_node(nt);
           p.update_and_connect_available_socket(node, "Offset Location");
+        },
+        2);
+    params.add_item_full_name(
+        "Camera Shakify" UI_MENU_ARROW_SEP " Offset Rotation",
+        [&nt](LinkSearchOpParams &p) {
+          bNode &node = p.add_node(nt);
+          p.update_and_connect_available_socket(node, "Offset Rotation");
         },
         1);
     params.add_item_full_name(
