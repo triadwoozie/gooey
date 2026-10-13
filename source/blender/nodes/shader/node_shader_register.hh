@@ -4,8 +4,6 @@
 
 #pragma once
 
-namespace blender {
-
 void register_node_tree_type_sh();
 
 void register_node_type_sh_group();
@@ -34,6 +32,8 @@ void register_node_type_sh_bump();
 void register_node_type_sh_camera();
 void register_node_type_sh_clamp();
 void register_node_type_sh_combcolor();
+void register_node_type_sh_combhsv();
+void register_node_type_sh_combrgb();
 void register_node_type_sh_combxyz();
 void register_node_type_sh_curve_float();
 void register_node_type_sh_curve_rgb();
@@ -70,30 +70,17 @@ void register_node_type_sh_output_material();
 void register_node_type_sh_output_world();
 void register_node_type_sh_particle_info();
 void register_node_type_sh_point_info();
-void register_node_type_sh_radial_tiling();
-void register_node_type_sh_raycast();
 void register_node_type_sh_rgb();
 void register_node_type_sh_rgbtobw();
 void register_node_type_sh_script();
 void register_node_type_sh_sepcolor();
+void register_node_type_sh_sephsv();
+void register_node_type_sh_seprgb();
 void register_node_type_sh_sepxyz();
 void register_node_type_sh_shadertorgb();
 void register_node_type_sh_squeeze();
 void register_node_type_sh_subsurface_scattering();
 void register_node_type_sh_tangent();
-void register_node_type_sh_light_info();
-void register_node_type_sh_oklab_color_ramp();
-void register_node_type_sh_tex_hexagon();
-void register_node_type_sh_sdf_op();
-void register_node_type_sh_sdf_vector_op();
-void register_node_type_sh_sdf_primitive();
-void register_node_type_sh_curvature();
-void register_node_type_sh_screenspace_info();
-void register_node_type_sh_shader_info();
-void register_node_type_sh_set_depth();
-void register_node_type_sh_sdf_noise();
-void register_node_type_sh_twirl();
-void register_node_type_sh_water_ripples();
 void register_node_type_sh_tex_brick();
 void register_node_type_sh_tex_checker();
 void register_node_type_sh_tex_coord();
@@ -104,6 +91,7 @@ void register_node_type_sh_tex_ies();
 void register_node_type_sh_tex_image();
 void register_node_type_sh_tex_magic();
 void register_node_type_sh_tex_noise();
+void register_node_type_sh_tex_pointdensity();
 void register_node_type_sh_tex_sky();
 void register_node_type_sh_tex_voronoi();
 void register_node_type_sh_tex_wave();
@@ -125,4 +113,23 @@ void register_node_type_sh_volume_coefficients();
 void register_node_type_sh_wavelength();
 void register_node_type_sh_wireframe();
 
-}  // namespace blender
+void register_node_type_sh_curvature();
+void register_node_type_sh_light_info();
+void register_node_type_sh_oklab_color_ramp();
+void register_node_type_sh_screenspace_info();
+void register_node_type_sh_sdf_noise();
+void register_node_type_sh_sdf_op();
+void register_node_type_sh_sdf_primitive();
+void register_node_type_sh_sdf_vector_op();
+void register_node_type_sh_set_depth();
+void register_node_type_sh_shader_info();
+void register_node_type_sh_tex_hexagon();
+void register_node_type_sh_twirl();
+void register_node_type_sh_water_ripples();
+
+void register_node_type_sh_light_accumulator();
+void register_node_type_sh_light_data();
+void register_node_type_sh_shadow();
+void register_node_type_sh_light_evaluation();
+void register_node_type_sh_filter_blur();
+void register_node_type_sh_filter_sharpen();
