@@ -128,11 +128,11 @@ class RENDER_PT_format(RenderOutputButtonsPanel, Panel):
             sub.prop(rd, "show_fsr3_stats", text="Display HUD / Telemetry")
             if rd.show_fsr3_stats:
                 box = col.box()
-                box.use_property_split = False
-                box.label(text=f"Status: {rd.fsr3_stats_status}", icon='INFO')
-                box.label(text=f"Render: {rd.fsr3_stats_render_res}  →  Display: {rd.fsr3_stats_display_res}")
-                box.label(text=f"Scale: {rd.fsr3_stats_scale}  |  Frametime: {rd.fsr3_stats_time}")
-                box.label(text=f"Frames Reconstructed: {rd.fsr3_stats_frames}")
+                box.use_property_split = True
+                box.prop(rd, "fsr3_stats_status", text="Status")
+                box.prop(rd, "fsr3_stats_render_res", text="Render Res")
+                box.prop(rd, "fsr3_stats_display_res", text="Display Res")
+                box.prop(rd, "fsr3_stats_scale", text="Scale Factor")
 
         col = layout.column(align=True)
         col.prop(rd, "pixel_aspect_x", text="Aspect X")

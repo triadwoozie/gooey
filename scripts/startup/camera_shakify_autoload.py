@@ -7,6 +7,8 @@ from bpy.app.handlers import persistent
 
 def _enable_shakify():
     try:
+        for path in addon_utils.paths():
+            bpy.utils._sys_path_ensure_append(path)
         loaded, enabled = addon_utils.check("camera_shakify")
         if not enabled:
             addon_utils.enable("camera_shakify", default_set=False)

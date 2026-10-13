@@ -118,10 +118,12 @@ def translation_update(_):
 def register():
     from bpy.utils import register_class
     for cls in classes:
-        register_class(cls)
+        if not getattr(cls, "is_registered", False):
+            register_class(cls)
     for mod in _modules_loaded:
         for cls in mod.classes:
-            register_class(cls)
+            if not getattr(cls, "is_registered", False):
+                register_class(cls)
 
     for mod in _modules_loaded:
         if hasattr(mod, "register_props"):

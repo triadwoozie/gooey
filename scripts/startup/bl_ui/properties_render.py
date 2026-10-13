@@ -865,11 +865,11 @@ class RENDER_PT_eevee_next_fsr3(RenderButtonsPanel, Panel):
 
             if rd.show_fsr3_stats:
                 box = layout.box()
-                box.use_property_split = False
-                box.label(text=f"Status: {rd.fsr3_stats_status}", icon='INFO')
-                box.label(text=f"Render: {rd.fsr3_stats_render_res}  →  Display: {rd.fsr3_stats_display_res}")
-                box.label(text=f"Scale: {rd.fsr3_stats_scale}  |  Frametime: {rd.fsr3_stats_time}")
-                box.label(text=f"Frames Reconstructed: {rd.fsr3_stats_frames}")
+                box.use_property_split = True
+                box.prop(rd, "fsr3_stats_status", text="Status")
+                box.prop(rd, "fsr3_stats_render_res", text="Render Res")
+                box.prop(rd, "fsr3_stats_display_res", text="Display Res")
+                box.prop(rd, "fsr3_stats_scale", text="Scale Factor")
 
 
 class RENDER_PT_eevee_performance_viewport(RenderButtonsPanel, Panel):
@@ -901,11 +901,11 @@ class RENDER_PT_eevee_performance_viewport(RenderButtonsPanel, Panel):
             sub.prop(rd, "show_fsr3_stats", text="Show FSR Stats")
             if rd.show_fsr3_stats:
                 box = col.box()
-                box.use_property_split = False
-                box.label(text=f"Status: {rd.fsr3_stats_status}", icon='INFO')
-                box.label(text=f"Render: {rd.fsr3_stats_render_res}  →  Display: {rd.fsr3_stats_display_res}")
-                box.label(text=f"Ratio: {rd.fsr3_stats_scale}  |  Time: {rd.fsr3_stats_time}")
-                box.label(text=f"Frames: {rd.fsr3_stats_frames}")
+                box.use_property_split = True
+                box.prop(rd, "fsr3_stats_status", text="Status")
+                box.prop(rd, "fsr3_stats_render_res", text="Render Res")
+                box.prop(rd, "fsr3_stats_display_res", text="Display Res")
+                box.prop(rd, "fsr3_stats_scale", text="Scale Factor")
 
 
 # TODO(falk): To rename for 5.0
