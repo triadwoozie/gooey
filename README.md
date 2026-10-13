@@ -84,6 +84,9 @@
   - **`help`**: In-editor command reference guide.
 
 ### 5. Backported Blender 5.3 Features & Upstream Additions
+- **Tier 3 (Engine, Timeline & VSE Refactors)**:
+  - *VSE Unclamped Strips by Default* (`1cb86df7e6d`, by John Kiril Swenson): Unclamped slipping by default with 'C' to clamp and new user preference (`clamp_strips_by_default`) to toggle behavior.
+  - *VSE Set Render Size for Scene Strips* (`e3ad2320282`, by Philipp Oeser & John Kiril Swenson): Adapt project resolution and aspect ratio directly from selected Scene strips.
 - **Tier 4 (Geometry Nodes & Procedural Workflows)**:
   - *Camera Info Object Validation* (`dc936fdbf98`, by quackarooni): Context warning if input object is not a Camera.
   - *Repeat Zone Iterations Search* (`ea28033ce48`, by Brady Johnston): Drag-to-search directly exposes the `Iterations` input socket for empty Repeat zones.
@@ -100,6 +103,7 @@
   - *Convert Pose Marker Clarification* (`caa9272d9e0`, by RedMser): Clear naming for pose marker conversion operator.
   - *Compositor Anisotropic Kuwahara Speedup* (`e260a7e6071`, by Aras Pranckevicius): 25-30% faster CPU, 2x faster NVIDIA GPU, and 10x faster Apple GPU execution with polynomial radial falloff approximation.
 - **Tier 6 (Native LoopTools & Modeling Operators)**:
+  - *Snap to Origin* (`b9fe4691da0`, by Gerard Taulats): Native object origin snapping element (`ORIGIN`) across 3D viewport transform and cursor snapping.
   - *Quad-Sphere Primitive* (`mesh.primitive_quad_sphere_add`, `ef062185d55`, by bravo09 & Campbell Barton): High-performance all-quad spherical primitive with Even Area and Even Angle distribution mappings.
   - *To Circle / Circularize* (`mesh.circularize`, `32c797d606d` & `2502d96ade4`, by Tariq-Sulley & Bastien Montagne): High-performance native BMesh circularization with best-fit plane, custom radius, regular/custom spacing, and axis constraints.
   - *Flatten* (`mesh.flatten`, `6d6d97afe9d`, by Tariq-Sulley): Native BMesh planar flattening with best-fit normal, view, and custom plane projections.
@@ -107,6 +111,7 @@
   - *Curve Edge Loops Between Selected* (`mesh.curve_edge_loops_between_selected`, `827566f0d3b`, by Tariq-Sulley & Campbell Barton): Interpolate edge loops along cubic spline trajectories between boundary loops.
   - *Relax Edge Loops* (`mesh.relax_edge_loops`, `eb18863b4c3`, by Tariq-Sulley): Native Laplacian edge loop smoothing directly accessible in Edit Mesh menus and hotkeys.
 - **Tier 7 (UI Polish, Outliner & Tools)**:
+  - *Hold Shortcut to Switch Tools* (`2d186b8c494`, by John Kiril Swenson & Campbell Barton): Press and hold tool hotkeys (`WM_OT_tool_set_by_id_hold`) to switch tools temporarily until release.
   - *File Menu Rebuilt from Upstream*: Restored upstream File menu hierarchy ensuring full visibility of Import, Export, External Data, Clean Up, Defaults, and Quit.
   - *Outliner Show Users Column* (`3de313d5c98`, by 1P2D & Pratik Borhade): New data-block user count column in View Layer and Scenes modes with full DNA sync.
   - *Outliner Hide Unselected* (`9a717cccc74`, by Pratik Borhade): `Shift + H` hides unselected tree elements in the Outliner.
@@ -131,6 +136,9 @@
 - **Tokyo Dark / Tokyo Night Theme**: Inspired by Tiago Ventura ([tokyodark.nvim](https://github.com/tiagovla/tokyodark.nvim)) and enkia ([tokyo-night](https://github.com/enkia/tokyo-night-vscode-theme))
 - **Alien Pink Theme**: [Alumx/Alien-Pink-Blender-theme](https://github.com/Alumx/Alien-Pink-Blender-theme) hasnt been properly implemented on gooey yet :( gotta work on that
 - **Upstream Feature Contributors**:
+  - *Gerard Taulats*: Native Object Origin Snapping (`SCE_SNAP_TO_ORIGIN`).
+  - *John Kiril Swenson & Campbell Barton*: Hold-to-switch tools framework (`WM_OT_tool_set_by_id_hold`), VSE unclamped strip slipping & preference.
+  - *Philipp Oeser & John Kiril Swenson*: VSE Set Render Size for Scene Strips.
   - *bravo09 & Campbell Barton*: Native Quad-Sphere primitive (`mesh.primitive_quad_sphere_add`).
   - *Tariq-Sulley & Campbell Barton*: Native LoopTools modeling operators (`circularize`, `flatten`, `space_edge_loops_evenly`, `curve_edge_loops_between_selected`, `relax_edge_loops`).
   - *Julien Duroure*: glTF 2.0 Gaussian Splatting (`KHR_gaussian_splatting`) & modern material extensions.
