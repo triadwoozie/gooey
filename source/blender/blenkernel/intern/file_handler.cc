@@ -159,7 +159,7 @@ static bool extensions_group_is_collapsible(const Span<std::string> extensions)
 {
   const std::string prefix = extensions_common_prefix(extensions);
   const int64_t prefix_letters = prefix.size() - (!prefix.empty() && prefix[0] == '.' ? 1 : 0);
-  return prefix_letters >= 3 && std::ranges::all_of(extensions, [&](const auto &extension) {
+  return prefix_letters >= 3 && std::all_of(extensions.begin(), extensions.end(), [&](const auto &extension) {
            return extension.size() <= prefix.size() + 1;
          });
 }

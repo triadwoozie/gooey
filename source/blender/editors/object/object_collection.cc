@@ -821,6 +821,15 @@ static void WM_OT_collection_export_all(wmOperatorType *ot)
   ot->flag = 0;
 }
 
+static void collection_exporter_menu_draw(const bContext * /*C*/, Menu *menu)
+{
+  using namespace blender;
+  uiLayout *layout = menu->layout;
+
+  /* Add all file handlers capable of being exported to the menu. */
+  bool at_least_one = false;
+  for (const auto &fh : bke::file_handlers()) {
+    if (WM_operatortype_find(fh->export_operator, true)) {
       PointerRNA op_ptr = layout->op(
           "COLLECTION_OT_exporter_add", fh->label_with_extensions(), ICON_NONE);
       RNA_string_set(&op_ptr, "name", fh->idname);

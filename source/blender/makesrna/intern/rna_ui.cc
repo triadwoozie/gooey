@@ -2542,7 +2542,7 @@ static void rna_def_file_handler(BlenderRNA *brna)
   RNA_def_function_ui_description(
       func, "Return the label of the file handler with the given ID, with its file extensions");
   RNA_def_function_flag(func, FUNC_NO_SELF);
-  parm = RNA_def_string(func, "idname", nullptr, sizeof(bke::FileHandlerType::idname), "", "");
+  parm = RNA_def_string(func, "idname", nullptr, sizeof(blender::bke::FileHandlerType::idname), "", "");
   RNA_def_parameter_flags(parm, PropertyFlag(0), PARM_REQUIRED);
   parm = RNA_def_string(
       func, "result", nullptr, FH_MAX_FILE_EXTENSIONS_STR + OP_MAX_TYPENAME + 3, "result", "");
