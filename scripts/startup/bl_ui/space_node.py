@@ -214,7 +214,9 @@ class NODE_HT_header(Header):
             row.active = snode.node_tree is not None
             sub = row.row(align=True)
             sub.active = snode.show_gizmo and row.active
-            sub.popover(panel="NODE_PT_gizmo_display", text="")
+            # Asset Shelf toggle
+            row = layout.row(align=True)
+            row.prop(snode, "show_region_asset_shelf", icon='ASSET_MANAGER', text="", toggle=True)
 
         # Snap
         row = layout.row(align=True)
@@ -308,6 +310,7 @@ class NODE_MT_view(Menu):
 
         layout.prop(snode, "show_region_toolbar")
         layout.prop(snode, "show_region_ui")
+        layout.prop(snode, "show_region_asset_shelf")
 
         layout.separator()
 
@@ -1187,22 +1190,30 @@ def node_panel(cls):
 
 class NODE_AST_compositor(bpy.types.AssetShelf):
     bl_space_type = 'NODE_EDITOR'
-    bl_region_type = 'UI'
     bl_options = {'DEFAULT_VISIBLE', 'STORE_ENABLED_CATALOGS_IN_PREFERENCES'}
-    filter_node_tree = True
+    bl_activate_operator = "NODE_OT_add_group_asset"
+    bl_default_preview_size = 64
 
     @classmethod
     def poll(cls, context):
-        return context.space_data.tree_type == 'CompositorNodeTree'
+        space = getattr(context, "space_data", None)
+        return (
+            space is not None
+            and getattr(space, "type", None) == 'NODE_EDITOR'
+            and getattr(space, "tree_type", None) == 'CompositorNodeTree'
+        )
 
     @classmethod
     def asset_poll(cls, asset):
-        import os
-        from pathlib import Path
-
-        compositing_type = bpy.types.NodeTree.bl_rna.properties["type"].enum_items["COMPOSITING"]
-        if asset.id_type != 'NODETREE' or asset.metadata.get("type") != compositing_type.value:
+        if getattr(asset, "id_type", None) != 'NODETREE':
             return False
+
+        meta = getattr(asset, "metadata", None)
+        if meta:
+            meta_type = meta.get("type")
+            compositing_type = bpy.types.NodeTree.bl_rna.properties["type"].enum_items["COMPOSITING"].value
+            if meta_type is not None and meta_type != compositing_type:
+                return False
 
         ignored_essentials = {
             "Combine Cylindrical",
@@ -1214,16 +1225,8 @@ class NODE_AST_compositor(bpy.types.AssetShelf):
             "Project with Depth",
             "Transform and Project",
         }
-
-        compositor_essentials_path = Path(os.path.join(
-            bpy.utils.system_resource('DATAFILES'),
-            "assets",
-            "nodes",
-            "compositing_nodes_essentials.blend"
-        ))
-        if Path(asset.full_library_path) == compositor_essentials_path:
-            if asset.name in ignored_essentials:
-                return False
+        if asset.name in ignored_essentials:
+            return False
 
         return True
 

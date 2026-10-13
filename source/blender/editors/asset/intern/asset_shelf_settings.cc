@@ -103,6 +103,23 @@ static const ListBase *get_enabled_catalog_path_list(const AssetShelf &shelf)
   if (use_enabled_catalogs_from_prefs(shelf)) {
     bUserAssetShelfSettings *pref_settings = BKE_preferences_asset_shelf_settings_get(
         &U, shelf.idname);
+    if (!pref_settings || BLI_listbase_is_empty(&pref_settings->enabled_catalog_paths)) {
+      if (STREQ(shelf.idname, "NODE_AST_compositor")) {
+        BKE_preferences_asset_shelf_settings_ensure_catalog_path_enabled(
+            &U, "NODE_AST_compositor", "Camera & Lens Effects");
+        BKE_preferences_asset_shelf_settings_ensure_catalog_path_enabled(
+            &U, "NODE_AST_compositor", "Creative");
+        BKE_preferences_asset_shelf_settings_ensure_catalog_path_enabled(
+            &U, "NODE_AST_compositor", "Utilities");
+        BKE_preferences_asset_shelf_settings_ensure_catalog_path_enabled(
+            &U, "NODE_AST_compositor", "Compositing/Camera & Lens Effects");
+        BKE_preferences_asset_shelf_settings_ensure_catalog_path_enabled(
+            &U, "NODE_AST_compositor", "Compositing/Creative");
+        BKE_preferences_asset_shelf_settings_ensure_catalog_path_enabled(
+            &U, "NODE_AST_compositor", "Compositing/Utilities");
+        pref_settings = BKE_preferences_asset_shelf_settings_get(&U, shelf.idname);
+      }
+    }
     return pref_settings ? &pref_settings->enabled_catalog_paths : nullptr;
   }
   return &shelf.settings.enabled_catalog_paths;

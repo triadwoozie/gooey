@@ -82,12 +82,15 @@ bool hiprtewInit()
   }
 
 #ifdef _WIN32
-  const char *hiprt_paths[] = {"hiprt64.dll", NULL};
+  const char *hiprt_paths[] = {"hiprt0200564.dll", "hiprt64.dll", NULL};
 #else
-  /* libhiprt is installed to the bin subfolder by default, so we include it
+  /* libhiprt is installed to the bin/lib subfolder by default, so we include it
    * in our search path. */
-  const char *hiprt_paths[] = {"libhiprt64.so",
+  const char *hiprt_paths[] = {"libhiprt0200564.so",
+                               "libhiprt64.so",
+                               "/opt/rocm/lib/libhiprt0200564.so",
                                "/opt/rocm/lib/libhiprt64.so",
+                               "/opt/rocm/bin/libhiprt0200564.so",
                                "/opt/rocm/bin/libhiprt64.so", NULL};
 #endif
 

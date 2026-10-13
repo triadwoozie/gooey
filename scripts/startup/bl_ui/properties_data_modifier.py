@@ -76,12 +76,6 @@ class OBJECT_MT_modifier_add(ModifierAddMenu, Menu):
 
         layout.operator_context = 'INVOKE_REGION_WIN'
 
-        try:
-            from bl_operators.assets import ensure_essentials_asset_library
-            ensure_essentials_asset_library()
-        except Exception:
-            pass
-
         if geometry_nodes_supported:
             self.operator_modifier_add(layout, 'NODES')
             layout.separator()
