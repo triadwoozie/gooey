@@ -133,16 +133,22 @@ struct GPUSource {
     using namespace blender::gpu::shader;
     switch (type) {
       case metadata::Type::float1:
+      case metadata::Type::vec1:
         return GPU_FLOAT;
       case metadata::Type::float2:
+      case metadata::Type::vec2:
         return GPU_VEC2;
       case metadata::Type::float3:
+      case metadata::Type::vec3:
         return GPU_VEC3;
       case metadata::Type::float4:
+      case metadata::Type::vec4:
         return GPU_VEC4;
       case metadata::Type::float3x3:
+      case metadata::Type::mat3:
         return GPU_MAT3;
       case metadata::Type::float4x4:
+      case metadata::Type::mat4:
         return GPU_MAT4;
       case metadata::Type::sampler1DArray:
         return GPU_TEX1D_ARRAY;
@@ -154,9 +160,9 @@ struct GPUSource {
         return GPU_TEX3D;
       case metadata::Type::Closure:
         return GPU_CLOSURE;
+      default:
+        return GPU_NONE;
     }
-    BLI_assert_unreachable();
-    return GPU_NONE;
   }
 
   GPUSource(

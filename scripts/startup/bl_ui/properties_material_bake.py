@@ -3,6 +3,7 @@
 
 import os
 import bpy
+from bpy.app.handlers import persistent
 from bpy.types import Panel, Operator, PropertyGroup
 from bpy.props import (
     StringProperty,
@@ -79,6 +80,17 @@ def init_default_bake_channels(settings):
             item.pack = pack
 
 
+class OBJECT_OT_bake_init_channels(Operator):
+    bl_idname = "object.bake_init_channels"
+    bl_label = "Initialize Bake Channels"
+    bl_description = "Initialize default bake and channel packing settings"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        init_default_bake_channels(context.scene.bake_channel_settings)
+        return {'FINISHED'}
+
+
 class OBJECT_OT_bake_material(Operator):
     bl_idname = "object.bake_material"
     bl_label = "Bake Material"
@@ -114,7 +126,12 @@ class OBJECT_OT_bake_scene(Operator):
 
 def draw_bake_panel_content(layout, context):
     settings = context.scene.bake_channel_settings
-    init_default_bake_channels(settings)
+
+    if len(settings.channels) == 0:
+        box = layout.box()
+        box.label(text="Bake channels not initialized.", icon='INFO')
+        box.operator("object.bake_init_channels", text="Initialize Channels", icon='ADD')
+        return
 
     col = layout.column(align=True)
     col.prop(settings, "filepath")
@@ -172,9 +189,17 @@ class NODE_PT_bake_channel_packing(Panel):
         draw_bake_panel_content(self.layout, context)
 
 
+@persistent
+def init_bake_channels_handler(dummy=None):
+    for scene in bpy.data.scenes:
+        if hasattr(scene, "bake_channel_settings"):
+            init_default_bake_channels(scene.bake_channel_settings)
+
+
 classes = (
     BakeChannelItem,
     SceneBakeChannelSettings,
+    OBJECT_OT_bake_init_channels,
     OBJECT_OT_bake_material,
     OBJECT_OT_bake_mesh,
     OBJECT_OT_bake_scene,
@@ -196,9 +221,19 @@ def register():
     for cls in classes:
         bpy.utils.register_class(cls)
     register_props()
+    if init_bake_channels_handler not in bpy.app.handlers.load_post:
+        bpy.app.handlers.load_post.append(init_bake_channels_handler)
+    try:
+        for scene in bpy.data.scenes:
+            if hasattr(scene, "bake_channel_settings"):
+                init_default_bake_channels(scene.bake_channel_settings)
+    except Exception:
+        pass
 
 
 def unregister():
+    if init_bake_channels_handler in bpy.app.handlers.load_post:
+        bpy.app.handlers.load_post.remove(init_bake_channels_handler)
     unregister_props()
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)

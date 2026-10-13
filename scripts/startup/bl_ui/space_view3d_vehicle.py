@@ -2101,6 +2101,8 @@ class SNA_OT_Record_Simulation_22D2D(bpy.types.Operator):
 
 @persistent
 def frame_change_post_handler_DD6BD(dummy):
+    if not bpy.context.scene or not bpy.context.scene.rigidbody_world or not bpy.context.scene.rigidbody_world.point_cache:
+        return
     if (bpy.context.scene.rigidbody_world.point_cache.info == bpy.context.scene.sna_rbw_info):
         bpy.context.scene.sna_is_recording = False
     else:
@@ -5463,6 +5465,8 @@ def sna_ground_mat_BE385():
 
 @persistent
 def frame_change_pre_handler_FA47C(dummy):
+    if not bpy.context.scene or not bpy.context.scene.rigidbody_world or not bpy.context.scene.rigidbody_world.point_cache:
+        return
     if (bpy.context.scene.rigidbody_world.point_cache.frame_end != bpy.context.scene.frame_end):
         bpy.context.scene.rigidbody_world.point_cache.frame_end = bpy.context.scene.frame_end
     if (bpy.context.scene.rigidbody_world.point_cache.frame_start != bpy.context.scene.frame_start):
