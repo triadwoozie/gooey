@@ -153,10 +153,94 @@ class CYCLES_OT_merge_images(Operator):
         return {'FINISHED'}
 
 
+class CYCLES_OT_enable_fsr1(Operator):
+    """Enable AMD FSR 1 Upscaling for Cycles (inserts FSR1 in compositor, enables real-time viewport compositor, and sets preview pixel size to 2x)"""
+    bl_idname = "cycles.enable_fsr1"
+    bl_label = "Enable Cycles FSR1"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        scene = context.scene
+
+        # 1. Enable Compositor Nodes
+        scene.use_nodes = True
+        tree = scene.node_tree
+        if not tree:
+            self.report({'ERROR'}, "Scene compositor node tree could not be accessed")
+            return {'CANCELLED'}
+
+        # 2. Check for existing FSR1 node or create one
+        fsr_node = None
+        for node in tree.nodes:
+            if node.type == 'FSR1' or node.bl_idname == 'CompositorNodeFSR1':
+                fsr_node = node
+                break
+
+        if not fsr_node:
+            fsr_node = tree.nodes.new(type='CompositorNodeFSR1')
+            fsr_node.location = (150, 200)
+
+        # Configure FSR default scale and sharpness
+        if 'Scale' in fsr_node.inputs:
+            fsr_node.inputs['Scale'].default_value = 2.0
+        if 'Sharpness' in fsr_node.inputs:
+            fsr_node.inputs['Sharpness'].default_value = 0.8
+
+        # Find or create Render Layers node
+        rl_node = None
+        for node in tree.nodes:
+            if node.type == 'R_LAYERS':
+                rl_node = node
+                break
+        if not rl_node:
+            rl_node = tree.nodes.new(type='CompositorNodeRLayers')
+            rl_node.location = (-250, 200)
+
+        # Find Composite and Viewer nodes
+        comp_node = None
+        viewer_node = None
+        for node in tree.nodes:
+            if node.type == 'COMPOSITE':
+                comp_node = node
+            elif node.type == 'VIEWER':
+                viewer_node = node
+
+        if not comp_node:
+            comp_node = tree.nodes.new(type='CompositorNodeComposite')
+            comp_node.location = (450, 200)
+
+        # Wire Render Layers -> FSR1 -> Composite / Viewer
+        if rl_node and 'Image' in rl_node.outputs and 'Image' in fsr_node.inputs:
+            tree.links.new(rl_node.outputs['Image'], fsr_node.inputs['Image'])
+
+        if 'Image' in fsr_node.outputs:
+            if comp_node and 'Image' in comp_node.inputs:
+                tree.links.new(fsr_node.outputs['Image'], comp_node.inputs['Image'])
+            if viewer_node and 'Image' in viewer_node.inputs:
+                tree.links.new(fsr_node.outputs['Image'], viewer_node.inputs['Image'])
+
+        # 3. Set Preview Pixel Size to 2x (half resolution rendering)
+        scene.render.preview_pixel_size = '2'
+
+        # 4. Set 3D Viewport shading compositor to ALWAYS
+        for window in context.window_manager.windows:
+            screen = window.screen
+            if screen:
+                for area in screen.areas:
+                    if area.type == 'VIEW_3D':
+                        for space in area.spaces:
+                            if space.type == 'VIEW_3D' and hasattr(space, 'shading'):
+                                space.shading.use_compositor = 'ALWAYS'
+
+        self.report({'INFO'}, "Cycles FSR1 enabled: Compositor configured, Pixel Size set to 2x, Viewport Compositor set to Always.")
+        return {'FINISHED'}
+
+
 classes = (
     CYCLES_OT_use_shading_nodes,
     CYCLES_OT_denoise_animation,
-    CYCLES_OT_merge_images
+    CYCLES_OT_merge_images,
+    CYCLES_OT_enable_fsr1,
 )
 
 
@@ -170,3 +254,4 @@ def unregister():
     from bpy.utils import unregister_class
     for cls in classes:
         unregister_class(cls)
+

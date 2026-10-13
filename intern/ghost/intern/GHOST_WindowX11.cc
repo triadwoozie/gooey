@@ -1308,6 +1308,54 @@ GHOST_TSuccess GHOST_WindowX11::getStandardCursor(GHOST_TStandardCursor g_cursor
     case GHOST_kStandardCursorBottomLeftCorner:
       xcursor_id = XC_bottom_left_corner;
       break;
+    case GHOST_kStandardCursorMove:
+    case GHOST_kStandardCursorNSEWScroll:
+      xcursor_id = XC_fleur;
+      break;
+    case GHOST_kStandardCursorHandOpen:
+      xcursor_id = XC_hand1;
+      break;
+    case GHOST_kStandardCursorHandPoint:
+    case GHOST_kStandardCursorHandClosed:
+      xcursor_id = XC_hand2;
+      break;
+    case GHOST_kStandardCursorStop:
+    case GHOST_kStandardCursorDestroy:
+      xcursor_id = XC_circle;
+      break;
+    case GHOST_kStandardCursorCopy:
+      xcursor_id = XC_plus;
+      break;
+    case GHOST_kStandardCursorPencil:
+      xcursor_id = XC_pencil;
+      break;
+    case GHOST_kStandardCursorUpArrow:
+      xcursor_id = XC_sb_up_arrow;
+      break;
+    case GHOST_kStandardCursorDownArrow:
+      xcursor_id = XC_sb_down_arrow;
+      break;
+    case GHOST_kStandardCursorRightArrow:
+      xcursor_id = XC_sb_right_arrow;
+      break;
+    case GHOST_kStandardCursorLeftArrow:
+      xcursor_id = XC_sb_left_arrow;
+      break;
+    case GHOST_kStandardCursorVerticalSplit:
+    case GHOST_kStandardCursorNSScroll:
+      xcursor_id = XC_sb_v_double_arrow;
+      break;
+    case GHOST_kStandardCursorHorizontalSplit:
+    case GHOST_kStandardCursorEWScroll:
+      xcursor_id = XC_sb_h_double_arrow;
+      break;
+    case GHOST_kStandardCursorCrosshairA:
+    case GHOST_kStandardCursorCrosshairC:
+      xcursor_id = XC_crosshair;
+      break;
+    case GHOST_kStandardCursorCrosshairB:
+      xcursor_id = XC_dot;
+      break;
     case GHOST_kStandardCursorDefault:
       xcursor = None;
       return GHOST_kSuccess;

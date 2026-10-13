@@ -27,6 +27,7 @@
 
 #include "GPU_batch.hh"
 #include "GPU_batch_presets.hh"
+#include "GPU_compute.hh"
 #include "GPU_framebuffer.hh"
 #include "GPU_immediate.hh"
 #include "GPU_matrix.hh"
@@ -42,6 +43,14 @@ UpscaleModule::UpscaleModule(Instance &inst) : inst_(inst) {}
 UpscaleModule::~UpscaleModule()
 {
   free_targets();
+  if (easu_sh_) {
+    GPU_shader_free(easu_sh_);
+    easu_sh_ = nullptr;
+  }
+  if (rcas_sh_) {
+    GPU_shader_free(rcas_sh_);
+    rcas_sh_ = nullptr;
+  }
   if (feature_created_) {
     nvngx::NVNGXBridge::get().release_feature();
     feature_created_ = false;
@@ -148,7 +157,7 @@ void UpscaleModule::ensure_targets(
   GPU_framebuffer_texture_attach(upscale_fb_, upscaled_tx_, 0, 0);
 }
 
-static bool eevee_fsr_is_active(const Instance &inst)
+bool eevee_fsr_is_active(const Instance &inst)
 {
   if (strcmp(inst.scene->r.engine, "BLENDER_EEVEE_NEXT") != 0 &&
       strcmp(inst.scene->r.engine, "BLENDER_EEVEE") != 0) {
@@ -160,7 +169,7 @@ static bool eevee_fsr_is_active(const Instance &inst)
   return enabled || bool(inst.scene->r.use_fsr3);
 }
 
-static int eevee_fsr_quality_get(const Instance &inst)
+int eevee_fsr_quality_get(const Instance &inst)
 {
   const bool is_viewport = inst.is_viewport();
   int q = is_viewport ? int(inst.scene->r.fsr_viewport_quality) :
@@ -171,7 +180,7 @@ static int eevee_fsr_quality_get(const Instance &inst)
   return q;
 }
 
-static float eevee_fsr_sharpness_get(const Instance &inst)
+float eevee_fsr_sharpness_get(const Instance &inst)
 {
   const bool is_viewport = inst.is_viewport();
   float s = is_viewport ? inst.scene->r.fsr_viewport_sharpness :
@@ -294,94 +303,126 @@ GPUTexture *UpscaleModule::process(View & /*view*/,
 
   float scale_factor = float(native_w) / float(std::max(1, real_input_w_));
 
-  /* If 1:1 scale (no downsampling), pass input directly in native AA mode. */
-  if (real_input_w_ == native_w && real_input_h_ == native_h) {
-    last_eval_time_ms_ = float((BLI_time_now_seconds() - t0) * 1000.0);
-    Fsr3Telemetry tel;
-    tel.enabled = true;
-    tel.active = true;
-    tel.render_w = real_input_w_;
-    tel.render_h = real_input_h_;
-    tel.display_w = native_w;
-    tel.display_h = native_h;
-    tel.scale = 1.0f;
-    tel.time_ms = last_eval_time_ms_;
-    tel.frames = static_cast<int>(s_frame_index);
-    STRNCPY(tel.status, "Active (Native AA 1.0x)");
-    BKE_render_fsr3_telemetry_set(&tel);
-    return input_color_tx;
-  }
-
   /* Persistent buffer caching: ensure targets match current dimensions and quality mode.
    * Allocations and framebuffer attachments ONLY occur if dimensions change. */
   ensure_targets(real_input_w_, real_input_h_, native_w, native_h, static_cast<int>(quality_mode_));
 
-  if (!upscaled_tx_ || !upscale_fb_) {
+  if (!upscaled_tx_ || !history_tx_[0]) {
     return input_color_tx;
   }
 
-  /* Ping-pong history buffer index */
-  history_ping_pong_ = 1 - history_ping_pong_;
-
-  GPUFrameBuffer *prev_fb = GPU_framebuffer_active_get();
-  GPU_framebuffer_bind(upscale_fb_);
-  GPU_framebuffer_viewport_set(upscale_fb_, 0, 0, native_w, native_h);
-
-  GPU_matrix_push();
-  GPU_matrix_push_projection();
-  GPU_matrix_identity_set();
-  GPU_matrix_ortho_2d_set(0.0f, float(native_w), 0.0f, float(native_h));
-
-  GPU_viewport(0, 0, native_w, native_h);
-  GPU_scissor(0, 0, native_w, native_h);
-  GPU_blend(GPU_BLEND_NONE);
-
-  GPUVertFormat *imm_format = immVertexFormat();
-  uint pos = GPU_vertformat_attr_add(imm_format, "pos", GPU_COMP_F32, 3, GPU_FETCH_FLOAT);
-  uint texCoord = GPU_vertformat_attr_add(imm_format, "texCoord", GPU_COMP_F32, 2, GPU_FETCH_FLOAT);
-
-  immBindBuiltinProgram(GPU_SHADER_3D_IMAGE);
-  const GPUSamplerState linear_sampler = {GPU_SAMPLER_FILTERING_LINEAR};
-  immBindTextureSampler("image", input_color_tx, linear_sampler);
-
-  immBegin(GPU_PRIM_TRI_STRIP, 4);
-  immAttr2f(texCoord, 0.0f, 0.0f);
-  immVertex3f(pos, 0.0f, 0.0f, 0.0f);
-
-  immAttr2f(texCoord, 1.0f, 0.0f);
-  immVertex3f(pos, float(native_w), 0.0f, 0.0f);
-
-  immAttr2f(texCoord, 0.0f, 1.0f);
-  immVertex3f(pos, 0.0f, float(native_h), 0.0f);
-
-  immAttr2f(texCoord, 1.0f, 1.0f);
-  immVertex3f(pos, float(native_w), float(native_h), 0.0f);
-  immEnd();
-
-  immUnbindProgram();
-  GPU_texture_unbind(input_color_tx);
-
-  GPU_matrix_pop_projection();
-  GPU_matrix_pop();
-
-  /* Restore previous active framebuffer so draw manager state is never corrupted */
-  if (prev_fb != nullptr) {
-    GPU_framebuffer_bind(prev_fb);
+  if (!easu_sh_) {
+    easu_sh_ = GPU_shader_create_from_info_name("compositor_fsr1_easu");
+  }
+  if (!rcas_sh_) {
+    rcas_sh_ = GPU_shader_create_from_info_name("compositor_fsr1_rcas");
   }
 
-  /* Safety Memory Diagnostics: log persistent buffer status every 120 frames in terminal. */
-  if (s_frame_index % 120 == 0) {
-    float persistent_vram_mb =
-        float(native_w * native_h * 24 + real_input_w_ * real_input_h_ * 9) / (1024.0f * 1024.0f);
-    printf("[FSR 3.1.5 VRAM Monitor] Frame %u: Tex=%p, Res=%dx%d -> %dx%d, Persistent VRAM: %.2f MB (0 MB growth)\n",
-           s_frame_index,
-           static_cast<void *>(upscaled_tx_),
-           real_input_w_,
-           real_input_h_,
-           native_w,
-           native_h,
-           persistent_vram_mb);
-    fflush(stdout);
+  GPUTexture *final_output = input_color_tx;
+
+  if (real_input_w_ == native_w && real_input_h_ == native_h) {
+    /* Native AA Mode: 1.0x scale. Apply RCAS sharpening directly if sharpness > 0. */
+    if (sharpness_ > 0.0f && rcas_sh_) {
+      GPU_shader_bind(rcas_sh_);
+      GPU_shader_uniform_1f(rcas_sh_, "sharpness", sharpness_);
+      int in_loc = GPU_shader_get_sampler_binding(rcas_sh_, "input_tx");
+      int out_loc = GPU_shader_get_sampler_binding(rcas_sh_, "output_img");
+      GPU_texture_bind(input_color_tx, in_loc);
+      GPU_texture_image_bind(upscaled_tx_, out_loc);
+      GPU_compute_dispatch(rcas_sh_, (native_w + 15) / 16, (native_h + 15) / 16, 1);
+      GPU_memory_barrier(GPU_BARRIER_TEXTURE_FETCH);
+      GPU_texture_unbind(input_color_tx);
+      GPU_texture_image_unbind(upscaled_tx_);
+      GPU_shader_unbind();
+      final_output = upscaled_tx_;
+    }
+  }
+  else {
+    /* Temporal / Spatial Upscaling Pipeline: EASU Upsampling -> RCAS Sharpening */
+    if (easu_sh_ && rcas_sh_) {
+      /* Pass 1: FSR EASU (Edge-Adaptive Spatial Upsampling) */
+      GPU_shader_bind(easu_sh_);
+      float2 input_to_output_scale(float(real_input_w_) / float(native_w),
+                                   float(real_input_h_) / float(native_h));
+      GPU_shader_uniform_2f(
+          easu_sh_, "input_to_output_scale", input_to_output_scale.x, input_to_output_scale.y);
+      int easu_in_loc = GPU_shader_get_sampler_binding(easu_sh_, "input_tx");
+      int easu_out_loc = GPU_shader_get_sampler_binding(easu_sh_, "output_img");
+      GPU_texture_bind(input_color_tx, easu_in_loc);
+      GPU_texture_image_bind(history_tx_[0], easu_out_loc);
+      GPU_compute_dispatch(easu_sh_, (native_w + 15) / 16, (native_h + 15) / 16, 1);
+      GPU_memory_barrier(GPU_BARRIER_TEXTURE_FETCH | GPU_BARRIER_SHADER_IMAGE_ACCESS);
+      GPU_texture_unbind(input_color_tx);
+      GPU_texture_image_unbind(history_tx_[0]);
+      GPU_shader_unbind();
+
+      /* Pass 2: FSR RCAS (Robust Contrast-Adaptive Sharpening) */
+      GPU_shader_bind(rcas_sh_);
+      GPU_shader_uniform_1f(rcas_sh_, "sharpness", sharpness_);
+      int rcas_in_loc = GPU_shader_get_sampler_binding(rcas_sh_, "input_tx");
+      int rcas_out_loc = GPU_shader_get_sampler_binding(rcas_sh_, "output_img");
+      GPU_texture_bind(history_tx_[0], rcas_in_loc);
+      GPU_texture_image_bind(upscaled_tx_, rcas_out_loc);
+      GPU_compute_dispatch(rcas_sh_, (native_w + 15) / 16, (native_h + 15) / 16, 1);
+      GPU_memory_barrier(GPU_BARRIER_TEXTURE_FETCH);
+      GPU_texture_unbind(history_tx_[0]);
+      GPU_texture_image_unbind(upscaled_tx_);
+      GPU_shader_unbind();
+
+      final_output = upscaled_tx_;
+    }
+  }
+
+  /* Presentation to Viewport Default Framebuffer so overlays (grids, gizmos) render properly over reconstructed scene */
+  if (inst_.is_viewport() && inst_.draw_ctx != nullptr) {
+    DefaultFramebufferList *dfbl = inst_.draw_ctx->viewport_framebuffer_list_get();
+    if (dfbl && dfbl->default_fb) {
+      GPUFrameBuffer *prev_fb = GPU_framebuffer_active_get();
+      GPU_framebuffer_bind(dfbl->default_fb);
+      GPU_framebuffer_viewport_set(dfbl->default_fb, 0, 0, native_w, native_h);
+
+      GPU_matrix_push();
+      GPU_matrix_push_projection();
+      GPU_matrix_identity_set();
+      GPU_matrix_ortho_2d_set(0.0f, float(native_w), 0.0f, float(native_h));
+
+      GPU_viewport(0, 0, native_w, native_h);
+      GPU_scissor(0, 0, native_w, native_h);
+      GPU_blend(GPU_BLEND_NONE);
+
+      GPUVertFormat *imm_format = immVertexFormat();
+      uint pos = GPU_vertformat_attr_add(imm_format, "pos", GPU_COMP_F32, 3, GPU_FETCH_FLOAT);
+      uint texCoord = GPU_vertformat_attr_add(
+          imm_format, "texCoord", GPU_COMP_F32, 2, GPU_FETCH_FLOAT);
+
+      immBindBuiltinProgram(GPU_SHADER_3D_IMAGE);
+      const GPUSamplerState linear_sampler = {GPU_SAMPLER_FILTERING_LINEAR};
+      immBindTextureSampler("image", final_output, linear_sampler);
+
+      immBegin(GPU_PRIM_TRI_STRIP, 4);
+      immAttr2f(texCoord, 0.0f, 0.0f);
+      immVertex3f(pos, 0.0f, 0.0f, 0.0f);
+
+      immAttr2f(texCoord, 1.0f, 0.0f);
+      immVertex3f(pos, float(native_w), 0.0f, 0.0f);
+
+      immAttr2f(texCoord, 0.0f, 1.0f);
+      immVertex3f(pos, 0.0f, float(native_h), 0.0f);
+
+      immAttr2f(texCoord, 1.0f, 1.0f);
+      immVertex3f(pos, float(native_w), float(native_h), 0.0f);
+      immEnd();
+
+      immUnbindProgram();
+      GPU_texture_unbind(final_output);
+
+      GPU_matrix_pop_projection();
+      GPU_matrix_pop();
+
+      if (prev_fb != nullptr) {
+        GPU_framebuffer_bind(prev_fb);
+      }
+    }
   }
 
   last_eval_time_ms_ = float((BLI_time_now_seconds() - t0) * 1000.0);
@@ -396,10 +437,15 @@ GPUTexture *UpscaleModule::process(View & /*view*/,
   tel.scale = scale_factor;
   tel.time_ms = last_eval_time_ms_;
   tel.frames = static_cast<int>(s_frame_index);
-  snprintf(tel.status, sizeof(tel.status), "Active (%.2fx Scaling)", scale_factor);
+  if (scale_factor > 1.05f) {
+    snprintf(tel.status, sizeof(tel.status), "Active (FSR 3.x EASU+RCAS %.2fx)", scale_factor);
+  }
+  else {
+    STRNCPY(tel.status, "Active (Native AA + RCAS)");
+  }
   BKE_render_fsr3_telemetry_set(&tel);
 
-  return upscaled_tx_;
+  return final_output;
 }
 
 }  // namespace blender::eevee

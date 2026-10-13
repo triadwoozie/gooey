@@ -239,7 +239,7 @@ string HIPRTDevice::compile_kernel(const uint kernel_features, const char *name,
 
   double starttime = time_dt();
 
-  string compile_command = string_printf("%s %s -I %s -I %s --%s %s -o \"%s\"",
+  string compile_command = string_printf("%s %s -I \"%s\" -I \"%s\" --%s \"%s\" -o \"%s\"",
                                          hipcc,
                                          options.c_str(),
                                          include_path.c_str(),

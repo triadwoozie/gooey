@@ -328,8 +328,21 @@ void Film::init(const int2 &extent, const rcti *output_rect)
   }
   {
     data_.scaling_factor = 1;
+    if (eevee_fsr_is_active(inst_)) {
+      int q = eevee_fsr_quality_get(inst_);
+      if (q == SCE_FSR3_NATIVE_AA) {
+        data_.scaling_factor = 1;
+      }
+      else if (q == SCE_FSR3_ULTRA_PERFORMANCE) {
+        data_.scaling_factor = 4;
+      }
+      else {
+        data_.scaling_factor = 2;
+      }
+    }
     if (inst_.is_viewport()) {
-      data_.scaling_factor = BKE_render_preview_pixel_size(&inst_.scene->r);
+      data_.scaling_factor = std::max(data_.scaling_factor,
+                                      int(BKE_render_preview_pixel_size(&inst_.scene->r)));
     }
     /* Sharpen the LODs (1.5x) to avoid TAA filtering causing over-blur (see #122941). */
     data_.texture_lod_bias = 1.0f / (data_.scaling_factor * 1.5f);

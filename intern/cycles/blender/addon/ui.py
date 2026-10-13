@@ -947,6 +947,10 @@ class CYCLES_RENDER_PT_performance_viewport(CyclesButtonsPanel, Panel):
         col = layout.column()
         col.prop(rd, "preview_pixel_size", text="Pixel Size")
 
+        sub = col.column(align=True)
+        sub.separator(factor=0.5)
+        sub.operator("cycles.enable_fsr1", text="Enable FSR 1 Upscaling", icon='MOD_THICKNESS')
+
 
 class CYCLES_RENDER_PT_filter(CyclesButtonsPanel, Panel):
     bl_label = "Filter"

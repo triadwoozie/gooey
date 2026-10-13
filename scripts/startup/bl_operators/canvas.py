@@ -385,6 +385,10 @@ def draw_canvas_panel_ui(self, context):
     box_iso.operator("canvas.isolate_collections", text="Isolate Collections", icon='FILE_REFRESH')
     box_iso.prop(vl, "use_sky", text="Render Sky / Background")
 
+    box_fsr = box.column(align=True)
+    box_fsr.label(text="Compositor Upscaling:", icon='MOD_THICKNESS')
+    box_fsr.operator("cycles.enable_fsr1", text="Enable Cycles FSR1", icon='MOD_THICKNESS')
+
 
 class CANVAS_PT_tools_view3d(Panel):
     bl_label = "Canvas Tools"

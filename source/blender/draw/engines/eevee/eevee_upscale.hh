@@ -58,6 +58,9 @@ class UpscaleModule {
   float4x4 last_winmat_ = float4x4::identity();
   bool history_valid_ = false;
 
+  GPUShader *easu_sh_ = nullptr;
+  GPUShader *rcas_sh_ = nullptr;
+
   void free_targets();
   void ensure_targets(int render_w, int render_h, int display_w, int display_h, int quality_mode);
 
@@ -88,5 +91,9 @@ class UpscaleModule {
                       GPUTexture *depth_tx,
                       GPUTexture *vector_tx);
 };
+
+bool eevee_fsr_is_active(const Instance &inst);
+int eevee_fsr_quality_get(const Instance &inst);
+float eevee_fsr_sharpness_get(const Instance &inst);
 
 }  // namespace blender::eevee
