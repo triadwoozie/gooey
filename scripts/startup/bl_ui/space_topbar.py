@@ -56,7 +56,7 @@ class TOPBAR_HT_upper_bar(Header):
             for parent in blend_path.parents:
                 proj_dir = parent / ".blender_project"
                 if proj_dir.is_dir():
-                    for cfg_name in ("project.toml", "config.toml"):
+                    for cfg_name in ("settings.toml", "project.toml", "config.toml"):
                         cfg_file = proj_dir / cfg_name
                         if cfg_file.is_file():
                             import tomllib
@@ -314,17 +314,18 @@ class TOPBAR_MT_file_project(Menu):
     bl_label = "Project"
     bl_translation_context = i18n_contexts.editor_preferences
 
-    def draw(self, _context):
+    def draw(self, context):
         layout = self.layout
 
-        if hasattr(bpy.ops.screen, "project_setup_show"):
-            layout.operator("screen.project_setup_show", text="Settings...", icon='PREFERENCES')
-        elif hasattr(bpy.ops, "project") and hasattr(bpy.ops.project, "new_project"):
-            layout.operator("project.new_project", text="New Project...", icon='ADD')
-        if hasattr(bpy.ops, "project") and hasattr(bpy.ops.project, "open_blend_in_project"):
-            layout.operator("project.open_blend_in_project", icon='FILE_FOLDER')
-        if hasattr(bpy.ops.screen, "project_setup_show"):
-            layout.operator("screen.project_setup_show", text="Project Settings...", icon='PREFERENCES')
+        project_name = TOPBAR_HT_upper_bar.get_active_project_name(context)
+        if project_name:
+            layout.label(text=f"Active: {project_name}", icon='CHECKMARK')
+            layout.separator()
+
+        layout.operator("project.setup", text="Setup Project...", icon='ADD')
+        layout.operator("project.open_settings", text="Project Settings...", icon='PREFERENCES')
+        layout.operator("project.resolve_render_path", text="Evaluate Output Path", icon='FILE_REFRESH')
+
 
 
 class TOPBAR_MT_file_new(Menu):
@@ -708,14 +709,9 @@ class TOPBAR_MT_project(Menu):
             layout.label(text=f"Active: {project_name}", icon='CHECKMARK')
             layout.separator()
 
-        if hasattr(bpy.ops.screen, "project_setup_show"):
-            layout.operator("screen.project_setup_show", text="Settings...", icon='PREFERENCES')
-
-        if hasattr(bpy.ops, "project"):
-            if hasattr(bpy.ops.project, "open_blend_in_project"):
-                layout.operator("project.open_blend_in_project", icon='FILE_FOLDER')
-            if hasattr(bpy.ops.project, "new_project"):
-                layout.operator("project.new_project", text="New Project...", icon='ADD')
+        layout.operator("project.setup", text="Setup Project...", icon='ADD')
+        layout.operator("project.open_settings", text="Project Settings...", icon='PREFERENCES')
+        layout.operator("project.resolve_render_path", text="Evaluate Output Path", icon='FILE_REFRESH')
 
 
 class TOPBAR_MT_window(Menu):

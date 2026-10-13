@@ -21,3 +21,11 @@ def _ensure_shakify_on_load(scene):
 
 if _ensure_shakify_on_load not in bpy.app.handlers.load_post:
     bpy.app.handlers.load_post.append(_ensure_shakify_on_load)
+
+def register():
+    pass
+
+def unregister():
+    if _ensure_shakify_on_load in bpy.app.handlers.load_post:
+        bpy.app.handlers.load_post.remove(_ensure_shakify_on_load)
+
