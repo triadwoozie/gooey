@@ -68,7 +68,22 @@
   - Full keyword aliases indexed for instant search (`Shakify`, `Camera Shake`, `Aubio`, `libtsm`, `TSM`, `Viseme`, `Mouth Shapes`, `Vibration`, `Resonance`).
   - Native Link-Drag Search integration for all sockets.
 
-### 4. Backported Blender 5.3 Features & Upstream Additions
+### 4. Blend Shell: Unix Terminal for `.blend` Database
+- **Integrated Interactive CLI**: The Python Console editor now doubles as a Unix shell environment designed specifically for manipulating Blender data-blocks in real-time, while preserving full Python interoperability:
+  - **`cat <name>`**: Inspect data-blocks. Dumps text scripts, object transforms (Location, Rotation, Euler, Scale), material shader node graphs, and external files.
+  - **`rm [-rf] <name>`**: Remove data-blocks from `bpy.data`. Run `rm -rf *` or `rm --orphans` to execute a recursive orphan purge.
+  - **`cp <src> <dest>`**: Duplicate data-blocks internally or append directly from external `.blend` files (`cp lib.blend/Collection/Props .`).
+  - **`mv <src> <dest>`**: Rename data-blocks or move objects between collections (`mv Cube Props`).
+  - **`mkdir <name>`**: Create collections linked to the active scene.
+  - **`ls [type]`**: Overview of scene data-blocks (objects, materials, meshes, collections, texts) or local filesystem.
+  - **`du`**: Statistics summary of total vertex count, polygon count, objects, materials, and collections.
+  - **`grep <pattern>`**: Regex and substring filter for data-block names or materials (`grep mat Gold`).
+  - **`diff <file1> [file2]`**: Compare data-block inventories between two `.blend` files or against the current open session.
+  - **`pip <args...>`**: Run pip package manager inside Blender's embedded interpreter (`pip install scipy`, `pip list`) with automatic `ensurepip` bootstrapping and import cache invalidation. In Python mode, call `pip("install", ...)` directly.
+  - **`!command` / `sh <command>`**: Execute system bash terminal commands on demand without leaving Blender.
+  - **`help`**: In-editor command reference guide.
+
+### 5. Backported Blender 5.3 Features & Upstream Additions
 - **Tier 4 (Geometry Nodes & Procedural Workflows)**:
   - *Camera Info Object Validation* (`dc936fdbf98`, by quackarooni): Context warning if input object is not a Camera.
   - *Repeat Zone Iterations Search* (`ea28033ce48`, by Brady Johnston): Drag-to-search directly exposes the `Iterations` input socket for empty Repeat zones.
@@ -77,17 +92,22 @@
 - **Tier 5 (Animation, Addons & Asset Pipeline)**:
   - *glTF 2.0 Gaussian Splatting & Materials* (`5c33429dca0`, by Julien Duroure): Full 5.3 update adding `KHR_gaussian_splatting` (3D Gaussian Splats import), `KHR_materials_dispersion`, `KHR_materials_iridescence`, Meshopt compression, and Animation Pointer.
   - *Node Wrangler 5.3 Modular Architecture* (`e9af5bdcb94`, by quackarooni): Modernized modular layout, cross-tree `Change Factor` improvements, and `Geometry to Instance` in Merge Nodes.
+  - *Shape Keys Duplicate All Selected* (`9851c6b1c5`, by Nika Kutsniashvili): Duplicate all selected shape keys simultaneously with selection update.
+  - *Armature Pose Mode Align to Orientation* (`7c00566f74`, by RedMser): Expose Align to Transform Orientation operator in pose mode.
+  - *Asset Shelf Empty Info Label* (`06e66393d3`, by Julian Eisel): Draw informative feedback explaining empty asset shelf filters.
   - *Rigify B-Bone Segment Count* (`b6085cc8a13`, by Antônio Froz): Exposed B-Bone segment count for spine and head rig types.
   - *Asset Browser Persistent "Asset" Menu* (`324f1a32d10`, by Nika Kutsniashvili): Always-accessible Asset menu in the header.
   - *Convert Pose Marker Clarification* (`caa9272d9e0`, by RedMser): Clear naming for pose marker conversion operator.
   - *Compositor Anisotropic Kuwahara Speedup* (`e260a7e6071`, by Aras Pranckevicius): 25-30% faster CPU, 2x faster NVIDIA GPU, and 10x faster Apple GPU execution with polynomial radial falloff approximation.
-- **Tier 6 (Native LoopTools Modeling Operators)**:
+- **Tier 6 (Native LoopTools & Modeling Operators)**:
+  - *Quad-Sphere Primitive* (`mesh.primitive_quad_sphere_add`, `ef062185d55`, by bravo09 & Campbell Barton): High-performance all-quad spherical primitive with Even Area and Even Angle distribution mappings.
   - *To Circle / Circularize* (`mesh.circularize`, `32c797d606d` & `2502d96ade4`, by Tariq-Sulley & Bastien Montagne): High-performance native BMesh circularization with best-fit plane, custom radius, regular/custom spacing, and axis constraints.
   - *Flatten* (`mesh.flatten`, `6d6d97afe9d`, by Tariq-Sulley): Native BMesh planar flattening with best-fit normal, view, and custom plane projections.
   - *Space Edge Loops Evenly* (`mesh.space_edge_loops_evenly`, `a38568b4e64`, by Tariq-Sulley): Native loop spacing with linear and cubic interpolation.
   - *Curve Edge Loops Between Selected* (`mesh.curve_edge_loops_between_selected`, `827566f0d3b`, by Tariq-Sulley & Campbell Barton): Interpolate edge loops along cubic spline trajectories between boundary loops.
   - *Relax Edge Loops* (`mesh.relax_edge_loops`, `eb18863b4c3`, by Tariq-Sulley): Native Laplacian edge loop smoothing directly accessible in Edit Mesh menus and hotkeys.
 - **Tier 7 (UI Polish, Outliner & Tools)**:
+  - *File Menu Rebuilt from Upstream*: Restored upstream File menu hierarchy ensuring full visibility of Import, Export, External Data, Clean Up, Defaults, and Quit.
   - *Outliner Show Users Column* (`3de313d5c98`, by 1P2D & Pratik Borhade): New data-block user count column in View Layer and Scenes modes with full DNA sync.
   - *Outliner Hide Unselected* (`9a717cccc74`, by Pratik Borhade): `Shift + H` hides unselected tree elements in the Outliner.
   - *Compositor Group Output Shortcut* (`a5273e0710b`, by Habib Gahbiche): `Alt + LMB` instantly connects active node to Group Output.
@@ -111,10 +131,14 @@
 - **Tokyo Dark / Tokyo Night Theme**: Inspired by Tiago Ventura ([tokyodark.nvim](https://github.com/tiagovla/tokyodark.nvim)) and enkia ([tokyo-night](https://github.com/enkia/tokyo-night-vscode-theme))
 - **Alien Pink Theme**: [Alumx/Alien-Pink-Blender-theme](https://github.com/Alumx/Alien-Pink-Blender-theme) hasnt been properly implemented on gooey yet :( gotta work on that
 - **Upstream Feature Contributors**:
+  - *bravo09 & Campbell Barton*: Native Quad-Sphere primitive (`mesh.primitive_quad_sphere_add`).
   - *Tariq-Sulley & Campbell Barton*: Native LoopTools modeling operators (`circularize`, `flatten`, `space_edge_loops_evenly`, `curve_edge_loops_between_selected`, `relax_edge_loops`).
   - *Julien Duroure*: glTF 2.0 Gaussian Splatting (`KHR_gaussian_splatting`) & modern material extensions.
   - *quackarooni*: Node Wrangler 5.3 architecture, Change Factor improvements, Camera Info validation.
+  - *Nika Kutsniashvili*: Shape keys multi-duplicate & Asset menu header integration.
+  - *Julian Eisel*: Asset shelf empty status label hints.
   - *Pratik Borhade & 1P2D*: Outliner users column and tree visibility operators.
+  - *RedMser*: Pose Mode align to orientation & Pose marker operator clarifications.
   - *Sybren A. Stüvel*: Animation tool & camera focal length operator improvements.
   - *Brady Johnston*: Geometry Nodes search enhancements for repeat zones and index switches.
   - *Aras Pranckevicius*: Anisotropic Kuwahara compositor speedups.

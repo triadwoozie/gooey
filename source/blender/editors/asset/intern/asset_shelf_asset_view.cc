@@ -383,26 +383,14 @@ void build_asset_view(uiLayout &layout,
     }
 
     if (empty_list_hint) {
-      ui::Layout &row = layout.row(false);
+      uiLayout &row = layout.row(false);
       /* Align with first button in asset shelf header. */
       row.separator();
 
-      ui::Layout &column = row.column(false);
+      uiLayout &column = row.column(false);
 
       column.separator();
-      column.label(*empty_list_hint, ICON_STATUS_INFO);
-
-      std::optional<StringRef> access_filter_hint;
-      if (U.asset_access == AssetAccess::OnlyOnline) {
-        access_filter_hint = RPT_("\"Online Only\" filter is enabled.");
-      }
-      else if (U.asset_access == AssetAccess::OnlyOffline) {
-        access_filter_hint = RPT_("\"Offline Only\" filter is enabled.");
-      }
-
-      if (access_filter_hint) {
-        column.label(*access_filter_hint, ICON_BLANK1);
-      }
+      column.label(*empty_list_hint, ICON_INFO);
     }
   }
 }
