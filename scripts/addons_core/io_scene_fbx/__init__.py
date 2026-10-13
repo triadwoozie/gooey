@@ -27,6 +27,7 @@ if "bpy" in locals():
 
 
 import bpy
+from bpy.app.translations import pgettext_iface as iface_
 from bpy.props import (
     StringProperty,
     BoolProperty,
@@ -703,11 +704,23 @@ class IO_FH_fbx(bpy.types.FileHandler):
 
 
 def menu_func_import(self, context):
-    self.layout.operator(ImportFBX.bl_idname, text="FBX (.fbx)")
+    label = "FBX (.fbx) (Legacy)"
+    if hasattr(bpy.types, "FileHandler") and hasattr(bpy.types.FileHandler, "label_with_extensions"):
+        try:
+            label = bpy.types.FileHandler.label_with_extensions("IO_FH_fbx") + " " + iface_("(Legacy)")
+        except Exception:
+            pass
+    self.layout.operator(ImportFBX.bl_idname, text=label)
 
 
 def menu_func_export(self, context):
-    self.layout.operator(ExportFBX.bl_idname, text="FBX (.fbx)")
+    label = "FBX (.fbx)"
+    if hasattr(bpy.types, "FileHandler") and hasattr(bpy.types.FileHandler, "label_with_extensions"):
+        try:
+            label = bpy.types.FileHandler.label_with_extensions("IO_FH_fbx") or label
+        except Exception:
+            pass
+    self.layout.operator(ExportFBX.bl_idname, text=label)
 
 
 classes = (

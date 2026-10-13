@@ -64,8 +64,13 @@ class ImportSVG(bpy.types.Operator, ImportHelper):
 
 
 def menu_func_import(self, context):
-    self.layout.operator(ImportSVG.bl_idname,
-                         text="Scalable Vector Graphics (.svg)")
+    label = "Scalable Vector Graphics (.svg)"
+    if hasattr(bpy.types, "FileHandler") and hasattr(bpy.types.FileHandler, "label_with_extensions"):
+        try:
+            label = bpy.types.FileHandler.label_with_extensions("IO_FH_svg_as_curves") or label
+        except Exception:
+            pass
+    self.layout.operator(ImportSVG.bl_idname, text=label)
 
 
 def register():
