@@ -40,6 +40,7 @@ _modules = [
     "properties_data_volume",
     "properties_mask_common",
     "properties_material",
+    "properties_material_bake",
     "properties_material_gpencil",
     "properties_object",
     "properties_paint_common",
@@ -81,6 +82,7 @@ _modules = [
     "space_outliner",
     "space_properties",
     "space_sequencer",
+    "space_sequencer_media_bin",
     "space_spreadsheet",
     "space_statusbar",
     "space_text",
@@ -121,11 +123,11 @@ def register():
         for cls in mod.classes:
             register_class(cls)
 
-    space_filebrowser.register_props()
+    for mod in _modules_loaded:
+        if hasattr(mod, "register_props"):
+            mod.register_props()
     if hasattr(space_view3d_vehicle, "register"):
         space_view3d_vehicle.register()
-    if hasattr(camera_shake, "register_props"):
-        camera_shake.register_props()
 
     from bpy.props import (
         EnumProperty,

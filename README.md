@@ -79,11 +79,34 @@
   - **`du`**: Statistics summary of total vertex count, polygon count, objects, materials, and collections.
   - **`grep <pattern>`**: Regex and substring filter for data-block names or materials (`grep mat Gold`).
   - **`diff <file1> [file2]`**: Compare data-block inventories between two `.blend` files or against the current open session.
+  - **`path <on|off|add>`**: Toggle host `$PATH` resolution or register custom system directories for command execution.
   - **`pip <args...>`**: Run pip package manager inside Blender's embedded interpreter (`pip install scipy`, `pip list`) with automatic `ensurepip` bootstrapping and import cache invalidation. In Python mode, call `pip("install", ...)` directly.
-  - **`!command` / `sh <command>`**: Execute system bash terminal commands on demand without leaving Blender.
+  - **`!command` / `sh <command>`**: Execute system bash terminal commands on demand without leaving Blender, using linked system `$PATH`.
   - **`help`**: In-editor command reference guide.
+  - **Documentation**: Detailed guide and workflows in [Blend Shell & Utilities Guide](doc/blend_shell_and_utilities.md).
 
-### 5. Backported Blender 5.3 Features & Upstream Additions
+### 5. Production Pipelines & In-Material Stylization
+- **Material Lighting Nodes (In-Material Stylization)**:
+  - *Light Accumulator* (`ShaderNodeLightAccumulator`): Inputs Diffuse, Glossy, Transmission to output surface Closure across render passes.
+  - *Light Data* (`ShaderNodeLightData`): Outputs evaluated Light Color, Power, Position, Direction, Distance, and Attenuation.
+  - *Shadow* (`ShaderNodeShadow`): Cone-filtered raycasted shadow casting with configurable Ray Count.
+  - *Light Evaluation* (`ShaderNodeLightEvaluation`): Configurable Area/Point LTC, Cosine Hemisphere/Sphere (Half-Lambert), Uniform Hemisphere (Toon), and anisotropic parameters.
+  - *Texture Filters*: *Filter Blur* (`ShaderNodeFilterBlur`) and *Filter Sharpen* (`ShaderNodeFilterSharpen`).
+- **Project Environment & Awareness (`.blender_project`)**:
+  - Shared project root with `settings.toml` and `variables.toml`.
+  - Dynamic token resolution in paths: `{project_root}`, `{project_name}`, `{blend_name}`, `{fps}`, `{resolution_x}`, `{resolution_y}`.
+  - Topbar active project indicator and `bpy.context.project` API.
+- **Texture Baking & Channel Packing**:
+  - Multi-channel packing panel in Material properties and Node Editor sidebar.
+  - Native RGBA channel distribution (Base Color -> `RGBA`, Roughness -> `R`, Metallic -> `G`, AO -> `B`, Normal -> `XYZ`).
+  - Batch bake operators for Material, Mesh, and Scene.
+- **VSE Media Bin**:
+  - Sequencer organizer sub-view with folder bins (`Footage`, `Audio`, `VFX`, `Graphics`, `Scenes`).
+  - In/Out frame range marks per media and unified Sequencer `Add -> Media...` operator.
+- **Canvas Operator**:
+  - 3D Viewport header button to instantly generate a new Scene View Layer, Orthographic Camera, dedicated render target Image, and Compositor wiring.
+
+### 6. Backported Blender 5.3 Features & Upstream Additions
 - **Tier 3 (Engine, Timeline & VSE Refactors)**:
   - *VSE Unclamped Strips by Default* (`1cb86df7e6d`, by John Kiril Swenson): Unclamped slipping by default with 'C' to clamp and new user preference (`clamp_strips_by_default`) to toggle behavior.
   - *VSE Set Render Size for Scene Strips* (`e3ad2320282`, by Philipp Oeser & John Kiril Swenson): Adapt project resolution and aspect ratio directly from selected Scene strips.
