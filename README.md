@@ -1,9 +1,12 @@
 # Gooey 5.2 (Blender)
 
-**Gooey 5.2** is the next-generation branch of **Gooey**, porting all Gooey workflows, NPR rendering tools, procedural audio/animation systems, and 5.3+ enhancements on top of **Blender 5.2.1 LTS** and the **Goo Engine 5.2 EEVEE-Next** architecture.
+**Gooey 5.2** is the next-generation branch of **Gooey**, porting all Gooey workflows, NPR rendering tools, procedural audio/animation systems, and 5.3+ enhancements on top of **Blender 5.2.1 LTS** and the **Goo Engine 5.2 EEVEE-Next** architecture maintained by **NaMgAl-Studio** ([NaMgAl-Studio/goo-engine-5.2.0](https://github.com/NaMgAl-Studio/goo-engine-5.2.0)).
 
-> [!NOTE]
-> Active production continues on the `gooey` (4.5.14 LTS) branch until Blender 4.5 support wraps up. The `gooey-5.2` branch tracks the forward port to Blender 5.2.1 LTS and beyond, incorporating all modern EEVEE-Next shaders and upstream 5.3+ improvements.
+> [!IMPORTANT]
+> **Active Development Has Transitioned to 5.2.1 LTS**:
+> Maintenance on the legacy 4.5.x base has been retired in favor of full alignment with Blender 5.2.1 and the EEVEE-Next shader rewrite. All new NPR shaders, upscaling pipelines, and animation tools target 5.2+.
+> 
+> See the [Gooey 5.2 Collaboration Roadmap](doc/guides/gooey_5.2_roadmap.md) and [Downloads & Build Guide](doc/guides/namgal_5.2_downloads.md) for details.
 
 ---
 
