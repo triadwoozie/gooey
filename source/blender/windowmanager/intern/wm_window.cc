@@ -690,7 +690,7 @@ static std::string wm_window_title_text(
     }
   }
 
-  win_title.append(fmt::format(" - Blender {}", BKE_blender_version_string()));
+  win_title.append(fmt::format(" - Gooey {}", BKE_blender_version_string()));
 
   return win_title;
 }
@@ -1546,6 +1546,58 @@ wmOperatorStatus wm_window_fullscreen_toggle_exec(bContext *C, wmOperator * /*op
   }
 
   return OPERATOR_FINISHED;
+}
+
+wmOperatorStatus wm_window_minimize_exec(bContext *C, wmOperator * /*op*/)
+{
+  wmWindow *window = CTX_wm_window(C);
+
+  if (G.background || !window || !window->runtime || !window->runtime->ghostwin) {
+    return OPERATOR_CANCELLED;
+  }
+
+  GHOST_IWindow *ghost_window = static_cast<GHOST_IWindow *>(window->runtime->ghostwin);
+  ghost_window->setState(GHOST_kWindowStateMinimized);
+
+  return OPERATOR_FINISHED;
+}
+
+wmOperatorStatus wm_window_maximize_toggle_exec(bContext *C, wmOperator * /*op*/)
+{
+  wmWindow *window = CTX_wm_window(C);
+
+  if (G.background || !window || !window->runtime || !window->runtime->ghostwin) {
+    return OPERATOR_CANCELLED;
+  }
+
+  GHOST_IWindow *ghost_window = static_cast<GHOST_IWindow *>(window->runtime->ghostwin);
+  GHOST_TWindowState state = ghost_window->getState();
+  if (state == GHOST_kWindowStateMaximized) {
+    ghost_window->setState(GHOST_kWindowStateNormal);
+  }
+  else {
+    ghost_window->setState(GHOST_kWindowStateMaximized);
+  }
+
+  return OPERATOR_FINISHED;
+}
+
+wmOperatorStatus wm_window_drag_start_invoke(bContext *C,
+                                             wmOperator * /*op*/,
+                                             const wmEvent * /*event*/)
+{
+  wmWindow *window = CTX_wm_window(C);
+
+  if (G.background || !window || !window->runtime || !window->runtime->ghostwin) {
+    return OPERATOR_PASS_THROUGH;
+  }
+
+  GHOST_IWindow *ghost_window = static_cast<GHOST_IWindow *>(window->runtime->ghostwin);
+  if (ghost_window->beginWindowMove() == GHOST_kSuccess) {
+    return OPERATOR_FINISHED;
+  }
+
+  return OPERATOR_PASS_THROUGH;
 }
 
 /** \} */
@@ -3143,7 +3195,16 @@ bool WM_window_is_csd(const wmWindow *win)
 {
 #ifdef WITH_GHOST_CSD
   if (g_system_use_csd && !WM_window_is_fullscreen(win)) {
-    return true;
+    /* Only subwindows (preferences, dialogs, child windows) should have CSD titlebars.
+     * The main window has integrated topbar window controls and should not have a titlebar. */
+    if (win) {
+      const GHOST_IWindow *ghost_window = static_cast<const GHOST_IWindow *>(
+          win->runtime ? win->runtime->ghostwin : nullptr);
+      if (win->parent != nullptr || (ghost_window && ghost_window->isDialog())) {
+        return true;
+      }
+    }
+    return false;
   }
 #else
   UNUSED_VARS(win);

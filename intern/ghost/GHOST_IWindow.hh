@@ -383,5 +383,14 @@ class GHOST_IWindow {
   virtual void endIME() = 0;
 #endif /* WITH_INPUT_IME */
 
+  /**
+   * Starts interactive window dragging/moving via window manager.
+   * \return Indication of success.
+   */
+  virtual GHOST_TSuccess beginWindowMove()
+  {
+    return GHOST_kFailure;
+  }
+
   MEM_CXX_CLASS_ALLOC_FUNCS("GHOST:GHOST_IWindow")
 };

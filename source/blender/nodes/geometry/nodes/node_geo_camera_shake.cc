@@ -33,37 +33,37 @@ static void node_declare(NodeDeclarationBuilder &b)
   b.use_custom_socket_order();
 
   /* Geometry I/O for direct application on regular objects */
-  b.add_input<decl::Geometry>("Geometry")
+  b.add_input<decl::Geometry>("Geometry"_ustr)
       .description("Input geometry of the regular controller object to displace");
-  b.add_output<decl::Geometry>("Geometry")
+  b.add_output<decl::Geometry>("Geometry"_ustr)
       .description("Transformed shaker geometry tracking the camera shake");
 
   /* Camera Dropdown Target */
-  b.add_input<decl::Object>("Camera")
+  b.add_input<decl::Object>("Camera"_ustr)
       .description("Target camera to control or follow (select from dropdown or leave blank for active camera)");
 
   /* Transform Displacement Outputs */
-  b.add_output<decl::Vector>("Offset Location")
+  b.add_output<decl::Vector>("Offset Location"_ustr)
       .description("Camera shake translational displacement offset");
-  b.add_output<decl::Vector>("Offset Rotation")
+  b.add_output<decl::Vector>("Offset Rotation"_ustr)
       .description("Camera shake rotational wobble Euler (radians)");
-  b.add_output<decl::Matrix>("Transform Matrix")
+  b.add_output<decl::Matrix>("Transform Matrix"_ustr)
       .description("Combined 4x4 wobble transformation matrix");
-  b.add_output<decl::Vector>("Final Location")
+  b.add_output<decl::Vector>("Final Location"_ustr)
       .description("Base camera location plus shake translational displacement");
-  b.add_output<decl::Vector>("Final Rotation")
+  b.add_output<decl::Vector>("Final Rotation"_ustr)
       .description("Base camera rotation plus shake rotational displacement");
 
   /* Base Inputs */
-  b.add_input<decl::Vector>("Location")
+  b.add_input<decl::Vector>("Location"_ustr)
       .default_value(float3(0.0f))
       .description("Base camera position offset (sampled from target camera if zero)");
-  b.add_input<decl::Vector>("Rotation")
+  b.add_input<decl::Vector>("Rotation"_ustr)
       .default_value(float3(0.0f))
       .description("Base camera Euler rotation offset (sampled from target camera if zero)");
 
   /* Motion Profile selection matching Camera Shakify */
-  b.add_input<decl::Int>("Profile")
+  b.add_input<decl::Int>("Profile"_ustr)
       .default_value(0)
       .min(0)
       .max(8)
@@ -72,26 +72,26 @@ static void node_declare(NodeDeclarationBuilder &b)
           "4: Handycam Run, 5: Out Car Window, 6: Bike On Gravel, 7: Spaceship Shake, "
           "8: The Zeek (Impact)");
 
-  b.add_input<decl::Float>("Frequency")
+  b.add_input<decl::Float>("Frequency"_ustr)
       .default_value(1.0f)
       .min(0.01f)
       .max(10.0f)
       .description("Speed / Frequency multiplier");
-  b.add_input<decl::Float>("Intensity")
+  b.add_input<decl::Float>("Intensity"_ustr)
       .default_value(1.0f)
       .min(0.0f)
       .max(10.0f)
       .description("Amplitude / Influence multiplier");
-  b.add_input<decl::Float>("Audio Trigger")
+  b.add_input<decl::Float>("Audio Trigger"_ustr)
       .default_value(0.0f)
       .min(0.0f)
       .max(5.0f)
       .description("Audio onset/beat modulation factor to dynamically spike shake");
-  b.add_input<decl::Float>("Time")
+  b.add_input<decl::Float>("Time"_ustr)
       .default_value(-1.0f)
       .min(-1.0f)
       .description("Time in seconds (-1 for scene playback time)");
-  b.add_input<decl::Int>("Seed")
+  b.add_input<decl::Int>("Seed"_ustr)
       .default_value(0)
       .description("Random variation seed");
 }
@@ -112,13 +112,13 @@ static void node_geo_exec(GeoNodeExecParams params)
   }
 
   /* Extract Target Camera (or fallback to active scene camera) */
-  const Object *camera_obj = params.extract_input<Object *>("Camera");
+  const Object *camera_obj = params.extract_input<Object *>("Camera"_ustr);
   if (!camera_obj && scene->camera) {
     camera_obj = scene->camera;
   }
 
-  float3 base_loc = params.extract_input<float3>("Location");
-  float3 base_rot = params.extract_input<float3>("Rotation");
+  float3 base_loc = params.extract_input<float3>("Location"_ustr);
+  float3 base_rot = params.extract_input<float3>("Rotation"_ustr);
 
   /* If Location / Rotation are zero and a camera is chosen, sample base transforms */
   if (camera_obj && camera_obj->type == OB_CAMERA) {
@@ -134,12 +134,12 @@ static void node_geo_exec(GeoNodeExecParams params)
     }
   }
 
-  const int profile = std::clamp(params.extract_input<int>("Profile"), 0, 8);
-  const float freq = std::max(0.01f, params.extract_input<float>("Frequency"));
-  const float intensity = std::max(0.0f, params.extract_input<float>("Intensity"));
-  const float audio_trigger = std::max(0.0f, params.extract_input<float>("Audio Trigger"));
-  float time = params.extract_input<float>("Time");
-  const int seed = params.extract_input<int>("Seed");
+  const int profile = std::clamp(params.extract_input<int>("Profile"_ustr), 0, 8);
+  const float freq = std::max(0.01f, params.extract_input<float>("Frequency"_ustr));
+  const float intensity = std::max(0.0f, params.extract_input<float>("Intensity"_ustr));
+  const float audio_trigger = std::max(0.0f, params.extract_input<float>("Audio Trigger"_ustr));
+  float time = params.extract_input<float>("Time"_ustr);
+  const int seed = params.extract_input<int>("Seed"_ustr);
 
   if (time < 0.0f) {
     const float scene_ctime = BKE_scene_ctime_get(scene);
@@ -270,18 +270,18 @@ static void node_geo_exec(GeoNodeExecParams params)
       disp_loc, math::EulerXYZ(disp_rot.x, disp_rot.y, disp_rot.z), float3(1.0f));
 
   /* Transform input geometry if present */
-  GeometrySet geometry_set = params.extract_input<GeometrySet>("Geometry");
+  GeometrySet geometry_set = params.extract_input<GeometrySet>("Geometry"_ustr);
   if (!geometry_set.is_empty()) {
     geometry::transform_geometry(geometry_set, wobble_mat);
   }
-  params.set_output("Geometry", std::move(geometry_set));
+  params.set_output("Geometry"_ustr, std::move(geometry_set));
 
   /* Outputs */
-  params.set_output("Offset Location", disp_loc);
-  params.set_output("Offset Rotation", disp_rot);
-  params.set_output("Transform Matrix", wobble_mat);
-  params.set_output("Final Location", base_loc + disp_loc);
-  params.set_output("Final Rotation", base_rot + disp_rot);
+  params.set_output("Offset Location"_ustr, disp_loc);
+  params.set_output("Offset Rotation"_ustr, disp_rot);
+  params.set_output("Transform Matrix"_ustr, wobble_mat);
+  params.set_output("Final Location"_ustr, base_loc + disp_loc);
+  params.set_output("Final Rotation"_ustr, base_rot + disp_rot);
 }
 
 static void node_gather_link_searches(GatherLinkSearchOpParams &params)
@@ -294,14 +294,14 @@ static void node_gather_link_searches(GatherLinkSearchOpParams &params)
         "Camera Shakify" UI_MENU_ARROW_SEP " Geometry",
         [&nt](LinkSearchOpParams &p) {
           bNode &node = p.add_node(nt);
-          p.update_and_connect_available_socket(node, "Geometry");
+          p.update_and_connect_available_socket(node, "Geometry"_ustr);
         },
         2);
     params.add_item_full_name(
         "Camera Shakify" UI_MENU_ARROW_SEP " Camera",
         [&nt](LinkSearchOpParams &p) {
           bNode &node = p.add_node(nt);
-          p.update_and_connect_available_socket(node, "Camera");
+          p.update_and_connect_available_socket(node, "Camera"_ustr);
         },
         1);
   }
@@ -310,21 +310,21 @@ static void node_gather_link_searches(GatherLinkSearchOpParams &params)
         "Camera Shakify" UI_MENU_ARROW_SEP " Offset Location",
         [&nt](LinkSearchOpParams &p) {
           bNode &node = p.add_node(nt);
-          p.update_and_connect_available_socket(node, "Offset Location");
+          p.update_and_connect_available_socket(node, "Offset Location"_ustr);
         },
         2);
     params.add_item_full_name(
         "Camera Shakify" UI_MENU_ARROW_SEP " Offset Rotation",
         [&nt](LinkSearchOpParams &p) {
           bNode &node = p.add_node(nt);
-          p.update_and_connect_available_socket(node, "Offset Rotation");
+          p.update_and_connect_available_socket(node, "Offset Rotation"_ustr);
         },
         1);
     params.add_item_full_name(
         "Camera Shakify" UI_MENU_ARROW_SEP " Geometry",
         [&nt](LinkSearchOpParams &p) {
           bNode &node = p.add_node(nt);
-          p.update_and_connect_available_socket(node, "Geometry");
+          p.update_and_connect_available_socket(node, "Geometry"_ustr);
         },
         1);
   }
@@ -334,7 +334,7 @@ static void node_register()
 {
   static blender::bke::bNodeType ntype;
 
-  geo_node_type_base(&ntype, "GeometryNodeCameraShake");
+  geo_node_type_base(&ntype, "GeometryNodeCameraShake"_ustr);
   ntype.ui_name = "Camera Shake";
   ntype.ui_description =
       "Synthesize realistic camera shake and wobble driven by motion profiles and audio transients "

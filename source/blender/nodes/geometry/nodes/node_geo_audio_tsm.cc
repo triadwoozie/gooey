@@ -22,32 +22,32 @@ static void node_declare(NodeDeclarationBuilder &b)
   b.use_custom_socket_order();
 
   /* Outputs */
-  b.add_output<decl::Float>("Target Time").description("Warped audio playback time coordinate");
-  b.add_output<decl::Float>("Pitch Ratio").description("Frequency scaling ratio (2^(semitones/12))");
-  b.add_output<decl::Float>("Time Stretch Ratio").description("Time-stretch duration expansion factor");
-  b.add_output<decl::Float>("Formant Ratio").description("Formant shift ratio");
+  b.add_output<decl::Float>("Target Time"_ustr).description("Warped audio playback time coordinate");
+  b.add_output<decl::Float>("Pitch Ratio"_ustr).description("Frequency scaling ratio (2^(semitones/12))");
+  b.add_output<decl::Float>("Time Stretch Ratio"_ustr).description("Time-stretch duration expansion factor");
+  b.add_output<decl::Float>("Formant Ratio"_ustr).description("Formant shift ratio");
 
   /* Inputs */
-  b.add_input<decl::Float>("Time")
+  b.add_input<decl::Float>("Time"_ustr)
       .default_value(-1.0f)
       .min(-1.0f)
       .description("Source evaluation time (-1 for current scene time)");
-  b.add_input<decl::Float>("Speed Factor")
+  b.add_input<decl::Float>("Speed Factor"_ustr)
       .default_value(1.0f)
       .min(0.05f)
       .max(20.0f)
       .description("Playback speed (0.5 for 2x slow-mo, 2.0 for 2x fast-forward)");
-  b.add_input<decl::Float>("Pitch Shift")
+  b.add_input<decl::Float>("Pitch Shift"_ustr)
       .default_value(0.0f)
       .min(-36.0f)
       .max(36.0f)
       .description("Pitch shift offset in semitones without altering speed");
-  b.add_input<decl::Float>("Formant Preservation")
+  b.add_input<decl::Float>("Formant Preservation"_ustr)
       .default_value(1.0f)
       .min(0.0f)
       .max(1.0f)
       .description("Formant correction factor to prevent chipmunk effect");
-  b.add_input<decl::Int>("Algorithm")
+  b.add_input<decl::Int>("Algorithm"_ustr)
       .default_value(0)
       .min(0)
       .max(1)
@@ -62,11 +62,11 @@ static void node_geo_exec(GeoNodeExecParams params)
     return;
   }
 
-  float time = params.extract_input<float>("Time");
-  const float speed_factor = std::max(0.01f, params.extract_input<float>("Speed Factor"));
-  const float pitch_shift = params.extract_input<float>("Pitch Shift");
-  const float formant_pres = std::clamp(params.extract_input<float>("Formant Preservation"), 0.0f, 1.0f);
-  const int algorithm = std::clamp(params.extract_input<int>("Algorithm"), 0, 1);
+  float time = params.extract_input<float>("Time"_ustr);
+  const float speed_factor = std::max(0.01f, params.extract_input<float>("Speed Factor"_ustr));
+  const float pitch_shift = params.extract_input<float>("Pitch Shift"_ustr);
+  const float formant_pres = std::clamp(params.extract_input<float>("Formant Preservation"_ustr), 0.0f, 1.0f);
+  const int algorithm = std::clamp(params.extract_input<int>("Algorithm"_ustr), 0, 1);
   (void)algorithm;
 
   if (time < 0.0f) {
@@ -81,10 +81,10 @@ static void node_geo_exec(GeoNodeExecParams params)
   const float time_stretch_ratio = 1.0f / speed_factor;
   const float formant_ratio = 1.0f + (1.0f - formant_pres) * (pitch_ratio - 1.0f);
 
-  params.set_output("Target Time", target_time);
-  params.set_output("Pitch Ratio", pitch_ratio);
-  params.set_output("Time Stretch Ratio", time_stretch_ratio);
-  params.set_output("Formant Ratio", formant_ratio);
+  params.set_output("Target Time"_ustr, target_time);
+  params.set_output("Pitch Ratio"_ustr, pitch_ratio);
+  params.set_output("Time Stretch Ratio"_ustr, time_stretch_ratio);
+  params.set_output("Formant Ratio"_ustr, formant_ratio);
 }
 
 static void node_gather_link_searches(GatherLinkSearchOpParams &params)
@@ -97,21 +97,21 @@ static void node_gather_link_searches(GatherLinkSearchOpParams &params)
         "libtsm Audio TSM" UI_MENU_ARROW_SEP " Pitch Ratio",
         [&nt](LinkSearchOpParams &p) {
           bNode &node = p.add_node(nt);
-          p.update_and_connect_available_socket(node, "Pitch Ratio");
+          p.update_and_connect_available_socket(node, "Pitch Ratio"_ustr);
         },
         1);
     params.add_item_full_name(
         "libtsm" UI_MENU_ARROW_SEP " Time Stretch Ratio",
         [&nt](LinkSearchOpParams &p) {
           bNode &node = p.add_node(nt);
-          p.update_and_connect_available_socket(node, "Time Stretch Ratio");
+          p.update_and_connect_available_socket(node, "Time Stretch Ratio"_ustr);
         },
         1);
     params.add_item_full_name(
         "Time Scale Modification" UI_MENU_ARROW_SEP " Formant Ratio",
         [&nt](LinkSearchOpParams &p) {
           bNode &node = p.add_node(nt);
-          p.update_and_connect_available_socket(node, "Formant Ratio");
+          p.update_and_connect_available_socket(node, "Formant Ratio"_ustr);
         },
         1);
   }
@@ -121,7 +121,7 @@ static void node_register()
 {
   static blender::bke::bNodeType ntype;
 
-  geo_node_type_base(&ntype, "GeometryNodeAudioTSM");
+  geo_node_type_base(&ntype, "GeometryNodeAudioTSM"_ustr);
   ntype.ui_name = "Audio Time Stretch (TSM)";
   ntype.ui_description = "Time-Scale Modification and pitch-shifting controls via WSOLA and Phase Vocoder";
   ntype.nclass = NODE_CLASS_INPUT;

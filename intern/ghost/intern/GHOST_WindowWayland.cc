@@ -1642,9 +1642,10 @@ GHOST_WindowWayland::GHOST_WindowWayland(GHOST_SystemWayland *system,
           system_->xdg_decor_manager_get(), decor.toplevel);
       zxdg_toplevel_decoration_v1_add_listener(
           decor.toplevel_decor, &xdg_toplevel_decoration_v1_listener, window_);
-      /* Request client side decorations as a way of disabling decorations
-       * or to use client side decorations. */
-      const uint32_t mode = (use_window_frame && system_->use_window_frame_csd_get() == false) ?
+      /* Request server-side decorations for subwindows (preferences, dialogs),
+       * while the main window uses client-side mode so system titlebar is suppressed. */
+      const bool is_subwindow = window_->is_dialog || (parent_window != nullptr);
+      const uint32_t mode = (is_subwindow && use_window_frame && system_->use_window_frame_csd_get() == false) ?
                                 ZXDG_TOPLEVEL_DECORATION_V1_MODE_SERVER_SIDE :
                                 ZXDG_TOPLEVEL_DECORATION_V1_MODE_CLIENT_SIDE;
       zxdg_toplevel_decoration_v1_set_mode(decor.toplevel_decor, mode);
@@ -2258,6 +2259,27 @@ GHOST_TSuccess GHOST_WindowWayland::setOrder(GHOST_TWindowOrder order)
   }
 
   return GHOST_kSuccess;
+}
+
+GHOST_TSuccess GHOST_WindowWayland::beginWindowMove()
+{
+#ifdef USE_EVENT_BACKGROUND_THREAD
+  std::lock_guard lock_server_guard{*system_->server_mutex};
+#endif
+
+  uint32_t serial = 0;
+  struct wl_seat *seat = system_->wl_seat_active_get_with_input_serial(serial);
+  if (!seat) {
+    return GHOST_kFailure;
+  }
+
+  if (window_->xdg_decor && window_->xdg_decor->toplevel) {
+    xdg_toplevel_move(window_->xdg_decor->toplevel, seat, serial);
+    wl_display_flush(system_->wl_display_get());
+    return GHOST_kSuccess;
+  }
+
+  return GHOST_kFailure;
 }
 
 bool GHOST_WindowWayland::isDialog() const

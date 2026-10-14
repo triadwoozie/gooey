@@ -1976,6 +1976,9 @@ class CyclesPreferences(bpy.types.AddonPreferences):
 
         # Any device without RT support will disable it for all.
         has_hardware_rt = has_enabled_hardware_rt and not has_disabled_hardware_rt
+        if not has_hardware_rt and not has_disabled_hardware_rt:
+            # Fall back to checking if any available device for this backend supports hardware RT
+            has_hardware_rt = any(device[1] == compute_device_type and device[4] for device in devices)
 
         if has_peer_memory:
             row = layout.row()

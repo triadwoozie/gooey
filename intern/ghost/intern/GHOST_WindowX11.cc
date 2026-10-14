@@ -617,9 +617,10 @@ GHOST_TSuccess GHOST_WindowX11::setDialogHints(GHOST_WindowX11 *parent_window)
    * Actually, most window managers disable minimizing and maximizing for dialogs, ignoring this.
    * Leaving it here anyway in the hope it brings back maximizing on some window managers at least,
    * we'd preferably have it even for dialog windows (e.g. file browser). */
-  hints.flags = MWM_HINTS_FUNCTIONS;
+  hints.flags = MWM_HINTS_FUNCTIONS | MWM_HINTS_DECORATIONS;
   hints.functions = MWM_FUNCTION_RESIZE | MWM_FUNCTION_MOVE | MWM_FUNCTION_MAXIMIZE |
                     MWM_FUNCTION_CLOSE;
+  hints.decorations = 1; /* MWM_DECOR_ALL */
   XChangeProperty(display_,
                   window_,
                   system_->atom_._MOTIF_WM_HINTS,
@@ -1584,4 +1585,42 @@ GHOST_TSuccess GHOST_WindowX11::setProgressBar(float /*progress*/)
 GHOST_TSuccess GHOST_WindowX11::endProgressBar()
 {
   return GHOST_kFailure;
+}
+
+GHOST_TSuccess GHOST_WindowX11::beginWindowMove()
+{
+  Atom atom = XInternAtom(display_, "_NET_WM_MOVERESIZE", False);
+  if (atom == None) {
+    return GHOST_kFailure;
+  }
+
+  Window root_return, child_return;
+  int root_x = 0, root_y = 0, win_x = 0, win_y = 0;
+  unsigned int mask_return = 0;
+  Window root = RootWindow(display_, visual_info_->screen);
+
+  XQueryPointer(
+      display_, root, &root_return, &child_return, &root_x, &root_y, &win_x, &win_y, &mask_return);
+
+  XUngrabPointer(display_, CurrentTime);
+
+  XEvent xev;
+  memset(&xev, 0, sizeof(xev));
+  xev.xclient.type = ClientMessage;
+  xev.xclient.serial = 0;
+  xev.xclient.send_event = True;
+  xev.xclient.window = window_;
+  xev.xclient.message_type = atom;
+  xev.xclient.format = 32;
+  xev.xclient.data.l[0] = root_x;
+  xev.xclient.data.l[1] = root_y;
+  xev.xclient.data.l[2] = 8; /* _NET_WM_MOVERESIZE_MOVE */
+  xev.xclient.data.l[3] = Button1; /* Left mouse button */
+  xev.xclient.data.l[4] = 1; /* source indication: normal application */
+
+  long eventmask = SubstructureRedirectMask | SubstructureNotifyMask;
+  XSendEvent(display_, root, False, eventmask, &xev);
+  XFlush(display_);
+
+  return GHOST_kSuccess;
 }

@@ -35,57 +35,57 @@ static void node_declare(NodeDeclarationBuilder &b)
   b.use_custom_socket_order();
 
   /* Geometry In / Out */
-  b.add_input<decl::Geometry>("Geometry")
+  b.add_input<decl::Geometry>("Geometry"_ustr)
       .description("Input geometry of the prop or colliding body to vibrate");
-  b.add_output<decl::Geometry>("Geometry")
+  b.add_output<decl::Geometry>("Geometry"_ustr)
       .description("Physically vibrating geometry with modal resonance displacement");
 
   /* Transform & Vibration Outputs */
-  b.add_output<decl::Vector>("Offset")
+  b.add_output<decl::Vector>("Offset"_ustr)
       .description("Instantaneous physical resonance offset vector (connect to Set Position Offset)");
-  b.add_output<decl::Vector>("Displacement")
+  b.add_output<decl::Vector>("Displacement"_ustr)
       .description("Instantaneous vector displacement offset");
-  b.add_output<decl::Float>("Amplitude")
+  b.add_output<decl::Float>("Amplitude"_ustr)
       .description("Current damped resonance amplitude envelope");
-  b.add_output<decl::Float>("Resonant Freq (f0)")
+  b.add_output<decl::Float>("Resonant Freq (f0)"_ustr)
       .description("Applied fundamental resonant frequency in Hz");
-  b.add_output<decl::Float>("Damping (Q)")
+  b.add_output<decl::Float>("Damping (Q)"_ustr)
       .description("Effective acoustic modal Q-factor / decay factor");
 
   /* Inputs */
-  b.add_input<decl::Object>("Object")
+  b.add_input<decl::Object>("Object"_ustr)
       .description("Reference object to query material BSDF and thickness (leave empty for self)");
 
-  b.add_input<decl::Float>("Trigger / Impulse")
+  b.add_input<decl::Float>("Trigger / Impulse"_ustr)
       .default_value(1.0f)
       .min(0.0f)
       .max(100.0f)
       .description("Kinetic impact energy (Joules) or audio onset impulse to excite resonance");
 
-  b.add_input<decl::Float>("Frequency")
+  b.add_input<decl::Float>("Frequency"_ustr)
       .default_value(-1.0f)
       .min(-1.0f)
       .max(10000.0f)
       .description("Fundamental frequency f0 in Hz (-1 to infer from mesh thickness and speed of sound)");
 
-  b.add_input<decl::Float>("Damping")
+  b.add_input<decl::Float>("Damping"_ustr)
       .default_value(-1.0f)
       .min(-1.0f)
       .max(500.0f)
       .description("Modal damping decay rate (-1 to infer from BSDF metallic/roughness)");
 
-  b.add_input<decl::Float>("Time")
+  b.add_input<decl::Float>("Time"_ustr)
       .default_value(-1.0f)
       .min(-1.0f)
       .description("Evaluation playback time in seconds (-1 for current scene time)");
 
-  b.add_input<decl::Float>("Amplitude Scale")
+  b.add_input<decl::Float>("Amplitude Scale"_ustr)
       .default_value(0.02f)
       .min(0.0f)
       .max(1.0f)
       .description("Visual displacement amplitude multiplier (meters)");
 
-  b.add_input<decl::Vector>("Vibration Axis")
+  b.add_input<decl::Vector>("Vibration Axis"_ustr)
       .default_value(float3(0.0f, 0.0f, 1.0f))
       .description("Primary vibration axis (defaults to Z-axis or modal normal)");
 }
@@ -98,23 +98,23 @@ static void node_geo_exec(GeoNodeExecParams params)
     return;
   }
 
-  const Object *target_ob = params.extract_input<Object *>("Object");
+  const Object *target_ob = params.extract_input<Object *>("Object"_ustr);
   if (!target_ob && params.depsgraph()) {
     /* Fallback to self object from depsgraph context if available */
   }
 
-  float time = params.extract_input<float>("Time");
+  float time = params.extract_input<float>("Time"_ustr);
   if (time < 0.0f) {
     const float scene_ctime = BKE_scene_ctime_get(scene);
     const double frame_rate = double(scene->r.frs_sec) / double(scene->r.frs_sec_base);
     time = float(scene_ctime / frame_rate);
   }
 
-  const float impulse = std::max(0.0f, params.extract_input<float>("Trigger / Impulse"));
-  float freq = params.extract_input<float>("Frequency");
-  float damping = params.extract_input<float>("Damping");
-  const float amp_scale = std::max(0.0f, params.extract_input<float>("Amplitude Scale"));
-  float3 axis = params.extract_input<float3>("Vibration Axis");
+  const float impulse = std::max(0.0f, params.extract_input<float>("Trigger / Impulse"_ustr));
+  float freq = params.extract_input<float>("Frequency"_ustr);
+  float damping = params.extract_input<float>("Damping"_ustr);
+  const float amp_scale = std::max(0.0f, params.extract_input<float>("Amplitude Scale"_ustr));
+  float3 axis = params.extract_input<float3>("Vibration Axis"_ustr);
 
   if (math::is_zero(axis)) {
     axis = float3(0.0f, 0.0f, 1.0f);
@@ -159,17 +159,17 @@ static void node_geo_exec(GeoNodeExecParams params)
   const float3 disp_vec = axis * disp_mag;
 
   /* Displace Geometry */
-  GeometrySet geometry_set = params.extract_input<GeometrySet>("Geometry");
+  GeometrySet geometry_set = params.extract_input<GeometrySet>("Geometry"_ustr);
   if (!geometry_set.is_empty()) {
     geometry::translate_geometry(geometry_set, disp_vec);
   }
 
-  params.set_output("Geometry", std::move(geometry_set));
-  params.set_output("Offset", disp_vec);
-  params.set_output("Displacement", disp_vec);
-  params.set_output("Amplitude", envelope * amp_scale);
-  params.set_output("Resonant Freq (f0)", f0);
-  params.set_output("Damping (Q)", q_factor);
+  params.set_output("Geometry"_ustr, std::move(geometry_set));
+  params.set_output("Offset"_ustr, disp_vec);
+  params.set_output("Displacement"_ustr, disp_vec);
+  params.set_output("Amplitude"_ustr, envelope * amp_scale);
+  params.set_output("Resonant Freq (f0)"_ustr, f0);
+  params.set_output("Damping (Q)"_ustr, q_factor);
 }
 
 static void node_gather_link_searches(GatherLinkSearchOpParams &params)
@@ -182,14 +182,14 @@ static void node_gather_link_searches(GatherLinkSearchOpParams &params)
         "Prop Vibration" UI_MENU_ARROW_SEP " Offset",
         [&nt](LinkSearchOpParams &p) {
           bNode &node = p.add_node(nt);
-          p.update_and_connect_available_socket(node, "Offset");
+          p.update_and_connect_available_socket(node, "Offset"_ustr);
         },
         1);
     params.add_item_full_name(
         "Impact Resonance" UI_MENU_ARROW_SEP " Offset",
         [&nt](LinkSearchOpParams &p) {
           bNode &node = p.add_node(nt);
-          p.update_and_connect_available_socket(node, "Offset");
+          p.update_and_connect_available_socket(node, "Offset"_ustr);
         },
         1);
   }
@@ -199,7 +199,7 @@ static void node_register()
 {
   static blender::bke::bNodeType ntype;
 
-  geo_node_type_base(&ntype, "GeometryNodePropVibration");
+  geo_node_type_base(&ntype, "GeometryNodePropVibration"_ustr);
   ntype.ui_name = "Surface Resonance";
   ntype.ui_description =
       "Synthesize physical damped modal vibrations driven by material BSDF, geometry thickness, "

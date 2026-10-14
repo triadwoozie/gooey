@@ -153,6 +153,8 @@ class GHOST_WindowX11 : public GHOST_Window {
 
   GHOST_TSuccess setDialogHints(GHOST_WindowX11 *parent_window);
 
+  GHOST_TSuccess beginWindowMove() override;
+
   uint16_t getDPIHint() override;
 
  protected:

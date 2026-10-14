@@ -21,26 +21,26 @@ static void node_declare(NodeDeclarationBuilder &b)
   b.use_custom_socket_order();
 
   /* Outputs */
-  b.add_output<decl::Float>("Volume").description("RMS envelope volume [0.0 to 1.0]");
-  b.add_output<decl::Float>("Onset").description("Transient attack impulse spike [0.0 to 1.0]");
-  b.add_output<decl::Float>("Pitch").description("Estimated fundamental frequency in Hz (YIN)");
-  b.add_output<decl::Bool>("Is Beat").description("True on musical rhythm beat onset");
-  b.add_output<decl::Float>("Beat Phase").description("Continuous 0.0 to 1.0 phase ramp per beat");
-  b.add_output<decl::Float>("BPM").description("Estimated tempo in beats per minute");
-  b.add_output<decl::Vector>("Viseme").description("Vowel shape factors: X=A/Open, Y=E/Wide, Z=O/Round");
+  b.add_output<decl::Float>("Volume"_ustr).description("RMS envelope volume [0.0 to 1.0]");
+  b.add_output<decl::Float>("Onset"_ustr).description("Transient attack impulse spike [0.0 to 1.0]");
+  b.add_output<decl::Float>("Pitch"_ustr).description("Estimated fundamental frequency in Hz (YIN)");
+  b.add_output<decl::Bool>("Is Beat"_ustr).description("True on musical rhythm beat onset");
+  b.add_output<decl::Float>("Beat Phase"_ustr).description("Continuous 0.0 to 1.0 phase ramp per beat");
+  b.add_output<decl::Float>("BPM"_ustr).description("Estimated tempo in beats per minute");
+  b.add_output<decl::Vector>("Viseme"_ustr).description("Vowel shape factors: X=A/Open, Y=E/Wide, Z=O/Round");
 
   /* Inputs */
-  b.add_input<decl::Object>("Speaker").description("Speaker object containing audio data");
-  b.add_input<decl::Float>("Time")
+  b.add_input<decl::Object>("Speaker"_ustr).description("Speaker object containing audio data");
+  b.add_input<decl::Float>("Time"_ustr)
       .default_value(-1.0f)
       .min(-1.0f)
       .description("Playback time in seconds (-1 for current scene time)");
-  b.add_input<decl::Float>("Sensitivity")
+  b.add_input<decl::Float>("Sensitivity"_ustr)
       .default_value(0.5f)
       .min(0.01f)
       .max(1.0f)
       .description("Onset detection sensitivity threshold");
-  b.add_input<decl::Float>("Smoothing")
+  b.add_input<decl::Float>("Smoothing"_ustr)
       .default_value(0.25f)
       .min(0.0f)
       .max(0.95f)
@@ -55,8 +55,8 @@ static void node_geo_exec(GeoNodeExecParams params)
     return;
   }
 
-  const Object *speaker_obj = params.extract_input<Object *>("Speaker");
-  float eval_time = params.extract_input<float>("Time");
+  const Object *speaker_obj = params.extract_input<Object *>("Speaker"_ustr);
+  float eval_time = params.extract_input<float>("Time"_ustr);
 
   if (eval_time < 0.0f) {
     const float scene_ctime = BKE_scene_ctime_get(scene);
@@ -64,19 +64,19 @@ static void node_geo_exec(GeoNodeExecParams params)
     eval_time = float(scene_ctime / frame_rate);
   }
 
-  const float sensitivity = params.extract_input<float>("Sensitivity");
-  const float smoothing = params.extract_input<float>("Smoothing");
+  const float sensitivity = params.extract_input<float>("Sensitivity"_ustr);
+  const float smoothing = params.extract_input<float>("Smoothing"_ustr);
 
   AudioAnalysisResult result;
   BKE_audio_analysis_evaluate(scene, speaker_obj, eval_time, sensitivity, smoothing, &result);
 
-  params.set_output("Volume", result.volume);
-  params.set_output("Onset", result.onset);
-  params.set_output("Pitch", result.pitch);
-  params.set_output("Is Beat", result.is_beat);
-  params.set_output("Beat Phase", result.beat_phase);
-  params.set_output("BPM", result.bpm);
-  params.set_output("Viseme", float3{result.viseme[0], result.viseme[1], result.viseme[2]});
+  params.set_output("Volume"_ustr, result.volume);
+  params.set_output("Onset"_ustr, result.onset);
+  params.set_output("Pitch"_ustr, result.pitch);
+  params.set_output("Is Beat"_ustr, result.is_beat);
+  params.set_output("Beat Phase"_ustr, result.beat_phase);
+  params.set_output("BPM"_ustr, result.bpm);
+  params.set_output("Viseme"_ustr, float3{result.viseme[0], result.viseme[1], result.viseme[2]});
 }
 
 static void node_gather_link_searches(GatherLinkSearchOpParams &params)
@@ -89,21 +89,21 @@ static void node_gather_link_searches(GatherLinkSearchOpParams &params)
         "Aubio Audio Analysis" UI_MENU_ARROW_SEP " Pitch",
         [&nt](LinkSearchOpParams &p) {
           bNode &node = p.add_node(nt);
-          p.update_and_connect_available_socket(node, "Pitch");
+          p.update_and_connect_available_socket(node, "Pitch"_ustr);
         },
         1);
     params.add_item_full_name(
         "Aubio" UI_MENU_ARROW_SEP " Onset Trigger",
         [&nt](LinkSearchOpParams &p) {
           bNode &node = p.add_node(nt);
-          p.update_and_connect_available_socket(node, "Onset Trigger");
+          p.update_and_connect_available_socket(node, "Onset Trigger"_ustr);
         },
         1);
     params.add_item_full_name(
         "Audio Feature Extraction" UI_MENU_ARROW_SEP " Volume",
         [&nt](LinkSearchOpParams &p) {
           bNode &node = p.add_node(nt);
-          p.update_and_connect_available_socket(node, "Volume");
+          p.update_and_connect_available_socket(node, "Volume"_ustr);
         },
         1);
   }
@@ -113,7 +113,7 @@ static void node_register()
 {
   static blender::bke::bNodeType ntype;
 
-  geo_node_type_base(&ntype, "GeometryNodeAudioAnalysis");
+  geo_node_type_base(&ntype, "GeometryNodeAudioAnalysis"_ustr);
   ntype.ui_name = "Audio Analysis";
   ntype.ui_description = "Real-time Aubio audio feature extraction (volume, onsets, pitch, beats, visemes)";
   ntype.nclass = NODE_CLASS_INPUT;

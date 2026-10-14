@@ -27,68 +27,68 @@ static void node_declare(NodeDeclarationBuilder &b)
   b.use_custom_socket_order();
 
   /* Geometry In / Out */
-  b.add_input<decl::Geometry>("Geometry")
+  b.add_input<decl::Geometry>("Geometry"_ustr)
       .description("Character face or mouth geometry to deform for speech lipsync");
-  b.add_output<decl::Geometry>("Geometry")
+  b.add_output<decl::Geometry>("Geometry"_ustr)
       .description("Deformed character geometry driven by Aubio speech analysis");
 
   /* Viseme Factor Outputs */
-  b.add_output<decl::Float>("Jaw Open")
+  b.add_output<decl::Float>("Jaw Open"_ustr)
       .description("Open vowel 'A' factor [0.0 to 1.0] for vertical jaw drop");
-  b.add_output<decl::Float>("Lip Wide")
+  b.add_output<decl::Float>("Lip Wide"_ustr)
       .description("Wide vowel 'E' factor [0.0 to 1.0] for lateral smile stretch");
-  b.add_output<decl::Float>("Lip Round")
+  b.add_output<decl::Float>("Lip Round"_ustr)
       .description("Round vowel 'O' factor [0.0 to 1.0] for forward lip pucker");
-  b.add_output<decl::Vector>("Viseme Vector")
+  b.add_output<decl::Vector>("Viseme Vector"_ustr)
       .description("Combined 3D viseme weights: (X=Open, Y=Wide, Z=Round)");
 
   /* Audio & Speaker Inputs */
-  b.add_input<decl::Object>("Speaker")
+  b.add_input<decl::Object>("Speaker"_ustr)
       .description("Speaker object containing dialog or singing audio stream");
 
-  b.add_input<decl::Float>("Time")
+  b.add_input<decl::Float>("Time"_ustr)
       .default_value(-1.0f)
       .min(-1.0f)
       .description("Playback time in seconds (-1 for current scene time)");
 
   /* Deformation Region & Falloff */
-  b.add_input<decl::Vector>("Mouth Center")
+  b.add_input<decl::Vector>("Mouth Center"_ustr)
       .default_value(float3(0.0f, 0.0f, 0.0f))
       .description("Local coordinates of mouth / lips center");
 
-  b.add_input<decl::Float>("Influence Radius")
+  b.add_input<decl::Float>("Influence Radius"_ustr)
       .default_value(0.25f)
       .min(0.001f)
       .max(10.0f)
       .description("Spherical falloff radius for lipsync vertex displacement");
 
   /* Viseme Displacement Amplitudes */
-  b.add_input<decl::Float>("Jaw Open Scale")
+  b.add_input<decl::Float>("Jaw Open Scale"_ustr)
       .default_value(0.04f)
       .min(0.0f)
       .max(1.0f)
       .description("Downward vertical displacement for open vowel 'A' (meters)");
 
-  b.add_input<decl::Float>("Lip Wide Scale")
+  b.add_input<decl::Float>("Lip Wide Scale"_ustr)
       .default_value(0.025f)
       .min(0.0f)
       .max(1.0f)
       .description("Lateral horizontal stretch for wide vowel 'E' (meters)");
 
-  b.add_input<decl::Float>("Lip Round Scale")
+  b.add_input<decl::Float>("Lip Round Scale"_ustr)
       .default_value(0.03f)
       .min(0.0f)
       .max(1.0f)
       .description("Forward protrusion displacement for round vowel 'O' (meters)");
 
   /* Aubio Detection Parameters */
-  b.add_input<decl::Float>("Sensitivity")
+  b.add_input<decl::Float>("Sensitivity"_ustr)
       .default_value(0.5f)
       .min(0.01f)
       .max(1.0f)
       .description("Aubio formant and onset detection sensitivity");
 
-  b.add_input<decl::Float>("Smoothing")
+  b.add_input<decl::Float>("Smoothing"_ustr)
       .default_value(0.25f)
       .min(0.0f)
       .max(0.95f)
@@ -103,21 +103,21 @@ static void node_geo_exec(GeoNodeExecParams params)
     return;
   }
 
-  const Object *speaker_ob = params.extract_input<Object *>("Speaker");
-  float time = params.extract_input<float>("Time");
+  const Object *speaker_ob = params.extract_input<Object *>("Speaker"_ustr);
+  float time = params.extract_input<float>("Time"_ustr);
   if (time < 0.0f) {
     const float scene_ctime = BKE_scene_ctime_get(scene);
     const double frame_rate = double(scene->r.frs_sec) / double(scene->r.frs_sec_base);
     time = float(scene_ctime / frame_rate);
   }
 
-  const float3 mouth_center = params.extract_input<float3>("Mouth Center");
-  const float radius = std::max(0.001f, params.extract_input<float>("Influence Radius"));
-  const float jaw_open_scale = params.extract_input<float>("Jaw Open Scale");
-  const float lip_wide_scale = params.extract_input<float>("Lip Wide Scale");
-  const float lip_round_scale = params.extract_input<float>("Lip Round Scale");
-  const float sensitivity = params.extract_input<float>("Sensitivity");
-  const float smoothing = params.extract_input<float>("Smoothing");
+  const float3 mouth_center = params.extract_input<float3>("Mouth Center"_ustr);
+  const float radius = std::max(0.001f, params.extract_input<float>("Influence Radius"_ustr));
+  const float jaw_open_scale = params.extract_input<float>("Jaw Open Scale"_ustr);
+  const float lip_wide_scale = params.extract_input<float>("Lip Wide Scale"_ustr);
+  const float lip_round_scale = params.extract_input<float>("Lip Round Scale"_ustr);
+  const float sensitivity = params.extract_input<float>("Sensitivity"_ustr);
+  const float smoothing = params.extract_input<float>("Smoothing"_ustr);
 
   /* Evaluate Aubio feature extraction */
   AudioAnalysisResult result;
@@ -127,7 +127,7 @@ static void node_geo_exec(GeoNodeExecParams params)
   const float lip_wide = result.viseme[1];
   const float lip_round = result.viseme[2];
 
-  GeometrySet geometry_set = params.extract_input<GeometrySet>("Geometry");
+  GeometrySet geometry_set = params.extract_input<GeometrySet>("Geometry"_ustr);
   if (geometry_set.has_mesh()) {
     Mesh *mesh = geometry_set.get_mesh_for_write();
     if (mesh) {
@@ -156,11 +156,11 @@ static void node_geo_exec(GeoNodeExecParams params)
     }
   }
 
-  params.set_output("Geometry", std::move(geometry_set));
-  params.set_output("Jaw Open", jaw_open);
-  params.set_output("Lip Wide", lip_wide);
-  params.set_output("Lip Round", lip_round);
-  params.set_output("Viseme Vector", float3(jaw_open, lip_wide, lip_round));
+  params.set_output("Geometry"_ustr, std::move(geometry_set));
+  params.set_output("Jaw Open"_ustr, jaw_open);
+  params.set_output("Lip Wide"_ustr, lip_wide);
+  params.set_output("Lip Round"_ustr, lip_round);
+  params.set_output("Viseme Vector"_ustr, float3(jaw_open, lip_wide, lip_round));
 }
 
 static void node_gather_link_searches(GatherLinkSearchOpParams &params)
@@ -173,14 +173,14 @@ static void node_gather_link_searches(GatherLinkSearchOpParams &params)
         "Mouth Shapes" UI_MENU_ARROW_SEP " Offset",
         [&nt](LinkSearchOpParams &p) {
           bNode &node = p.add_node(nt);
-          p.update_and_connect_available_socket(node, "Offset");
+          p.update_and_connect_available_socket(node, "Offset"_ustr);
         },
         1);
     params.add_item_full_name(
         "Speech Visemes" UI_MENU_ARROW_SEP " Offset",
         [&nt](LinkSearchOpParams &p) {
           bNode &node = p.add_node(nt);
-          p.update_and_connect_available_socket(node, "Offset");
+          p.update_and_connect_available_socket(node, "Offset"_ustr);
         },
         1);
   }
@@ -190,7 +190,7 @@ static void node_register()
 {
   static blender::bke::bNodeType ntype;
 
-  geo_node_type_base(&ntype, "GeometryNodeMouthShapes");
+  geo_node_type_base(&ntype, "GeometryNodeMouthShapes"_ustr);
   ntype.ui_name = "Speech Viseme Deformer";
   ntype.ui_description =
       "Deform character mouth geometry automatically driven by Aubio acoustic speech visemes "

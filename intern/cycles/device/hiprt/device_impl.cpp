@@ -74,6 +74,13 @@ bool HIPRTDevice::is_supported()
    * future update we'll make HIP-RT consistent, and this code can be removed. */
   const vector<const char *> hip_paths = {
       "libamdhip64.so",
+      "libamdhip64.so.7",
+      "libamdhip64.so.6",
+      "/lib64/libamdhip64.so",
+      "/lib64/libamdhip64.so.7",
+      "/usr/lib64/libamdhip64.so",
+      "/usr/lib64/libamdhip64.so.7",
+      "/usr/lib/x86_64-linux-gnu/libamdhip64.so",
       "/opt/rocm/lib/libamdhip64.so",
       "/opt/rocm/hip/lib/libamdhip64.so",
   };
