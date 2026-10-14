@@ -5,12 +5,13 @@
 set(INC
   .
   ..
-  ../intern
-  ../../editors/include
-  ../../makesrna
-  ../../../../intern/sky/include
+  PUBLIC include
+  PRIVATE ../intern
+  PRIVATE ../../editors/include
+  PRIVATE ../../makesrna
+  PRIVATE ../../../../intern/sky/include
   # RNA_prototypes.hh
-  ${CMAKE_BINARY_DIR}/source/blender/makesrna
+  PRIVATE ${CMAKE_BINARY_DIR}/source/blender/makesrna
 )
 
 set(INC_SYS
@@ -42,26 +43,7 @@ set(SRC
   nodes/node_shader_clamp.cc
   nodes/node_shader_color_ramp.cc
   nodes/node_shader_common.cc
-  nodes/node_shader_curvature.cc
   nodes/node_shader_curves.cc
-  nodes/node_shader_light_info.cc
-  nodes/node_shader_oklab_color_ramp.cc
-  nodes/node_shader_screenspace_info.cc
-  nodes/node_shader_sdf_noise.cc
-  nodes/node_shader_sdf_op.cc
-  nodes/node_shader_sdf_primitive.cc
-  nodes/node_shader_sdf_vector_op.cc
-  nodes/node_shader_set_depth.cc
-  nodes/node_shader_shader_info.cc
-  nodes/node_shader_tex_hexagon.cc
-  nodes/node_shader_twirl.cc
-  nodes/node_shader_water_ripples.cc
-  nodes/node_shader_light_accumulator.cc
-  nodes/node_shader_light_data.cc
-  nodes/node_shader_shadow.cc
-  nodes/node_shader_light_evaluation.cc
-  nodes/node_shader_filter_blur.cc
-  nodes/node_shader_filter_sharpen.cc
   nodes/node_shader_displacement.cc
   nodes/node_shader_eevee_specular.cc
   nodes/node_shader_emission.cc
@@ -92,12 +74,12 @@ set(SRC
   nodes/node_shader_output_world.cc
   nodes/node_shader_particle_info.cc
   nodes/node_shader_point_info.cc
+  nodes/node_shader_radial_tiling.cc
+  nodes/node_shader_raycast.cc
   nodes/node_shader_rgb.cc
   nodes/node_shader_rgb_to_bw.cc
   nodes/node_shader_script.cc
   nodes/node_shader_sepcomb_color.cc
-  nodes/node_shader_sepcomb_hsv.cc
-  nodes/node_shader_sepcomb_rgb.cc
   nodes/node_shader_sepcomb_xyz.cc
   nodes/node_shader_shader_to_rgb.cc
   nodes/node_shader_squeeze.cc
@@ -112,11 +94,23 @@ set(SRC
   nodes/node_shader_tex_image.cc
   nodes/node_shader_tex_magic.cc
   nodes/node_shader_tex_noise.cc
-  nodes/node_shader_tex_pointdensity.cc
   nodes/node_shader_tex_sky.cc
   nodes/node_shader_tex_voronoi.cc
   nodes/node_shader_tex_wave.cc
   nodes/node_shader_tex_white_noise.cc
+  nodes/node_shader_light_info.cc
+  nodes/node_shader_oklab_color_ramp.cc
+  nodes/node_shader_tex_hexagon.cc
+  nodes/node_shader_sdf_op.cc
+  nodes/node_shader_sdf_vector_op.cc
+  nodes/node_shader_sdf_primitive.cc
+  nodes/node_shader_curvature.cc
+  nodes/node_shader_screenspace_info.cc
+  nodes/node_shader_shader_info.cc
+  nodes/node_shader_set_depth.cc
+  nodes/node_shader_sdf_noise.cc
+  nodes/node_shader_twirl.cc
+  nodes/node_shader_water_ripples.cc
   nodes/node_shader_uv_along_stroke.cc
   nodes/node_shader_uvmap.cc
   nodes/node_shader_value.cc
@@ -139,11 +133,14 @@ set(SRC
 
   node_shader_register.hh
   node_shader_util.hh
+
+  include/NOD_shader_raycast.hh
 )
 
 set(LIB
   PRIVATE bf::blenkernel
   PRIVATE bf::blenlib
+  PRIVATE bf::blenloader
   PRIVATE bf::blentranslation
   PRIVATE bf::depsgraph
   PRIVATE bf::dna
@@ -152,6 +149,7 @@ set(LIB
   PRIVATE bf::imbuf
   PRIVATE bf::intern::clog
   PRIVATE bf::intern::guardedalloc
+  PRIVATE bf::extern::xxhash
   bf_intern_sky
   bf_nodes
   PRIVATE bf::render
@@ -180,9 +178,8 @@ if(WITH_MATERIALX)
 
   if(WITH_USD)
     add_definitions(-DWITH_USD)
-    list(APPEND INC_SYS
-      ${USD_INCLUDE_DIRS}
-      ${BOOST_INCLUDE_DIR}
+    list(APPEND LIB
+      PRIVATE bf::dependencies::optional::usd
     )
   endif()
 endif()
@@ -191,15 +188,8 @@ if(WITH_FREESTYLE)
   add_definitions(-DWITH_FREESTYLE)
 endif()
 
-if(WITH_TBB)
-  if(WIN32)
-    # TBB includes Windows.h which will define min/max macros
-    # that will collide with the STL versions.
-    add_definitions(-DNOMINMAX)
-  endif()
-endif()
-
 blender_add_lib(bf_nodes_shader "${SRC}" "${INC}" "${INC_SYS}" "${LIB}")
+add_library(bf::nodes::shader ALIAS bf_nodes_shader)
 
 blender_set_target_unity_build(bf_nodes_shader 10)
 

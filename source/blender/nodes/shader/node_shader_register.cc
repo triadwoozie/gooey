@@ -6,6 +6,8 @@
 
 #include "node_shader_register.hh"
 
+namespace blender {
+
 void register_shader_nodes()
 {
   register_node_tree_type_sh();
@@ -36,8 +38,6 @@ void register_shader_nodes()
   register_node_type_sh_camera();
   register_node_type_sh_clamp();
   register_node_type_sh_combcolor();
-  register_node_type_sh_combhsv();
-  register_node_type_sh_combrgb();
   register_node_type_sh_combxyz();
   register_node_type_sh_curve_float();
   register_node_type_sh_curve_rgb();
@@ -71,12 +71,12 @@ void register_shader_nodes()
   register_node_type_sh_output_world();
   register_node_type_sh_particle_info();
   register_node_type_sh_point_info();
+  register_node_type_sh_radial_tiling();
+  register_node_type_sh_raycast();
   register_node_type_sh_rgb();
   register_node_type_sh_rgbtobw();
   register_node_type_sh_script();
   register_node_type_sh_sepcolor();
-  register_node_type_sh_sephsv();
-  register_node_type_sh_seprgb();
   register_node_type_sh_sepxyz();
   register_node_type_sh_shadertorgb();
   register_node_type_sh_squeeze();
@@ -92,11 +92,23 @@ void register_shader_nodes()
   register_node_type_sh_tex_image();
   register_node_type_sh_tex_magic();
   register_node_type_sh_tex_noise();
-  register_node_type_sh_tex_pointdensity();
   register_node_type_sh_tex_sky();
   register_node_type_sh_tex_voronoi();
   register_node_type_sh_tex_wave();
   register_node_type_sh_tex_white_noise();
+  register_node_type_sh_light_info();
+  register_node_type_sh_oklab_color_ramp();
+  register_node_type_sh_tex_hexagon();
+  register_node_type_sh_sdf_op();
+  register_node_type_sh_sdf_vector_op();
+  register_node_type_sh_sdf_primitive();
+  register_node_type_sh_curvature();
+  register_node_type_sh_screenspace_info();
+  register_node_type_sh_shader_info();
+  register_node_type_sh_set_depth();
+  register_node_type_sh_sdf_noise();
+  register_node_type_sh_twirl();
+  register_node_type_sh_water_ripples();
   register_node_type_sh_uvalongstroke();
   register_node_type_sh_uvmap();
   register_node_type_sh_valtorgb();
@@ -113,25 +125,6 @@ void register_shader_nodes()
   register_node_type_sh_volume_coefficients();
   register_node_type_sh_wavelength();
   register_node_type_sh_wireframe();
-
-  register_node_type_sh_curvature();
-  register_node_type_sh_light_info();
-  register_node_type_sh_oklab_color_ramp();
-  register_node_type_sh_screenspace_info();
-  register_node_type_sh_sdf_noise();
-  register_node_type_sh_sdf_op();
-  register_node_type_sh_sdf_primitive();
-  register_node_type_sh_sdf_vector_op();
-  register_node_type_sh_set_depth();
-  register_node_type_sh_shader_info();
-  register_node_type_sh_tex_hexagon();
-  register_node_type_sh_twirl();
-  register_node_type_sh_water_ripples();
-
-  register_node_type_sh_light_accumulator();
-  register_node_type_sh_light_data();
-  register_node_type_sh_shadow();
-  register_node_type_sh_light_evaluation();
-  register_node_type_sh_filter_blur();
-  register_node_type_sh_filter_sharpen();
 }
+
+}  // namespace blender
