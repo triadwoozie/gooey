@@ -13,6 +13,7 @@ if "bpy" in locals():
 _modules = [
     "anim",
     "asset_shelf",
+    "camera_shake",
     "node_add_menu",
     "node_add_menu_compositor",
     "node_add_menu_geometry",
@@ -125,6 +126,10 @@ def register():
     space_filebrowser.register_props()
     properties_paint_common.register()
 
+    for mod in _modules_loaded:
+        if hasattr(mod, "register_props"):
+            mod.register_props()
+
     from bpy.props import (
         EnumProperty,
         StringProperty,
@@ -190,6 +195,8 @@ def unregister():
     properties_paint_common.unregister()
 
     for mod in reversed(_modules_loaded):
+        if hasattr(mod, "unregister_props"):
+            mod.unregister_props()
         for cls in reversed(mod.classes):
             if cls.is_registered:
                 unregister_class(cls)
