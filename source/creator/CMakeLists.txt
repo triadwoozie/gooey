@@ -1996,14 +1996,14 @@ if((DEFINED LIBDIR) AND TARGETDIR_LIB)
       install(DIRECTORY ${LIBDIR}/usd/plugin/usd/ DESTINATION "blender.shared/usd")
     elseif(USD_PYTHON_SUPPORT)
       install(DIRECTORY
-        ${USD_LIBRARY_DIR}/usd
-        DESTINATION ${TARGETDIR_LIB}
+        ${LIBDIR}/usd/lib/usd/
+        DESTINATION ${TARGETDIR_LIB}/usd
       )
       install(DIRECTORY ${LIBDIR}/usd/plugin/usd/ DESTINATION ${TARGETDIR_LIB}/usd)
     else()
       install(DIRECTORY
-        ${USD_LIBRARY_DIR}/usd
-        DESTINATION "${TARGETDIR_VER}/datafiles"
+        ${LIBDIR}/usd/lib/usd/
+        DESTINATION "${TARGETDIR_VER}/datafiles/usd"
       )
       install(DIRECTORY ${LIBDIR}/usd/plugin/usd/ DESTINATION "${TARGETDIR_VER}/datafiles/usd")
     endif()
