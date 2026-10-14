@@ -32,7 +32,6 @@
 #include "plugins/phonon/phonon_scene.h"
 #include "plugins/phonon/phonon_dsp.h"
 #include "plugins/phonon/phonon_simulator.h"
-#include "plugins/phonon/phonon_sound.h"
 
 #include "BKE_global.hh"
 #include <chrono>
@@ -399,15 +398,8 @@ void BKE_acoustics_scene_update_audio(Depsgraph *depsgraph, Scene *scene)
     float rel_direction[3] = {0.0f, 0.0f, -1.0f};
     phonon_simulator_source_simulate(source, &occlusion, transmission, &distance_atten, rel_direction);
 
-    /* Push simulation results directly to the live PhononReader for this speaker.
-     * This is the real DSP path: phonon_dsp_process() will apply occlusion, transmission EQ,
-     * distance attenuation, and HRTF binaural spatialization on every audio frame. */
-    aud::phonon_sound_update_reader_params(
-        static_cast<const void *>(ob_eval),
-        occlusion,
-        transmission,
-        distance_atten,
-        rel_direction);
+    /* Update DSP effect processor parameters for this speaker */
+    phonon_speaker_dsp_update(ob_eval, occlusion, transmission, distance_atten, rel_direction);
   }
   DEG_OBJECT_ITER_END;
 

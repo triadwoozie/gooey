@@ -238,8 +238,12 @@ class CANVAS_OT_create(Operator):
                 target_img.scale(res_x, res_y)
 
         # 8. Setup Dedicated Compositor Graph with White Background Alpha Over
-        scene.use_nodes = True
-        tree = scene.node_tree
+        tree = getattr(scene, "node_tree", None)
+        if not tree and hasattr(scene, "compositing_node_group"):
+            if not scene.compositing_node_group:
+                scene.compositing_node_group = bpy.data.node_groups.new("Compositor", "CompositorNodeTree")
+            tree = scene.compositing_node_group
+
         if tree:
             rl_node = None
             for node in tree.nodes:
@@ -254,18 +258,26 @@ class CANVAS_OT_create(Operator):
             comp_node = None
             viewer_node = None
             for node in tree.nodes:
-                if node.type == 'COMPOSITE':
+                if node.type in {'COMPOSITE', 'GROUP_OUTPUT'}:
                     comp_node = node
                 elif node.type == 'VIEWER':
                     viewer_node = node
 
             if not comp_node:
-                comp_node = tree.nodes.new(type='CompositorNodeComposite')
+                try:
+                    comp_node = tree.nodes.new(type='CompositorNodeComposite')
+                except Exception:
+                    if hasattr(tree, "interface") and not tree.interface.items_tree:
+                        tree.interface.new_socket('Image', in_out='OUTPUT', socket_type='NodeSocketColor')
+                    comp_node = tree.nodes.new(type='NodeGroupOutput')
                 comp_node.location = (400, 200)
 
             if not viewer_node:
-                viewer_node = tree.nodes.new(type='CompositorNodeViewer')
-                viewer_node.location = (400, -50)
+                try:
+                    viewer_node = tree.nodes.new(type='CompositorNodeViewer')
+                    viewer_node.location = (400, -50)
+                except Exception:
+                    pass
 
             # Alpha Over node with white background
             alpha_over_node = None
@@ -287,8 +299,10 @@ class CANVAS_OT_create(Operator):
                 # Foreground image is socket index 2 (Image_001)
                 tree.links.new(rl_node.outputs["Image"], alpha_over_node.inputs[2])
 
-            if comp_node and "Image" in comp_node.inputs:
-                tree.links.new(alpha_over_node.outputs["Image"], comp_node.inputs["Image"])
+            if comp_node:
+                out_socket = comp_node.inputs.get("Image") or (comp_node.inputs[0] if comp_node.inputs else None)
+                if out_socket:
+                    tree.links.new(alpha_over_node.outputs["Image"], out_socket)
             if viewer_node and "Image" in viewer_node.inputs:
                 tree.links.new(alpha_over_node.outputs["Image"], viewer_node.inputs["Image"])
 

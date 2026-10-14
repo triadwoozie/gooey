@@ -15,6 +15,7 @@ _modules = [
     "anim",
     "assets",
     "bone_selection_sets",
+    "canvas",
     "clip",
     "connect_to_output",
     "console",

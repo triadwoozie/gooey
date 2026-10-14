@@ -24,8 +24,6 @@ set(SRC
   plugins/phonon/phonon_simulator.h
   plugins/phonon/phonon_reader.cc
   plugins/phonon/phonon_reader.h
-  plugins/phonon/phonon_sound.cc
-  plugins/phonon/phonon_sound.h
   plugins/phonon/phonon_modal_synth.cc
   plugins/phonon/phonon_modal_synth.h
 )

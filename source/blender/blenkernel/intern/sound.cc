@@ -93,7 +93,6 @@
 
 #ifdef WITH_STEAM_AUDIO
 #  include "BKE_acoustics_scene.hh"
-#  include "plugins/phonon/phonon_sound.h"
 #endif
 
 #include "DEG_depsgraph.hh"
@@ -1399,22 +1398,8 @@ static void sound_update_base(Scene *scene, Object *object, Set<AUD_SequenceEntr
       }
       else {
         if (speaker->sound) {
-          AUD_Sound raw_sound = speaker->sound->runtime->playback_handle;
-#ifdef WITH_STEAM_AUDIO
-          /* Wrap the raw sound in a PhononSound so every audio frame is routed through
-           * Steam Audio's direct effect (occlusion, transmission EQ, distance attenuation)
-           * and binaural HRTF spatialization.  The PhononReader self-registers so the
-           * acoustic simulation thread can push per-frame parameters to it. */
-          const bool steam_active =
-              (scene->flag_audio & SCENE_AUDIO_USE_STEAM_AUDIO) &&
-              (scene->flag_audio & SCENE_AUDIO_STEAM_VIEWPORT);
-          if (steam_active && raw_sound) {
-            raw_sound = AUD_Sound(
-                std::make_shared<aud::PhononSound>(raw_sound, static_cast<const void *>(object)));
-          }
-#endif
           strip_runtime.speaker_handle = AUD_SequenceEntry(scene->runtime->audio.sound_scene->add(
-              raw_sound,
+              speaker->sound->runtime->playback_handle,
               double(strip.start) / scene->frames_per_second(),
               FLT_MAX,
               0));
@@ -1444,26 +1429,7 @@ static void sound_update_base(Scene *scene, Object *object, Set<AUD_SequenceEntr
             strip_runtime.speaker_handle, aud::AP_VOLUME, scene->r.cfra, &speaker->volume, true);
         set_audaspace_anim_property(
             strip_runtime.speaker_handle, aud::AP_PITCH, scene->r.cfra, &speaker->pitch, true);
-
-#ifdef WITH_STEAM_AUDIO
-        {
-          /* When Steam Audio is active, setSound must also re-wrap through PhononSound
-           * so re-played sounds don't bypass the DSP chain. */
-          const bool steam_active =
-              (scene->flag_audio & SCENE_AUDIO_USE_STEAM_AUDIO) &&
-              (scene->flag_audio & SCENE_AUDIO_STEAM_VIEWPORT);
-          if (steam_active && speaker->sound && speaker->sound->runtime->playback_handle) {
-            AUD_Sound wrapped_sound(std::make_shared<aud::PhononSound>(
-                speaker->sound->runtime->playback_handle, static_cast<const void *>(object)));
-            strip_runtime.speaker_handle->setSound(wrapped_sound);
-          }
-          else {
-            strip_runtime.speaker_handle->setSound(speaker->sound->runtime->playback_handle);
-          }
-        }
-#else
         strip_runtime.speaker_handle->setSound(speaker->sound->runtime->playback_handle);
-#endif
         strip_runtime.speaker_handle->mute(mute);
       }
     }
