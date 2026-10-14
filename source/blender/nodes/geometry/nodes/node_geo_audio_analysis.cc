@@ -4,6 +4,7 @@
 
 #include "BKE_audio_analysis.hh"
 #include "BKE_scene.hh"
+#include "DNA_sound_types.h"
 
 #include "DEG_depsgraph_query.hh"
 
@@ -30,6 +31,7 @@ static void node_declare(NodeDeclarationBuilder &b)
   b.add_output<decl::Vector>("Viseme"_ustr).description("Vowel shape factors: X=A/Open, Y=E/Wide, Z=O/Round");
 
   /* Inputs */
+  b.add_input<decl::Sound>("Sound"_ustr).description("Direct Sound datablock to sample (SOCK_SOUND)");
   b.add_input<decl::Object>("Speaker"_ustr).description("Speaker object containing audio data");
   b.add_input<decl::Float>("Time"_ustr)
       .default_value(-1.0f)
@@ -55,6 +57,7 @@ static void node_geo_exec(GeoNodeExecParams params)
     return;
   }
 
+  const bSound *sound_datablock = params.extract_input<bSound *>("Sound"_ustr);
   const Object *speaker_obj = params.extract_input<Object *>("Speaker"_ustr);
   float eval_time = params.extract_input<float>("Time"_ustr);
 
@@ -68,7 +71,7 @@ static void node_geo_exec(GeoNodeExecParams params)
   const float smoothing = params.extract_input<float>("Smoothing"_ustr);
 
   AudioAnalysisResult result;
-  BKE_audio_analysis_evaluate(scene, speaker_obj, eval_time, sensitivity, smoothing, &result);
+  BKE_audio_analysis_evaluate_ex(scene, speaker_obj, sound_datablock, eval_time, sensitivity, smoothing, &result);
 
   params.set_output("Volume"_ustr, result.volume);
   params.set_output("Onset"_ustr, result.onset);

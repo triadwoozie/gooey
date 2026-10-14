@@ -5,6 +5,7 @@
 #include "BKE_audio_analysis.hh"
 #include "BKE_mesh.hh"
 #include "BKE_scene.hh"
+#include "DNA_sound_types.h"
 
 #include "BLI_math_vector.hh"
 
@@ -43,6 +44,8 @@ static void node_declare(NodeDeclarationBuilder &b)
       .description("Combined 3D viseme weights: (X=Open, Y=Wide, Z=Round)");
 
   /* Audio & Speaker Inputs */
+  b.add_input<decl::Sound>("Sound"_ustr)
+      .description("Direct Sound datablock to sample (SOCK_SOUND)");
   b.add_input<decl::Object>("Speaker"_ustr)
       .description("Speaker object containing dialog or singing audio stream");
 
@@ -103,6 +106,7 @@ static void node_geo_exec(GeoNodeExecParams params)
     return;
   }
 
+  const bSound *sound_datablock = params.extract_input<bSound *>("Sound"_ustr);
   const Object *speaker_ob = params.extract_input<Object *>("Speaker"_ustr);
   float time = params.extract_input<float>("Time"_ustr);
   if (time < 0.0f) {
@@ -121,7 +125,7 @@ static void node_geo_exec(GeoNodeExecParams params)
 
   /* Evaluate Aubio feature extraction */
   AudioAnalysisResult result;
-  BKE_audio_analysis_evaluate(scene, speaker_ob, time, sensitivity, smoothing, &result);
+  BKE_audio_analysis_evaluate_ex(scene, speaker_ob, sound_datablock, time, sensitivity, smoothing, &result);
 
   const float jaw_open = result.viseme[0];
   const float lip_wide = result.viseme[1];

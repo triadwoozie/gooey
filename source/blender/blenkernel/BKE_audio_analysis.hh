@@ -7,11 +7,20 @@
 #include "BLI_sys_types.h"
 #include <stdbool.h>
 
+#ifdef __cplusplus
+#include "DNA_sound_types.h"
+namespace blender {
 struct Scene;
 struct Object;
-
-#ifdef __cplusplus
+}
+using blender::Scene;
+using blender::Object;
+using blender::bSound;
 extern "C" {
+#else
+struct Scene;
+struct Object;
+struct bSound;
 #endif
 
 typedef struct AudioAnalysisResult {
@@ -33,6 +42,14 @@ void BKE_audio_analysis_evaluate(const struct Scene *scene,
                                  float sensitivity,
                                  float smoothing,
                                  AudioAnalysisResult *r_result);
+
+void BKE_audio_analysis_evaluate_ex(const struct Scene *scene,
+                                    const struct Object *speaker_ob,
+                                    const bSound *sound_datablock,
+                                    float time,
+                                    float sensitivity,
+                                    float smoothing,
+                                    AudioAnalysisResult *r_result);
 
 #ifdef __cplusplus
 }

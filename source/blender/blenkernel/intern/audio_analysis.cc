@@ -35,6 +35,17 @@ void BKE_audio_analysis_evaluate(const Scene *scene,
                                  float smoothing,
                                  AudioAnalysisResult *r_result)
 {
+  BKE_audio_analysis_evaluate_ex(scene, speaker_ob, nullptr, time, sensitivity, smoothing, r_result);
+}
+
+void BKE_audio_analysis_evaluate_ex(const Scene *scene,
+                                    const Object *speaker_ob,
+                                    const bSound *sound_datablock,
+                                    float time,
+                                    float sensitivity,
+                                    float smoothing,
+                                    AudioAnalysisResult *r_result)
+{
   (void)scene;
   if (!r_result) {
     return;
@@ -60,23 +71,25 @@ void BKE_audio_analysis_evaluate(const Scene *scene,
 
   bool has_audio_data = false;
 
-  /* Check if speaker object has active sound data */
-  if (speaker_ob && speaker_ob->type == OB_SPEAKER && speaker_ob->data) {
+  /* Check for direct sound datablock or sound inside speaker object */
+  const blender::bSound *sound = sound_datablock;
+  if (!sound && speaker_ob && speaker_ob->type == OB_SPEAKER && speaker_ob->data) {
     const Speaker *speaker = reinterpret_cast<const Speaker *>(speaker_ob->data);
-    const blender::bSound *sound = speaker->sound;
-    if (sound) {
-      const blender::Vector<float> *waveform = blender::BKE_sound_runtime_get_waveform(sound);
-      if (waveform && !waveform->is_empty()) {
-        const int num_samples = waveform->size() / 3;
-        const int center_idx = static_cast<int>(time * SOUND_WAVE_SAMPLES_PER_SECOND);
-        for (int i = 0; i < win_size; i++) {
-          int idx = center_idx + (i - win_size / 2);
-          if (idx >= 0 && idx < num_samples) {
-            samples[i] = (*waveform)[idx * 3 + 1];
-          }
+    sound = speaker->sound;
+  }
+
+  if (sound) {
+    const blender::Vector<float> *waveform = blender::BKE_sound_runtime_get_waveform(sound);
+    if (waveform && !waveform->is_empty()) {
+      const int num_samples = waveform->size() / 3;
+      const int center_idx = static_cast<int>(time * SOUND_WAVE_SAMPLES_PER_SECOND);
+      for (int i = 0; i < win_size; i++) {
+        int idx = center_idx + (i - win_size / 2);
+        if (idx >= 0 && idx < num_samples) {
+          samples[i] = (*waveform)[idx * 3 + 1];
         }
-        has_audio_data = true;
       }
+      has_audio_data = true;
     }
   }
 
