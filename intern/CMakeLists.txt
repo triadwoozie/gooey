@@ -16,6 +16,10 @@ add_subdirectory(sky)
 
 add_subdirectory(openvdb)
 
+if(WITH_STEAM_AUDIO)
+  add_subdirectory(audaspace)
+endif()
+
 if(WITH_MOD_REMESH)
   add_subdirectory(dualcon)
 endif()

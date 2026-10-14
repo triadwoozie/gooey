@@ -309,10 +309,13 @@ GHOST_WindowX11::GHOST_WindowX11(GHOST_SystemX11 *system,
     XSetWMHints(display, window_, xwmhints);
     XFree(xwmhints);
   }
-  /* Controlled via the `--no-window-frame` CLI argument and wont change at run-time.
-   * Set this once and never change. */
-  if (GHOST_ISystem::getUseWindowFrame() == false) {
+  /* Suppress system window frame for main window on X11, while preserving
+   * system decorations for subwindows (preferences, dialogs). */
+  if (GHOST_ISystem::getUseWindowFrame() == false || parent_window == nullptr) {
     motifShowWindowFrame(false);
+  }
+  else {
+    motifShowWindowFrame(true);
   }
 
   /* set the icon */

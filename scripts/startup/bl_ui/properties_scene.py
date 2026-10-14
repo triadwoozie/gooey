@@ -299,6 +299,45 @@ class SCENE_PT_audio(SceneButtonsPanel, Panel):
         layout.operator("sound.bake_animation")
 
 
+class SCENE_PT_steam_audio(SceneButtonsPanel, Panel):
+    bl_label = "Steam Audio (Phonon)"
+    bl_parent_id = "SCENE_PT_audio"
+    bl_options = {'DEFAULT_CLOSED'}
+
+    def draw_header(self, context):
+        self.layout.prop(context.scene, "use_steam_audio", text="")
+
+    def draw(self, context):
+        layout = self.layout
+        layout.use_property_split = True
+        layout.active = context.scene.use_steam_audio
+
+        scene = context.scene
+
+        speakers = [ob for ob in scene.objects if ob.type == 'SPEAKER']
+        meshes = [ob for ob in scene.objects if ob.type == 'MESH']
+
+        col = layout.column(align=True)
+        col.label(text=f"Active Speakers: {len(speakers)}", icon='SPEAKER')
+        col.label(text=f"Scene Meshes: {len(meshes)}", icon='MESH_DATA')
+        col.label(text="Binaural Spatialization: HRTF", icon='SOUND')
+        col.label(text="Direct Raytracing: Occlusion & Transmission EQ", icon='LIGHT_SUN')
+
+        layout.separator()
+
+        col = layout.column(align=True)
+        col.prop(scene, "steam_audio_viewport", text="Use in Viewport")
+        col.prop(scene, "steam_audio_render", text="Use in Render")
+        col.prop(scene, "steam_audio_all_meshes", text="Simulate All Meshes")
+
+        layout.separator()
+
+        col = layout.column(align=True)
+        col.operator("sound.mixdown", text="Render Audio Mixdown (Phonon)", icon='RENDER_ANIMATION')
+        col.operator("scene.steam_audio_transition_scene", text="Transition Entire Scene to Phonon", icon='SCENE_DATA')
+        col.operator("scene.steam_audio_sync_meshes", text="Rebuild Acoustic Mesh Scene", icon='FILE_REFRESH')
+
+
 class SCENE_PT_physics(SceneButtonsPanel, Panel):
     bl_label = "Gravity"
     bl_options = {'DEFAULT_CLOSED'}
@@ -480,6 +519,7 @@ classes = (
     SCENE_PT_keying_set_paths,
     SCENE_PT_keyframing_settings,
     SCENE_PT_audio,
+    SCENE_PT_steam_audio,
     SCENE_PT_rigid_body_world,
     SCENE_PT_rigid_body_world_settings,
     SCENE_PT_rigid_body_cache,

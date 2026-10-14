@@ -8,12 +8,10 @@
 
 #include "BLI_sys_types.h"
 
+namespace blender {
+
 struct Depsgraph;
 struct Scene;
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /**
  * Initialize acoustics subsystem if needed.
@@ -41,8 +39,6 @@ void BKE_acoustics_scene_sync_ex(struct Depsgraph *depsgraph, struct Scene *scen
  */
 void BKE_acoustics_scene_update_audio(struct Depsgraph *depsgraph, struct Scene *scene);
 
-#ifdef __cplusplus
-}
-#endif
+}  // namespace blender
 
 #endif /* WITH_STEAM_AUDIO */

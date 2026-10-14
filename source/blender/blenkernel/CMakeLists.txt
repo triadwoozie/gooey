@@ -634,6 +634,37 @@ if(WITH_BULLET)
   )
 endif()
 
+if(WITH_STEAM_AUDIO)
+  list(APPEND INC
+    ../../../intern/audaspace
+  )
+  list(APPEND INC_SYS
+    ${STEAM_AUDIO_INCLUDE_DIR}
+  )
+  list(APPEND SRC
+    intern/acoustics_scene.cc
+    BKE_acoustics_scene.hh
+    intern/acoustics_inference.cc
+    BKE_acoustics_inference.hh
+  )
+  list(APPEND LIB
+    bf_intern_audaspace
+    ${STEAM_AUDIO_LIBRARY}
+  )
+  add_definitions(-DWITH_STEAM_AUDIO)
+endif()
+
+list(APPEND INC
+  ../../../extern/aubio/src
+)
+list(APPEND SRC
+  intern/audio_analysis.cc
+  BKE_audio_analysis.hh
+)
+list(APPEND LIB
+  extern_aubio
+)
+
 if(WITH_IMAGE_OPENJPEG)
   add_definitions(-DWITH_IMAGE_OPENJPEG)
 endif()

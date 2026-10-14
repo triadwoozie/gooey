@@ -3200,7 +3200,9 @@ bool WM_window_is_csd(const wmWindow *win)
     if (win) {
       const GHOST_IWindow *ghost_window = static_cast<const GHOST_IWindow *>(
           win->runtime ? win->runtime->ghostwin : nullptr);
-      if (win->parent != nullptr || (ghost_window && ghost_window->isDialog())) {
+      const bScreen *screen = WM_window_get_active_screen(win);
+      const bool is_temp = screen && screen->temp;
+      if (win->parent != nullptr || (ghost_window && ghost_window->isDialog()) || is_temp) {
         return true;
       }
     }

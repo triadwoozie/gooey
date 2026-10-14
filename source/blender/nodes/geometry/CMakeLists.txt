@@ -7,6 +7,7 @@ set(INC
   ..
   include
   ../intern
+  ../../blenkernel
   ../../editors/include
   ../../compositor
   ../../makesrna
@@ -32,12 +33,15 @@ set(SRC
   nodes/node_geo_attribute_capture.cc
   nodes/node_geo_attribute_domain_size.cc
   nodes/node_geo_attribute_statistic.cc
+  nodes/node_geo_audio_analysis.cc
+  nodes/node_geo_audio_tsm.cc
   nodes/node_geo_bake.cc
   nodes/node_geo_blur_attribute.cc
   nodes/node_geo_bone_info.cc
   nodes/node_geo_boolean.cc
   nodes/node_geo_bounding_box.cc
   nodes/node_geo_camera_info.cc
+  nodes/node_geo_camera_shake.cc
   nodes/node_geo_closure_to_list.cc
   nodes/node_geo_closure.cc
   nodes/node_geo_cluster_by_connected.cc
@@ -210,6 +214,7 @@ set(SRC
   nodes/node_geo_mesh_topology_offset_corner_in_face.cc
   nodes/node_geo_mesh_topology_vertex_of_corner.cc
   nodes/node_geo_mouse_position.cc
+  nodes/node_geo_mouth_shapes.cc
   nodes/node_geo_object_info.cc
   nodes/node_geo_offset_point_in_curve.cc
   nodes/node_geo_points.cc
@@ -217,6 +222,7 @@ set(SRC
   nodes/node_geo_points_to_sdf_grid.cc
   nodes/node_geo_points_to_vertices.cc
   nodes/node_geo_points_to_volume.cc
+  nodes/node_geo_prop_vibration.cc
   nodes/node_geo_proximity.cc
   nodes/node_geo_raycast.cc
   nodes/node_geo_realize_instances.cc
@@ -378,6 +384,13 @@ endif()
 
 if(WITH_OPENSUBDIV)
   add_definitions(-DWITH_OPENSUBDIV)
+endif()
+
+if(WITH_STEAM_AUDIO)
+  list(APPEND INC_SYS
+    ${STEAM_AUDIO_INCLUDE_DIR}
+  )
+  add_definitions(-DWITH_STEAM_AUDIO)
 endif()
 
 add_node_discovery(

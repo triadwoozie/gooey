@@ -80,7 +80,7 @@ RenderEngineType DRW_engine_viewport_eevee_type = {
     /*next*/ nullptr,
     /*prev*/ nullptr,
     /*idname*/ "BLENDER_EEVEE",
-    /*name*/ N_("EEVEE"),
+    /*name*/ N_("Goo EEVEE"),
     /*flag*/ RE_INTERNAL | RE_USE_PREVIEW | RE_USE_STEREO_VIEWPORT | RE_USE_GPU_CONTEXT,
     /*update*/ nullptr,
     /*render*/ &eevee_render,

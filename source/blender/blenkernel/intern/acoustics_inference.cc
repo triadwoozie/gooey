@@ -25,6 +25,7 @@
 #include "BLI_math_vector.h"
 #include "BLI_math_vector.hh"
 #include "BLI_string.h"
+#include "BLI_ustring.hh"
 
 #include "DEG_depsgraph.hh"
 #include "DEG_depsgraph_query.hh"
@@ -39,6 +40,8 @@
 #include <cmath>
 #include <cstdio>
 #include <vector>
+
+namespace blender {
 
 bool BKE_acoustics_infer_material(const Object *ob, AcousticMaterialProperties *r_props)
 {
@@ -64,30 +67,30 @@ bool BKE_acoustics_infer_material(const Object *ob, AcousticMaterialProperties *
       roughness = mat->roughness;
 
       /* Inspect Principled BSDF node if node tree is active */
-      if (mat->use_nodes && mat->nodetree) {
-        LISTBASE_FOREACH (bNode *, node, &mat->nodetree->nodes) {
-          if (node->type_legacy == SH_NODE_BSDF_PRINCIPLED ||
-              STREQ(node->idname, "ShaderNodeBsdfPrincipled"))
+      if (mat->nodetree) {
+        for (const bNode &node : mat->nodetree->nodes) {
+          if (node.type_legacy == SH_NODE_BSDF_PRINCIPLED ||
+              STREQ(node.idname, "ShaderNodeBsdfPrincipled"))
           {
-            const bNodeSocket *sock_met = blender::bke::node_find_socket(*node, SOCK_IN, "Metallic");
+            const bNodeSocket *sock_met = blender::bke::node_find_socket(node, SOCK_IN, "Metallic"_ustr);
             if (sock_met && sock_met->default_value) {
               metallic = static_cast<const bNodeSocketValueFloat *>(sock_met->default_value)->value;
             }
 
-            const bNodeSocket *sock_rough = blender::bke::node_find_socket(*node, SOCK_IN, "Roughness");
+            const bNodeSocket *sock_rough = blender::bke::node_find_socket(node, SOCK_IN, "Roughness"_ustr);
             if (sock_rough && sock_rough->default_value) {
               roughness = static_cast<const bNodeSocketValueFloat *>(sock_rough->default_value)->value;
             }
 
-            const bNodeSocket *sock_trans = blender::bke::node_find_socket(*node, SOCK_IN, "Transmission Weight");
+            const bNodeSocket *sock_trans = blender::bke::node_find_socket(node, SOCK_IN, "Transmission Weight"_ustr);
             if (!sock_trans) {
-              sock_trans = blender::bke::node_find_socket(*node, SOCK_IN, "Transmission");
+              sock_trans = blender::bke::node_find_socket(node, SOCK_IN, "Transmission"_ustr);
             }
             if (sock_trans && sock_trans->default_value) {
               transmission = static_cast<const bNodeSocketValueFloat *>(sock_trans->default_value)->value;
             }
 
-            const bNodeSocket *sock_ior = blender::bke::node_find_socket(*node, SOCK_IN, "IOR");
+            const bNodeSocket *sock_ior = blender::bke::node_find_socket(node, SOCK_IN, "IOR"_ustr);
             if (sock_ior && sock_ior->default_value) {
               ior = static_cast<const bNodeSocketValueFloat *>(sock_ior->default_value)->value;
             }
@@ -429,5 +432,7 @@ void BKE_acoustics_process_rigidbody_contacts(Depsgraph *depsgraph, Scene *scene
     }
   }
 }
+
+}  // namespace blender
 
 #endif /* WITH_STEAM_AUDIO */

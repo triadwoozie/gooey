@@ -4485,6 +4485,13 @@ static void rna_def_space_outliner(BlenderRNA *brna)
       prop, "Show Mode Column", "Show the mode column for mode toggle and activation");
   RNA_def_property_update(prop, NC_SPACE | ND_SPACE_OUTLINER, nullptr);
 
+  prop = RNA_def_property(srna, "show_users_column", PROP_BOOLEAN, PROP_NONE);
+  RNA_def_property_boolean_sdna(prop, nullptr, "flag", SO_USERS_COLUMN);
+  RNA_def_property_ui_text(prop,
+                           "Show Users Column",
+                           "Display a column showing the number of users for each data-block");
+  RNA_def_property_update(prop, NC_SPACE | ND_SPACE_OUTLINER, nullptr);
+
   prop = RNA_def_property(srna, "scroll_to_active", PROP_BOOLEAN, PROP_NONE);
   RNA_def_property_boolean_sdna(prop, nullptr, "flag", SO_SCROLL_TO_ACTIVE);
   RNA_def_property_ui_text(

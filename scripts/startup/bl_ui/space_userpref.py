@@ -73,7 +73,7 @@ class USERPREF_PT_navigation_bar(Panel):
         layout.prop(view, "search_filter", icon='VIEWZOOM', text="")
         layout.separator(factor=0.1)
 
-        col = layout.column()
+        col = layout.column(align=True)
 
         col.scale_x = 1.3
         col.scale_y = 1.3
@@ -590,6 +590,7 @@ class USERPREF_PT_edit_sequence_editor(EditingPanel, CenterAlignMixIn, Panel):
         edit = prefs.edit
 
         layout.prop(edit, "connect_strips_by_default")
+        layout.prop(edit, "clamp_strips_by_default")
 
 
 class USERPREF_PT_edit_misc(EditingPanel, CenterAlignMixIn, Panel):
@@ -1601,6 +1602,7 @@ class USERPREF_PT_file_paths_data(FilePathsPanel, Panel):
         col.prop(paths, "texture_directory", text="Textures")
         col.prop(paths, "sound_directory", text="Sounds")
         col.prop(paths, "temporary_directory", text="Temporary Files")
+        col.prop(paths, "auto_save_filepath", text="Auto Save Target")
 
 
 class USERPREF_PT_file_paths_script_directories(FilePathsPanel, Panel):
@@ -1825,6 +1827,10 @@ class USERPREF_PT_saveload_blend(SaveLoadPanel, CenterAlignMixIn, Panel):
         subrow = row.row()
         subrow.active = paths.use_auto_save_temporary_files
         subrow.prop(paths, "auto_save_time", text="Timer (Minutes)")
+
+        subcol = col.column()
+        subcol.active = paths.use_auto_save_temporary_files
+        subcol.prop(paths, "auto_save_filepath", text="Target File / Directory")
 
         layout.separator()
 

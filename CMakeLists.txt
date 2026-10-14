@@ -431,6 +431,7 @@ option(WITH_IMAGE_WEBP "Enable WebP Image Support" ON)
 # Audio/Video format support
 option(WITH_CODEC_FFMPEG "Enable FFmpeg Support (http://ffmpeg.org)" ON)
 option(WITH_CODEC_SNDFILE "Enable libsndfile Support (http://www.mega-nerd.com/libsndfile)" ON)
+option(WITH_STEAM_AUDIO "Enable Valve Steam Audio physical acoustics" ON)
 
 # Alembic support
 option(WITH_ALEMBIC "Enable Alembic Support" ON)
@@ -1379,6 +1380,12 @@ if(WITH_AUDASPACE)
       "${CMAKE_SOURCE_DIR}/extern/audaspace/bindings"
     )
   endif()
+endif()
+
+if(WITH_STEAM_AUDIO)
+  set(STEAM_AUDIO_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/extern/phonon/include")
+  set(STEAM_AUDIO_LIBRARY "${CMAKE_SOURCE_DIR}/extern/phonon/lib/linux-x64/libphonon.so")
+  add_definitions(-DWITH_STEAM_AUDIO)
 endif()
 
 # Auto-enable CUDA dynload if toolkit is not found.
@@ -2578,6 +2585,7 @@ if(FIRST_RUN)
   info_cfg_option(WITH_RUBBERBAND)
   info_cfg_option(WITH_CODEC_FFMPEG)
   info_cfg_option(WITH_CODEC_SNDFILE)
+  info_cfg_option(WITH_STEAM_AUDIO)
   info_cfg_option(WITH_COREAUDIO)
   info_cfg_option(WITH_JACK)
   info_cfg_option(WITH_JACK_DYNLOAD)

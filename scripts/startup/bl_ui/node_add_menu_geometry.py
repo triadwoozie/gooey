@@ -285,6 +285,9 @@ class NODE_MT_gn_geometry_operations_base(node_add_menu.NodeMenu):
         self.node_operator(layout, "GeometryNodeMergePoints")
         self.node_operator(layout, "GeometryNodeSortElements")
         self.node_operator(layout, "GeometryNodeTransform", search_weight=1.0)
+        self.node_operator(layout, "GeometryNodeCameraShake", search_weight=2.0)
+        self.node_operator(layout, "GeometryNodePropVibration", search_weight=2.0)
+        self.node_operator(layout, "GeometryNodeMouthShapes", search_weight=2.0)
         layout.separator()
         self.node_operator(layout, "GeometryNodeGetGeometryComponent")
         self.node_operator(layout, "GeometryNodeSeparateComponents")
@@ -686,12 +689,17 @@ class NODE_MT_gn_utilities_text_base(node_add_menu.NodeMenu):
 
 
 class NODE_MT_gn_utilities_sound_base(node_add_menu.NodeMenu):
-    bl_label = "Sound"
+    bl_label = "Sound & Audio Dynamics"
     menu_path = "Utilities/Sound"
 
     def draw(self, context):
         layout = self.layout
         self.node_operator(layout, "GeometryNodeSampleSoundFrequencies")
+        self.node_operator(layout, "GeometryNodeAudioAnalysis", search_weight=2.0)
+        self.node_operator(layout, "GeometryNodeAudioTSM", search_weight=2.0)
+        self.node_operator(layout, "GeometryNodeMouthShapes", search_weight=2.0)
+        self.node_operator(layout, "GeometryNodePropVibration", search_weight=2.0)
+        self.node_operator(layout, "GeometryNodeCameraShake", search_weight=2.0)
 
 
 class NODE_MT_gn_texture_base(node_add_menu.NodeMenu):

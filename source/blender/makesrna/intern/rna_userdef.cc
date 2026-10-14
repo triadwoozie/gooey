@@ -5887,6 +5887,12 @@ static void rna_def_userdef_edit(BlenderRNA *brna)
       "Connect Movie Strips by Default",
       "Connect newly added movie strips by default if they have multiple channels");
 
+  prop = RNA_def_property(srna, "clamp_strips_by_default", PROP_BOOLEAN, PROP_NONE);
+  RNA_def_property_boolean_sdna(
+      prop, nullptr, "sequencer_editor_flag", USER_SEQ_ED_CLAMP_STRIPS_BY_DEFAULT);
+  RNA_def_property_ui_text(
+      prop, "Clamp Strips by Default", "Clamp strips to source footage duration when slipping");
+
   /* duplication linking */
   prop = RNA_def_property(srna, "use_duplicate_mesh", PROP_BOOLEAN, PROP_NONE);
   RNA_def_property_boolean_sdna(prop, nullptr, "dupflag", USER_DUP_MESH);
@@ -7409,6 +7415,15 @@ static void rna_def_userdef_filepaths(BlenderRNA *brna)
                            "The directory for storing temporary save files. "
                            "The path must reference an existing directory or it will be ignored");
   RNA_def_property_update(prop, 0, "rna_userdef_temp_update");
+
+  prop = RNA_def_property(srna, "auto_save_filepath", PROP_STRING, PROP_FILEPATH);
+  RNA_def_property_string_sdna(prop, nullptr, "autosavedir");
+  RNA_def_property_ui_text(
+      prop,
+      "Auto Save Target",
+      "Custom file path or directory for auto-saves (supports specific .blend filename or folder, "
+      "and // relative to current project). Leave blank for default temp directory");
+  RNA_def_property_flag(prop, PROP_PATH_SUPPORTS_BLEND_RELATIVE);
 
   prop = RNA_def_property(srna, "render_cache_directory", PROP_STRING, PROP_DIRPATH);
   RNA_def_property_string_sdna(prop, nullptr, "render_cachedir");

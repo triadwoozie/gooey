@@ -107,3 +107,5 @@ endif()
 if(WITH_TRACY)
   add_subdirectory(tracy_profiler)
 endif()
+
+add_subdirectory(aubio)

@@ -9,13 +9,12 @@
 #include "BLI_sys_types.h"
 
 struct PhononModalParams;
+
+namespace blender {
+
 struct Depsgraph;
 struct Object;
 struct Scene;
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /**
  * Evaluated physical material properties inferred from surface BSDF nodes.
@@ -98,8 +97,6 @@ int BKE_acoustics_infer_friction_sound(const struct Object *ob_a,
  */
 void BKE_acoustics_process_rigidbody_contacts(struct Depsgraph *depsgraph, struct Scene *scene);
 
-#ifdef __cplusplus
-}
-#endif
+}  // namespace blender
 
 #endif /* WITH_STEAM_AUDIO */

@@ -620,9 +620,7 @@ void WM_file_autoexec_init(const char *filepath)
   }
 
   if (G.f & G_FLAG_SCRIPT_AUTOEXEC) {
-    char dirpath[FILE_MAX];
-    BLI_path_split_dir_part(filepath, dirpath, sizeof(dirpath));
-    if (BKE_autoexec_match(dirpath)) {
+    if (BKE_autoexec_match(filepath, false, true)) {
       G.f &= ~G_FLAG_SCRIPT_AUTOEXEC;
     }
   }
@@ -2290,6 +2288,38 @@ static void wm_autosave_location(char filepath[FILE_MAX])
     SNPRINTF(filename, "%d_autosave.blend", pid);
   }
 
+  /* Check for user-configured custom autosave path */
+  if (U.autosavedir[0] != '\0') {
+    char custom_path[FILE_MAX];
+    STRNCPY(custom_path, U.autosavedir);
+
+    /* Expand // relative to the current blend file if open */
+    if (custom_path[0] == '/' && custom_path[1] == '/') {
+      if (blendfile_path && blendfile_path[0] != '\0') {
+        BLI_path_abs(custom_path, blendfile_path);
+      }
+      else {
+        BLI_path_abs(custom_path, BKE_tempdir_base());
+      }
+    }
+
+    /* If custom path specifies a .blend file directly */
+    if (BLI_path_extension_check(custom_path, ".blend")) {
+      char dir[FILE_MAX];
+      BLI_path_split_dir_part(custom_path, dir, sizeof(dir));
+      if (dir[0] != '\0') {
+        BLI_dir_create_recursive(dir);
+      }
+      BLI_strncpy(filepath, custom_path, FILE_MAX);
+      return;
+    }
+
+    /* Otherwise treat as target directory */
+    BLI_dir_create_recursive(custom_path);
+    BLI_path_join(filepath, FILE_MAX, custom_path, filename);
+    return;
+  }
+
   const char *tempdir_base = BKE_tempdir_base();
   BLI_path_join(filepath, FILE_MAX, tempdir_base, filename);
 }
@@ -3346,18 +3376,11 @@ static bool wm_open_mainfile_check(bContext * /*C*/, wmOperator *op)
   PropertyRNA *prop = RNA_struct_find_property(op->ptr, "use_scripts");
   bool is_untrusted = false;
   char filepath[FILE_MAX];
-  char *lslash;
 
   RNA_string_get(op->ptr, "filepath", filepath);
 
-  /* Get the directory. */
-  lslash = const_cast<char *>(BLI_path_slash_rfind(filepath));
-  if (lslash) {
-    *(lslash + 1) = '\0';
-  }
-
   if ((U.flag & USER_SCRIPT_AUTOEXEC_DISABLE) == 0) {
-    if (BKE_autoexec_match(filepath) == true) {
+    if (BKE_autoexec_match(filepath, true, true) == true) {
       RNA_property_boolean_set(op->ptr, prop, false);
       is_untrusted = true;
     }

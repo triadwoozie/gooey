@@ -63,6 +63,7 @@ struct rbDynamicsWorld {
 struct rbRigidBody {
   btRigidBody *body;
   int col_groups;
+  void *user_data;
 };
 
 struct rbVert {
@@ -312,6 +313,7 @@ void RB_world_convex_sweep_test(rbDynamicsWorld *world,
 rbRigidBody *RB_body_new(rbCollisionShape *shape, const float loc[3], const float rot[4])
 {
   rbRigidBody *object = new rbRigidBody;
+  object->user_data = nullptr;
   /* current transform */
   btTransform trans;
   trans.setIdentity();
@@ -1292,6 +1294,70 @@ void RB_constraint_set_target_velocity_motor(rbConstraint *con,
 
   constraint->getTranslationalLimitMotor()->m_targetVelocity.setX(velocity_lin);
   constraint->getRotationalLimitMotor(0)->m_targetVelocity = velocity_ang;
+}
+
+/* User Data ------------------------ */
+
+void RB_body_set_user_data(rbRigidBody *object, void *user_data)
+{
+  if (object) {
+    object->user_data = user_data;
+  }
+}
+
+void *RB_body_get_user_data(rbRigidBody *object)
+{
+  return object ? object->user_data : nullptr;
+}
+
+/* Contact Queries ------------------ */
+
+void RB_dworld_get_contacts(rbDynamicsWorld *world, RBContactCallback callback, void *user_data)
+{
+  if (!world || !world->dynamicsWorld || !callback) {
+    return;
+  }
+
+  btDispatcher *dispatcher = world->dynamicsWorld->getDispatcher();
+  if (!dispatcher) {
+    return;
+  }
+
+  int numManifolds = dispatcher->getNumManifolds();
+  for (int i = 0; i < numManifolds; i++) {
+    btPersistentManifold *contactManifold = dispatcher->getManifoldByIndexInternal(i);
+    if (!contactManifold) {
+      continue;
+    }
+
+    const btCollisionObject *obA = contactManifold->getBody0();
+    const btCollisionObject *obB = contactManifold->getBody1();
+    if (!obA || !obB) {
+      continue;
+    }
+
+    rbRigidBody *rbA = static_cast<rbRigidBody *>(obA->getUserPointer());
+    rbRigidBody *rbB = static_cast<rbRigidBody *>(obB->getUserPointer());
+
+    void *dataA = rbA ? rbA->user_data : nullptr;
+    void *dataB = rbB ? rbB->user_data : nullptr;
+
+    int numContacts = contactManifold->getNumContacts();
+    for (int j = 0; j < numContacts; j++) {
+      const btManifoldPoint &pt = contactManifold->getContactPoint(j);
+      if (pt.getDistance() <= 0.05f) {
+        float pos[3] = {float(pt.getPositionWorldOnA().x()),
+                        float(pt.getPositionWorldOnA().y()),
+                        float(pt.getPositionWorldOnA().z())};
+        float normal[3] = {float(pt.m_normalWorldOnB.x()),
+                           float(pt.m_normalWorldOnB.y()),
+                           float(pt.m_normalWorldOnB.z())};
+        float impulse = float(pt.getAppliedImpulse());
+        float dist = float(pt.getDistance());
+        callback(user_data, dataA, dataB, pos, normal, impulse, dist);
+      }
+    }
+  }
 }
 
 /* ********************************** */

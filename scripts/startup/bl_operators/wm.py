@@ -2397,6 +2397,78 @@ class WM_OT_tool_set_by_id(Operator):
             return {'CANCELLED'}
 
 
+class WM_OT_tool_set_by_id_hold(Operator):
+    """Set the tool by name while the key is held, restoring the previous tool on release (for key-maps)"""
+    bl_idname = "wm.tool_set_by_id_hold"
+    bl_label = "Set Tool by Name (Hold)"
+
+    # Only kept for identity, never inspect it's contents.
+    _active_operator = None
+
+    name: StringProperty(
+        name="Identifier",
+        description="Identifier of the tool",
+    )
+
+    space_type: rna_space_type_prop
+
+    def _active_tool_restore(self, context):
+        from bl_ui.space_toolsystem_common import activate_by_id
+        if self._tool_prev_idname:
+            activate_by_id(context, self._space_type, self._tool_prev_idname)
+        # Harmless but better not keep a dangling reference.
+        WM_OT_tool_set_by_id_hold._active_operator = None
+
+    def invoke(self, context, event):
+        from bl_ui.space_toolsystem_common import (
+            ToolSelectPanelHelper,
+            activate_by_id,
+        )
+
+        if (space_type := WM_OT_tool_set_by_id.space_type_from_operator(self, context)) is None:
+            return {'CANCELLED'}
+
+        if (
+                (op_other := context.window.modal_operators.get(self.bl_idname)) and
+                (op_other._space_type == space_type)
+        ):
+            tool_prev_idname = op_other._tool_prev_idname
+        else:
+            # Should always be set, nevertheless, if in some rare case it's not,
+            # that shouldn't prevent the tool from being activated.
+            tool_prev = ToolSelectPanelHelper.tool_active_from_context(context, space_type)
+            tool_prev_idname = "" if tool_prev is None else tool_prev.idname
+
+        if not activate_by_id(context, space_type, self.name):
+            self.report({'WARNING'}, rpt_("Tool {!r} not found for space {!r}").format(self.name, space_type))
+            return {'CANCELLED'}
+
+        self._space_type = space_type
+        self._tool_prev_idname = tool_prev_idname
+        self._event_type = event.type
+
+        WM_OT_tool_set_by_id_hold._active_operator = self
+
+        context.window_manager.modal_handler_add(self)
+        return {'RUNNING_MODAL'}
+
+    def cancel(self, context):
+        if WM_OT_tool_set_by_id_hold._active_operator is not self:
+            return
+        self._active_tool_restore(context)
+
+    def modal(self, context, event):
+        # Another operator took over.
+        if WM_OT_tool_set_by_id_hold._active_operator is not self:
+            return {'FINISHED', 'PASS_THROUGH'}
+
+        if event.type == self._event_type and event.value == 'RELEASE':
+            self._active_tool_restore(context)
+            return {'FINISHED'}
+
+        return {'PASS_THROUGH'}
+
+
 class WM_OT_tool_set_by_index(Operator):
     """Set the tool by index (for key-maps)"""
     bl_idname = "wm.tool_set_by_index"
@@ -3686,25 +3758,65 @@ class WM_OT_drop_blend_file(Operator):
         subtype='FILE_PATH',
         options={'SKIP_SAVE'},
     )
+    use_scripts: BoolProperty(
+        name="Trusted Source",
+        options={'SKIP_SAVE'},
+    )
+
+    @classmethod
+    def _is_autoexec(cls, filepath):
+        """
+        Return true when `filepath` is in a directory which isn't excluded.
+        """
+        return bpy.path.is_autoexec(filepath, canonicalize=True, strip_filename=True)
+
+    def draw(self, context):
+        layout = self.layout
+        filepath = self.filepath
+
+        layout.label(text=bpy.path.basename(filepath), icon='QUESTION')
+
+        col = layout.column()
+        col.operator_context = 'INVOKE_DEFAULT'
+        # Return activates "Open", the primary action of this popup.
+        col.active_default = True
+        props = col.operator("wm.open_mainfile", text="Open", icon='FILE_FOLDER')
+        props.filepath = filepath
+        props.display_file_selector = False
+        props.use_scripts = self.use_scripts
+
+        col = layout.column()
+        if not context.preferences.filepaths.use_scripts_auto_execute or self._is_autoexec(filepath):
+            col.prop(self, "use_scripts")
+        else:
+            col.enabled = False
+            col.prop(self, "use_scripts", text="Trusted Source [Untrusted Path]")
+
+        layout.separator(type='LINE')
+
+        col = layout.column()
+        col.operator_context = 'INVOKE_DEFAULT'
+        # Use the confirm template so pressing these closes the popup,
+        # the popup is kept open otherwise (see `BLOCK_KEEP_OPEN`).
+        col.template_popup_confirm(
+            "wm.link", text="Link...", icon='LINK_BLEND', cancel_text="",
+        ).filepath = filepath
+        col.template_popup_confirm(
+            "wm.append", text="Append...", icon='APPEND_BLEND', cancel_text="",
+        ).filepath = filepath
+
+    def execute(self, context):
+        # Needed so the popup draws this operators UI.
+        return {'CANCELLED'}
 
     def invoke(self, context, _event):
-        context.window_manager.popup_menu(self.draw_menu, title=bpy.path.basename(self.filepath), icon='QUESTION')
-        return {'FINISHED'}
-
-    def draw_menu(self, menu, _context):
-        layout = menu.layout
-
-        col = layout.column()
-        col.operator_context = 'INVOKE_DEFAULT'
-        props = col.operator("wm.open_mainfile", text="Open", icon='FILE_FOLDER')
-        props.filepath = self.filepath
-        props.display_file_selector = False
-
-        layout.separator()
-        col = layout.column()
-        col.operator_context = 'INVOKE_DEFAULT'
-        col.operator("wm.link", text="Link...", icon='LINK_BLEND').filepath = self.filepath
-        col.operator("wm.append", text="Append...", icon='APPEND_BLEND').filepath = self.filepath
+        # Match the file selector, which defaults to the preferences.
+        self.use_scripts = (
+            context.preferences.filepaths.use_scripts_auto_execute and
+            self._is_autoexec(self.filepath)
+        )
+        # The popup shows this operators own UI, keeping it alive while it's open.
+        return context.window_manager.invoke_popup(self, auto_keymap=True)
 
 
 classes = (
@@ -3743,6 +3855,7 @@ classes = (
     WM_OT_url_open,
     WM_OT_url_open_preset,
     WM_OT_tool_set_by_id,
+    WM_OT_tool_set_by_id_hold,
     WM_OT_tool_set_by_index,
     WM_OT_tool_set_by_brush_type,
     WM_OT_toolbar,

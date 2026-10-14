@@ -759,6 +759,13 @@ if(UNIX AND NOT APPLE)
     )
   endif()
 
+  if(WITH_STEAM_AUDIO AND TARGETDIR_LIB)
+    install(
+      FILES ${STEAM_AUDIO_LIBRARY}
+      DESTINATION ${TARGETDIR_LIB}
+    )
+  endif()
+
   # There are a few differences between portable and system install.
   if(WITH_PYTHON_MODULE)
     if(WITH_INSTALL_PORTABLE)

@@ -232,6 +232,14 @@ enum eAudio_Flag : short {
 };
 ENUM_OPERATORS(eAudio_Flag)
 
+/** #Scene::flag_audio */
+enum {
+  SCENE_AUDIO_USE_STEAM_AUDIO = (1 << 0),
+  SCENE_AUDIO_STEAM_ALL_MESHES = (1 << 1),
+  SCENE_AUDIO_STEAM_VIEWPORT = (1 << 2),
+  SCENE_AUDIO_STEAM_RENDER = (1 << 3),
+};
+
 struct AudioData {
   int mixrate = 0; /* 2.5: now in FFMpegCodecData: audio_mixrate. */
   float main = 0;  /* 2.5: now in FFMpegCodecData: audio_volume. */
@@ -1936,7 +1944,8 @@ enum eSnapMode : short {
   SCE_SNAP_INDIVIDUAL_NEAREST = (1 << 9),
   SCE_SNAP_INDIVIDUAL_PROJECT = (1 << 10),
 
-  SCE_SNAP_TO_FACE_MIDPOINT = (1 << 11)
+  SCE_SNAP_TO_FACE_MIDPOINT = (1 << 11),
+  SCE_SNAP_TO_ORIGIN = (1 << 12),
 };
 ENUM_OPERATORS(eSnapMode)
 
@@ -2869,7 +2878,9 @@ struct Scene {
   SceneDepsgraphsMap *depsgraph_hash = nullptr;
 
   eScenePlaybackLoopMode playback_loop_mode = SCE_LOOP_MODE_INFINITE;
-  char _pad7[3] = {};
+  char _pad7[1] = {};
+  short flag_audio = SCENE_AUDIO_USE_STEAM_AUDIO | SCENE_AUDIO_STEAM_VIEWPORT |
+                     SCENE_AUDIO_STEAM_RENDER | SCENE_AUDIO_STEAM_ALL_MESHES;
 
   /* User-Defined KeyingSets. */
   /**

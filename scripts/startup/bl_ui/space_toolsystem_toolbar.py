@@ -512,6 +512,7 @@ class _defs_view3d_add:
         'CUBE': ToolDefaults('EDGE', 'FREE', 'EDGE', 'FREE'),
         'CONE': ToolDefaults('CENTER', 'FIXED', 'EDGE', 'FREE'),
         'CYLINDER': ToolDefaults('CENTER', 'FIXED', 'EDGE', 'FREE'),
+        'SPHERE_QUAD': ToolDefaults('CENTER', 'FIXED', 'CENTER', 'FIXED'),
         'SPHERE_UV': ToolDefaults('CENTER', 'FIXED', 'CENTER', 'FIXED'),
         'SPHERE_ICO': ToolDefaults('CENTER', 'FIXED', 'CENTER', 'FIXED'),
     }
@@ -672,6 +673,33 @@ class _defs_view3d_add:
             icon="ops.mesh.primitive_cylinder_add_gizmo",
             description=lambda *args: _defs_view3d_add.description_interactive_add(
                 *args, prefix=tip_("Add cylinder to mesh interactively"),
+            ),
+            widget="VIEW3D_GGT_placement",
+            keymap="3D View Tool: Object, Add Primitive",
+            draw_settings=draw_settings,
+        )
+
+    @ToolDef.from_fn
+    def quad_sphere_add():
+        def draw_settings(context, layout, tool, *, extra=False):
+            show_extra = _defs_view3d_add.draw_settings_interactive_add(layout, context.tool_settings, tool, extra)
+            if extra:
+                return
+
+            props = tool.operator_properties("mesh.primitive_quad_sphere_add")
+            layout.prop(props, "segments")
+
+            if show_extra:
+                layout.popover("TOPBAR_PT_tool_settings_extra", text="...")
+
+            _defs_view3d_add.draw_settings_defaults_init(context.mode, tool, 'SPHERE_QUAD')
+
+        return dict(
+            idname="builtin.primitive_quad_sphere_add",
+            label="Add Quad Sphere",
+            icon="ops.mesh.primitive_sphere_add_gizmo",
+            description=lambda *args: _defs_view3d_add.description_interactive_add(
+                *args, prefix=tip_("Add sphere to mesh interactively"),
             ),
             widget="VIEW3D_GGT_placement",
             keymap="3D View Tool: Object, Add Primitive",
@@ -3766,6 +3794,7 @@ class VIEW3D_PT_tools_active(ToolSelectPanelHelper, Panel):
         _defs_view3d_add.cube_add,
         _defs_view3d_add.cone_add,
         _defs_view3d_add.cylinder_add,
+        _defs_view3d_add.quad_sphere_add,
         _defs_view3d_add.uv_sphere_add,
         _defs_view3d_add.ico_sphere_add,
     )

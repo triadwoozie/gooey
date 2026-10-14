@@ -149,6 +149,7 @@ const EnumPropertyItem rna_enum_mesh_select_mode_uv_items[] = {
 #define RNA_SNAP_ELEMENTS_BASE \
   {SCE_SNAP_TO_INCREMENT, "INCREMENT", ICON_SNAP_INCREMENT, "Increment", "Snap to increments"}, \
   {SCE_SNAP_TO_GRID, "GRID", ICON_SNAP_GRID, "Grid", "Snap to grid"}, \
+  {SCE_SNAP_TO_ORIGIN, "ORIGIN", ICON_OBJECT_ORIGIN, "Origin", "Snap to origins"}, \
   {SCE_SNAP_TO_VERTEX, "VERTEX", ICON_SNAP_VERTEX, "Vertex", "Snap to vertices"}, \
   {SCE_SNAP_TO_EDGE, "EDGE", ICON_SNAP_EDGE, "Edge", "Snap to edges"}, \
   {SCE_SNAP_TO_FACE, "FACE", ICON_SNAP_FACE, "Face", "Snap by projecting onto faces"}, \
@@ -2381,6 +2382,79 @@ static void rna_Scene_use_audio_set(PointerRNA *ptr, bool value)
 static void rna_Scene_use_audio_update(Main * /*bmain*/, Scene * /*scene*/, PointerRNA *ptr)
 {
   DEG_id_tag_update(ptr->owner_id, ID_RECALC_AUDIO_MUTE);
+}
+
+static bool rna_Scene_use_steam_audio_get(PointerRNA *ptr)
+{
+  Scene *scene = static_cast<Scene *>(ptr->data);
+  return (scene->flag_audio & SCENE_AUDIO_USE_STEAM_AUDIO) != 0;
+}
+
+static void rna_Scene_use_steam_audio_set(PointerRNA *ptr, bool value)
+{
+  Scene *scene = static_cast<Scene *>(ptr->data);
+  if (value) {
+    scene->flag_audio |= SCENE_AUDIO_USE_STEAM_AUDIO;
+  }
+  else {
+    scene->flag_audio &= ~SCENE_AUDIO_USE_STEAM_AUDIO;
+  }
+}
+
+static bool rna_Scene_steam_audio_all_meshes_get(PointerRNA *ptr)
+{
+  Scene *scene = static_cast<Scene *>(ptr->data);
+  return (scene->flag_audio & SCENE_AUDIO_STEAM_ALL_MESHES) != 0;
+}
+
+static void rna_Scene_steam_audio_all_meshes_set(PointerRNA *ptr, bool value)
+{
+  Scene *scene = static_cast<Scene *>(ptr->data);
+  if (value) {
+    scene->flag_audio |= SCENE_AUDIO_STEAM_ALL_MESHES;
+  }
+  else {
+    scene->flag_audio &= ~SCENE_AUDIO_STEAM_ALL_MESHES;
+  }
+}
+
+static bool rna_Scene_steam_audio_viewport_get(PointerRNA *ptr)
+{
+  Scene *scene = static_cast<Scene *>(ptr->data);
+  return (scene->flag_audio & SCENE_AUDIO_STEAM_VIEWPORT) != 0;
+}
+
+static void rna_Scene_steam_audio_viewport_set(PointerRNA *ptr, bool value)
+{
+  Scene *scene = static_cast<Scene *>(ptr->data);
+  if (value) {
+    scene->flag_audio |= SCENE_AUDIO_STEAM_VIEWPORT;
+  }
+  else {
+    scene->flag_audio &= ~SCENE_AUDIO_STEAM_VIEWPORT;
+  }
+}
+
+static bool rna_Scene_steam_audio_render_get(PointerRNA *ptr)
+{
+  Scene *scene = static_cast<Scene *>(ptr->data);
+  return (scene->flag_audio & SCENE_AUDIO_STEAM_RENDER) != 0;
+}
+
+static void rna_Scene_steam_audio_render_set(PointerRNA *ptr, bool value)
+{
+  Scene *scene = static_cast<Scene *>(ptr->data);
+  if (value) {
+    scene->flag_audio |= SCENE_AUDIO_STEAM_RENDER;
+  }
+  else {
+    scene->flag_audio &= ~SCENE_AUDIO_STEAM_RENDER;
+  }
+}
+
+static void rna_Scene_steam_audio_update(Main * /*bmain*/, Scene * /*scene*/, PointerRNA *ptr)
+{
+  DEG_id_tag_update(ptr->owner_id, ID_RECALC_AUDIO);
 }
 
 static int rna_Scene_sync_mode_get(PointerRNA *ptr)
@@ -6981,7 +7055,7 @@ static void rna_def_scene_render_data(BlenderRNA *brna)
   };
 
   static const EnumPropertyItem engine_items[] = {
-      {0, "BLENDER_EEVEE", 0, "EEVEE", ""},
+      {0, "BLENDER_EEVEE", 0, "Goo EEVEE", ""},
       {0, nullptr, 0, nullptr, nullptr},
   };
 
@@ -9324,6 +9398,44 @@ void RNA_def_scene(BlenderRNA *brna)
   RNA_def_property_translation_context(prop, BLT_I18NCONTEXT_ID_SOUND);
   RNA_def_property_update(prop, NC_SCENE, nullptr);
   RNA_def_property_update(prop, NC_SCENE, "rna_Scene_volume_update");
+
+  prop = RNA_def_property(srna, "use_steam_audio", PROP_BOOLEAN, PROP_NONE);
+  RNA_def_property_boolean_funcs(
+      prop, "rna_Scene_use_steam_audio_get", "rna_Scene_use_steam_audio_set");
+  RNA_def_property_boolean_default(prop, false);
+  RNA_def_property_ui_text(
+      prop, "Steam Audio", "Enable Steam Audio binaural spatialization and ray-traced acoustics");
+  RNA_def_property_update(prop, NC_SCENE, "rna_Scene_steam_audio_update");
+
+  prop = RNA_def_property(srna, "steam_audio_all_meshes", PROP_BOOLEAN, PROP_NONE);
+  RNA_def_property_boolean_funcs(
+      prop, "rna_Scene_steam_audio_all_meshes_get", "rna_Scene_steam_audio_all_meshes_set");
+  RNA_def_property_boolean_default(prop, true);
+  RNA_def_property_ui_text(
+      prop,
+      "Simulate All Meshes",
+      "Include all scene mesh objects in Steam Audio acoustic raytracing geometry");
+  RNA_def_property_update(prop, NC_SCENE, "rna_Scene_steam_audio_update");
+
+  prop = RNA_def_property(srna, "steam_audio_viewport", PROP_BOOLEAN, PROP_NONE);
+  RNA_def_property_boolean_funcs(
+      prop, "rna_Scene_steam_audio_viewport_get", "rna_Scene_steam_audio_viewport_set");
+  RNA_def_property_boolean_default(prop, true);
+  RNA_def_property_ui_text(
+      prop,
+      "Use in Viewport",
+      "Enable Steam Audio acoustic simulation and spatialization during viewport playback");
+  RNA_def_property_update(prop, NC_SCENE, "rna_Scene_steam_audio_update");
+
+  prop = RNA_def_property(srna, "steam_audio_render", PROP_BOOLEAN, PROP_NONE);
+  RNA_def_property_boolean_funcs(
+      prop, "rna_Scene_steam_audio_render_get", "rna_Scene_steam_audio_render_set");
+  RNA_def_property_boolean_default(prop, true);
+  RNA_def_property_ui_text(
+      prop,
+      "Use in Render",
+      "Enable Steam Audio acoustic simulation and spatialization during animation render and audio mixdown");
+  RNA_def_property_update(prop, NC_SCENE, "rna_Scene_steam_audio_update");
 
   func = RNA_def_function(srna, "update_render_engine", "rna_Scene_update_render_engine");
   RNA_def_function_flag(func, FUNC_NO_SELF | FUNC_USE_MAIN);

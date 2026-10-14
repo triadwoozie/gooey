@@ -166,6 +166,7 @@ def is_ignore_dna_name(name):
         return True
     elif name in {
             b'active_theme_area',
+            b'filepath',
     }:
         return True
     else:

@@ -5,20 +5,32 @@
 #ifdef WITH_STEAM_AUDIO
 
 #include "phonon_reader.h"
+#include "phonon_sound.h"
 #include <cstring>
 
 AUD_NAMESPACE_BEGIN
 
-PhononReader::PhononReader(std::shared_ptr<IReader> reader)
-    : EffectReader(reader), m_dsp(nullptr)
+PhononReader::PhononReader(std::shared_ptr<IReader> reader, const void *speaker_key)
+    : EffectReader(reader), m_dsp(nullptr), m_speaker_key(speaker_key)
 {
   Specs specs = m_reader->getSpecs();
   int in_ch = (specs.channels == CHANNELS_MONO) ? 1 : 2;
   m_dsp = phonon_dsp_create(specs.rate, 512, in_ch);
+
+  /* Self-register into the global registry if we have a speaker key. */
+  if (m_speaker_key) {
+    phonon_sound_register_reader(m_speaker_key, this);
+  }
 }
 
 PhononReader::~PhononReader()
 {
+  /* Self-unregister before destroying DSP so no stale pointer is held. */
+  if (m_speaker_key) {
+    phonon_sound_unregister_reader(m_speaker_key, this);
+    m_speaker_key = nullptr;
+  }
+
   if (m_dsp) {
     phonon_dsp_destroy(m_dsp);
     m_dsp = nullptr;

@@ -567,6 +567,7 @@ if(WITH_BLENDER)
       mesh_icosphere
       mesh_monkey
       mesh_plane
+      mesh_quadsphere
       mesh_torus
       mesh_uvsphere
       meta_ball

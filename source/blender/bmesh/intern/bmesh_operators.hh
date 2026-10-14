@@ -159,6 +159,22 @@ enum FlattenMethod {
   FLATTEN_VIEW = 2,
 };
 
+/**
+ * Mappings from a location on the surface of a cube onto a sphere,
+ * used by the quad sphere primitive.
+ *
+ * \note regarding supporting multiple methods at all.
+ *
+ * - Even-area: provides a more even "shape", edges don't bunch up between the poles
+ *   and the resulting subdivision surface is more spherical.
+ * - Even-angle: has the advantage that on an axis - the vertices make a perfect circle,
+ *   useful for cutting in half and joining to cylinders/UV-spheres etc.
+ */
+enum QuadSphereMethod {
+  QUADSPHERE_METHOD_EQUI_ANGULAR_EVEN_AREA = 0,
+  QUADSPHERE_METHOD_EQUI_ANGULAR = 1,
+};
+
 extern const BMOpDefine *bmo_opdefines[];
 extern const int bmo_opdefines_total;
 

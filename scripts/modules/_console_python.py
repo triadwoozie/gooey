@@ -60,6 +60,14 @@ def replace_help(namespace):
 
     namespace["help"] = _help
 
+    import blend_shell
+    def _pip(*args):
+        code, out = blend_shell.pip_exec(*args)
+        if out:
+            print(out)
+        return code
+    namespace["pip"] = _pip
+
 
 def get_console(console_id):
     """
@@ -170,10 +178,14 @@ def execute(context, is_interactive):
         try:
             line = line_object.body
 
-            # run the console, "\n" executes a multi line statement
-            line_exec = line if line.strip() else "\n"
-
-            is_multiline = console.push(line_exec)
+            # Check if line is a blend-shell Unix command when not in multiline mode
+            import blend_shell
+            if not getattr(console, "buffer", None) and blend_shell.handle_command(line, context, stdout, stderr):
+                is_multiline = False
+            else:
+                # run the console, "\n" executes a multi line statement
+                line_exec = line if line.strip() else "\n"
+                is_multiline = console.push(line_exec)
         except SystemExit as ex:
             # Occurs when `exit(..)` is called, this raises an exception instead of exiting.
             # The trace-back isn't helpful in this case, just print the exception.
@@ -354,6 +366,9 @@ def banner(context):
 
         "Convenience Imports:   from mathutils import *; from math import *",
         "Convenience Variables: C = bpy.context, D = bpy.data",
+        "",
+        "Blend-Shell Commands:  ls, cat, rm, cp, mv, mkdir, du, grep, diff, pip, save, help",
+        "System Shell Bypass:   !<cmd>  or  sh <cmd>  (use 'term <cmd>' or '!term <cmd>' for live TUI apps)",
         "",
     )
 

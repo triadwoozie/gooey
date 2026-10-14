@@ -1359,6 +1359,14 @@ class VIEW3D_MT_transform_armature(VIEW3D_MT_transform_base, Menu):
                 layout.operator_context = 'EXEC_REGION_WIN'
                 layout.operator("transform.vertex_random", text="Randomize").offset = 0.1
                 layout.operator_context = 'INVOKE_REGION_WIN'
+            elif obj.mode == 'POSE':
+                layout.separator()
+
+                # Only show Align to Transform Orientation operator in pose mode, because in edit mode
+                # it might change the parent bone's length, or fail to align in certain cases.
+                layout.operator_context = 'EXEC_REGION_WIN'
+                layout.operator("transform.transform", text="Align to Transform Orientation").mode = 'ALIGN'
+                layout.operator_context = 'INVOKE_REGION_WIN'
 
             if obj.data.display_type == 'BBONE':
                 layout.separator()
@@ -1372,7 +1380,7 @@ class VIEW3D_MT_transform_armature(VIEW3D_MT_transform_base, Menu):
         if context.edit_object and context.edit_object.type == 'ARMATURE':
             layout.separator()
 
-            layout.operator("armature.align")
+            layout.operator("armature.align", text="Align to Active Bone or Parent")
 
 
 class VIEW3D_MT_mirror(Menu):
@@ -2428,6 +2436,7 @@ class VIEW3D_MT_mesh_add(Menu):
         layout.operator("mesh.primitive_plane_add", text="Plane", icon='MESH_PLANE')
         layout.operator("mesh.primitive_cube_add", text="Cube", icon='MESH_CUBE')
         layout.operator("mesh.primitive_circle_add", text="Circle", icon='MESH_CIRCLE')
+        layout.operator("mesh.primitive_quad_sphere_add", text="Quad Sphere", icon='MESH_QUADSPHERE')
         layout.operator("mesh.primitive_uv_sphere_add", text="UV Sphere", icon='MESH_UVSPHERE')
         layout.operator("mesh.primitive_ico_sphere_add", text="Ico Sphere", icon='MESH_ICOSPHERE')
         layout.operator("mesh.primitive_cylinder_add", text="Cylinder", icon='MESH_CYLINDER')
@@ -8997,6 +9006,7 @@ class VIEW3D_PT_sculpt_context_menu(Panel):
             context,
             brush,
             size,
+            unified_paint_settings_override=ups,
             unified_name="use_unified_size",
             pressure_name="use_pressure_size",
             text="Size",
@@ -9007,6 +9017,7 @@ class VIEW3D_PT_sculpt_context_menu(Panel):
             context,
             brush,
             "strength",
+            unified_paint_settings_override=ups,
             unified_name="use_unified_strength",
             pressure_name="use_pressure_strength",
             slider=True,

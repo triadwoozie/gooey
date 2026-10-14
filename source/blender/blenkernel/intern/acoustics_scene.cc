@@ -7,16 +7,20 @@
 #include "BKE_acoustics_scene.hh"
 #include "BKE_acoustics_inference.hh"
 
+#include "DNA_anim_types.h"
 #include "DNA_material_types.h"
 #include "DNA_mesh_types.h"
 #include "DNA_object_types.h"
 #include "DNA_scene_types.h"
+#include "DNA_speaker_types.h"
 
 #include "BKE_idprop.hh"
 #include "BKE_material.hh"
 #include "BKE_mesh.hh"
 #include "BKE_object.hh"
+#include "BKE_sound.hh"
 
+#include "BLI_listbase.h"
 #include "BLI_math_matrix.hh"
 #include "BLI_math_vector.hh"
 #include "BLI_span.hh"
@@ -28,10 +32,13 @@
 #include "plugins/phonon/phonon_scene.h"
 #include "plugins/phonon/phonon_dsp.h"
 #include "plugins/phonon/phonon_simulator.h"
+#include "plugins/phonon/phonon_sound.h"
 
 #include "BKE_global.hh"
 #include <chrono>
 #include <vector>
+
+namespace blender {
 
 static bool object_use_steam_audio(const Object *ob, bool all_meshes_mode)
 {
@@ -41,11 +48,8 @@ static bool object_use_steam_audio(const Object *ob, bool all_meshes_mode)
   if (ob->id.properties) {
     const IDProperty *prop = IDP_GetPropertyFromGroup(ob->id.properties, "use_steam_audio_mesh");
     if (prop) {
-      if (prop->type == IDP_INT) {
-        return IDP_Int(prop) != 0;
-      }
-      if (prop->type == IDP_BOOLEAN) {
-        return IDP_Bool(prop) != false;
+      if (prop->type == IDP_INT || prop->type == IDP_BOOLEAN) {
+        return IDP_int_or_bool_get(prop) != 0;
       }
     }
   }
@@ -319,6 +323,18 @@ void BKE_acoustics_scene_update_audio(Depsgraph *depsgraph, Scene *scene)
     return;
   }
 
+  const bool is_render = (G.is_rendering != 0);
+  if (is_render) {
+    if (!(scene->flag_audio & SCENE_AUDIO_STEAM_RENDER)) {
+      return;
+    }
+  }
+  else {
+    if (!(scene->flag_audio & SCENE_AUDIO_STEAM_VIEWPORT)) {
+      return;
+    }
+  }
+
   BKE_acoustics_scene_init();
   BKE_acoustics_scene_sync(depsgraph, scene);
   phonon_simulator_init();
@@ -383,13 +399,22 @@ void BKE_acoustics_scene_update_audio(Depsgraph *depsgraph, Scene *scene)
     float rel_direction[3] = {0.0f, 0.0f, -1.0f};
     phonon_simulator_source_simulate(source, &occlusion, transmission, &distance_atten, rel_direction);
 
-    /* Update DSP effect processor parameters for this speaker */
-    phonon_speaker_dsp_update(ob_eval, occlusion, transmission, distance_atten, rel_direction);
+    /* Push simulation results directly to the live PhononReader for this speaker.
+     * This is the real DSP path: phonon_dsp_process() will apply occlusion, transmission EQ,
+     * distance attenuation, and HRTF binaural spatialization on every audio frame. */
+    aud::phonon_sound_update_reader_params(
+        static_cast<const void *>(ob_eval),
+        occlusion,
+        transmission,
+        distance_atten,
+        rel_direction);
   }
   DEG_OBJECT_ITER_END;
 
   /* 3. Evaluate dynamic physics contact impacts and physical acoustics synthesis */
   BKE_acoustics_process_rigidbody_contacts(depsgraph, scene);
 }
+
+}  // namespace blender
 
 #endif /* WITH_STEAM_AUDIO */
