@@ -47,7 +47,7 @@
 - **Dynamic Scene Synchronization & Performance**:
   - Rebuilds are guarded by `acoustics_geometry_is_dirty(depsgraph, scene)`.
   - During playback, static meshes skip expensive vertex extraction and BVH commits, updating only listener (camera) and speaker poses at real-time frame rates with 0 MB memory leak.
-### 3. Audio Analysis, Animation Automation & Geometry Nodes Rigging
+### 4. Audio Analysis, Animation Automation & Geometry Nodes Rigging
 - **Aubio Integration (`extern/aubio`)**:
   - **Feature Extraction**: Real-time onset / attack transient detection, instantaneous pitch tracking via YIN / Fast YIN, and tempo / beat tracking.
   - **Action & F-Curve Automation**: Maps live or imported audio streams directly to MIDI events, custom driver properties, and keyframe curves in the Graph Editor and Action Editor.
@@ -74,7 +74,7 @@
   - Full keyword aliases indexed for instant search (`Shakify`, `Camera Shake`, `Aubio`, `libtsm`, `TSM`, `Viseme`, `Mouth Shapes`, `Vibration`, `Resonance`).
   - Native Link-Drag Search integration for all sockets.
 
-### 4. Blend Shell: Unix Terminal for `.blend` Database
+### 5. Blend Shell: Unix Terminal for `.blend` Database
 - **Integrated Interactive CLI**: The Python Console editor now doubles as a Unix shell environment designed specifically for manipulating Blender data-blocks in real-time, while preserving full Python interoperability:
   - **`cat <name>`**: Inspect data-blocks. Dumps text scripts, object transforms (Location, Rotation, Euler, Scale), material shader node graphs, and external files.
   - **`rm [-rf] <name>`**: Remove data-blocks from `bpy.data`. Run `rm -rf *` or `rm --orphans` to execute a recursive orphan purge.
@@ -88,10 +88,11 @@
   - **`path <on|off|add>`**: Toggle host `$PATH` resolution or register custom system directories for command execution.
   - **`pip <args...>`**: Run pip package manager inside Blender's embedded interpreter (`pip install scipy`, `pip list`) with automatic `ensurepip` bootstrapping and import cache invalidation. In Python mode, call `pip("install", ...)` directly.
   - **`!command` / `sh <command>`**: Execute system bash terminal commands on demand without leaving Blender, using linked system `$PATH`.
+  - **`!term <command>`**: Launch command in external native terminal window with preserved `$PATH`.
   - **`help`**: In-editor command reference guide.
-  - **Documentation**: Detailed guide and workflows in [Blend Shell & Utilities Guide](doc/blend_shell_and_utilities.md).
+  - **Documentation**: Detailed guide and workflows in [Blend Shell & Utilities Guide](doc/guides/blend_shell_and_utilities.md).
 
-### 5. Production Pipelines & In-Material Stylization
+### 6. Production Pipelines & In-Material Stylization
 - **Material Lighting Nodes (In-Material Stylization)**:
   - *Light Accumulator* (`ShaderNodeLightAccumulator`): Inputs Diffuse, Glossy, Transmission to output surface Closure across render passes.
   - *Light Data* (`ShaderNodeLightData`): Outputs evaluated Light Color, Power, Position, Direction, Distance, and Attenuation.
@@ -112,7 +113,7 @@
 - **Canvas Operator**:
   - 3D Viewport header button to instantly generate a new Scene View Layer, Orthographic Camera, dedicated render target Image, and Compositor wiring.
 
-### 6. Backported Blender 5.3 Features & Upstream Additions
+### 7. Upstream 5.3+ Features & Enhancements
 - **Tier 3 (Engine, Timeline & VSE Refactors)**:
   - *VSE Unclamped Strips by Default* (`1cb86df7e6d`, by John Kiril Swenson): Unclamped slipping by default with 'C' to clamp and new user preference (`clamp_strips_by_default`) to toggle behavior.
   - *VSE Set Render Size for Scene Strips* (`e3ad2320282`, by Philipp Oeser & John Kiril Swenson): Adapt project resolution and aspect ratio directly from selected Scene strips.
@@ -192,65 +193,30 @@
 - Ninja
 - Python (>= 3.11)
 - Vulkan SDK headers and libraries
+- Mold linker (`mold`) or LLD for rapid incremental linking
 
 ### Building
 ```bash
-# Clone the repository and checkout the gooey branch
-git clone -b gooey <repo-url>
-cd blender-4.5-port
+# Clone the repository and checkout the gooey-5.2 branch
+git clone -b gooey-5.2 https://github.com/triadwoozie/gooey.git
+cd gooey
 
-# Configure build with Ninja
-cmake -B ../build_linux_4.5 -S . -GNinja \
+# Configure build with Ninja, Clang, and Mold
+cmake -B ../build_linux_5.2 -S . -GNinja \
   -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_C_COMPILER=clang \
+  -DCMAKE_CXX_COMPILER=clang++ \
+  -DWITH_LINKER_MOLD=ON \
   -DWITH_COMPOSITOR_CPU=ON \
   -DWITH_VULKAN=ON
 
 # Compile Blender
-ninja -C ../build_linux_4.5 blender
+ninja -C ../build_linux_5.2 blender
 ```
 
 ### Running
 ```bash
-../build_linux_4.5/bin/blender
+../build_linux_5.2/bin/blender
 ```
 
----
 
-<!--
-Keep this document short & concise,
-linking to external resources instead of including content in-line.
-See 'release/text/readme.html' for the end user read-me.
--->
-
-Blender
-=======
-
-Blender is the free and open source 3D creation suite.
-It supports the entirety of the 3D pipeline—modeling, rigging, animation, simulation, rendering, compositing,
-motion tracking and video editing.
-
-![Blender screenshot](https://code.blender.org/wp-content/uploads/2018/12/springrg.jpg "Blender screenshot")
-
-Project Pages
--------------
-
-- [Main Website](http://www.blender.org)
-- [Reference Manual](https://docs.blender.org/manual/en/latest/index.html)
-- [User Community](https://www.blender.org/community/)
-
-Development
------------
-
-- [Build Instructions](https://developer.blender.org/docs/handbook/building_blender/)
-- [Code Review & Bug Tracker](https://projects.blender.org)
-- [Developer Forum](https://devtalk.blender.org)
-- [Developer Documentation](https://developer.blender.org/docs/)
-
-
-License
--------
-
-Blender as a whole is licensed under the GNU General Public License, Version 3.
-Individual files may have a different but compatible license.
-
-See [blender.org/about/license](https://www.blender.org/about/license) for details.
